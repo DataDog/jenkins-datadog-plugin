@@ -61,7 +61,8 @@ public class DatadogBuildListener extends RunListener<Run>
   static final Integer WARNING = 1;
   static final Integer CRITICAL = 2;
   static final Integer UNKNOWN = 3;
-  static final double THOUSAND = 1000.0;
+  static final double THOUSAND_DOUBLE = 1000.0;
+  static final long THOUSAND_LONG = 1000L;
   static final Integer HTTP_FORBIDDEN = 403;
   private PrintStream logger = null;
 
@@ -131,12 +132,13 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     // Assemble JSON
-    double starttime = run.getStartTimeInMillis() / this.THOUSAND;
-    double duration = run.getDuration() / this.THOUSAND;
+    long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
+    double duration = run.getDuration() / this.THOUSAND_DOUBLE; // adjusted from ms to s
+    long endtime = starttime + (long) duration; // adjusted from ms to s
     JSONObject builddata = new JSONObject();
-    builddata.put("starttime", starttime); // double, adjusted from ms to s
-    builddata.put("duration", duration); // double, adjusted from ms to s
-    builddata.put("endtime", starttime + duration); // double, adjusted from ms to s
+    builddata.put("starttime", starttime); // long
+    builddata.put("duration", duration); // double
+    builddata.put("endtime", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job_name", run.getParent().getDisplayName()); // string
@@ -278,7 +280,7 @@ public class DatadogBuildListener extends RunListener<Run>
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
     JSONArray point = new JSONArray();
-    point.add(System.currentTimeMillis() / this.THOUSAND); // current time in seconds
+    point.add(System.currentTimeMillis() / this.THOUSAND_LONG); // current time in s
     point.add(builddata.get(key));
     points.add(point); // api expects a list of points
 
@@ -319,7 +321,7 @@ public class DatadogBuildListener extends RunListener<Run>
     JSONObject payload = new JSONObject();
     payload.put("check", checkName);
     payload.put("host_name", builddata.get("hostname"));
-    payload.put("timestamp", System.currentTimeMillis() / this.THOUSAND);
+    payload.put("timestamp", System.currentTimeMillis() / this.THOUSAND_LONG); // current time in s
     payload.put("status", status);
     payload.put("tags", tags);
 
