@@ -61,7 +61,7 @@ public class DatadogBuildListener extends RunListener<Run>
   static final Integer WARNING = 1;
   static final Integer CRITICAL = 2;
   static final Integer UNKNOWN = 3;
-  static final long THOUSAND = 1000L;
+  static final double THOUSAND = 1000.0;
   static final Integer HTTP_FORBIDDEN = 403;
   private PrintStream logger = null;
 
@@ -104,9 +104,9 @@ public class DatadogBuildListener extends RunListener<Run>
     event(builddata, tags);
     gauge("jenkins.job.duration", builddata, "duration", tags);
     if ( "SUCCESS".equals(payload.get("result")) ) {
-      serviceCheck("jenkins.job.status", this.OK, tags);
+      serviceCheck("jenkins.job.status", this.OK, builddata, tags);
     } else {
-      serviceCheck("jenkins.job.status", this.CRITICAL, tags);
+      serviceCheck("jenkins.job.status", this.CRITICAL, builddata, tags);
     }
   }
 
@@ -272,6 +272,9 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final void gauge(final String metricName, final JSONObject builddata, final String key,
                           final JSONArray tags) {
+    logger.println("Sending metric '" + metricName + "' with value "
+                   + builddata.get(key).toString());
+
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
     JSONArray point = new JSONArray();
@@ -304,12 +307,23 @@ public class DatadogBuildListener extends RunListener<Run>
    *
    * @param checkName - A String with the name of the service check to record.
    * @param status - An Integer with the status code to record for this service check.
+   * @param builddata - A JSONObject containing a builds metadata.
    * @param tags - A JSONArray containing a specific subset of tags retrieved from a builds
    *               metadata.
    */
   public final void serviceCheck(final String checkName, final Integer status,
-                                 final JSONArray tags) {
-    logger.println("Service check called for '" + checkName + "' with status " + status.toString());
+                                 final JSONObject builddata, final JSONArray tags) {
+    logger.println("Sending service check '" + checkName + "' with status " + status.toString());
+
+    // Build payload
+    JSONObject payload = new JSONObject();
+    payload.put("check", checkName);
+    payload.put("host_name", builddata.get("hostname"));
+    payload.put("timestamp", System.currentTimeMillis() / this.THOUSAND);
+    payload.put("status", status);
+    payload.put("tags", tags);
+
+    post(payload, this.SERVICECHECK);
   }
 
   /**
@@ -321,6 +335,8 @@ public class DatadogBuildListener extends RunListener<Run>
    *               metadata.
    */
   public final void event(final JSONObject builddata, final JSONArray tags) {
+    logger.println("Sending event");
+
     // Build payload
     JSONObject payload = new JSONObject();
     String title = builddata.get("job_name").toString();
