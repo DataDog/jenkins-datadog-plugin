@@ -125,7 +125,6 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Collect Data
     JSONObject builddata = gatherBuildMetadata(run, listener);
-    JSONObject payload = assemblePayload(builddata);
     JSONArray tags = assembleTags(builddata);
 
     // Report Data
@@ -180,32 +179,6 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     return builddata;
-  }
-
-  /**
-   * Assembles a {@link JSONObject} payload from metadata available in the
-   * {@link JSONObject} builddata. Returns a {@link JSONObject} with the new
-   * payload.
-   *
-   * @param builddata - A JSONObject containing a builds metadata.
-   * @return a JSONObject containing a specific subset of a builds metadata.
-   */
-  private JSONObject assemblePayload(final JSONObject builddata) {
-    JSONObject payload = new JSONObject();
-    payload.put("host", builddata.get("hostname"));
-    payload.put("job_name", builddata.get("job_name"));
-    payload.put("event_type", "build result");
-    payload.put("timestamp", builddata.get("endtime"));
-    payload.put("result", builddata.get("result"));
-    payload.put("number", builddata.get("number"));
-    payload.put("duration", builddata.get("duration"));
-    payload.put("node", builddata.get("node"));
-
-    if ( builddata.get("branch") != null ) {
-      payload.put("branch", builddata.get("branch"));
-    }
-
-    return payload;
   }
 
   /**
