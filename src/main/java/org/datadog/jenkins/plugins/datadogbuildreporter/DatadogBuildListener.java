@@ -63,6 +63,8 @@ public class DatadogBuildListener extends RunListener<Run>
   static final Integer UNKNOWN = 3;
   static final double THOUSAND_DOUBLE = 1000.0;
   static final long THOUSAND_LONG = 1000L;
+  static final float MINUTE = 60;
+  static final float HOUR = 3600;
   static final Integer HTTP_FORBIDDEN = 403;
   private PrintStream logger = null;
 
@@ -82,6 +84,31 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void onStarted(final Run run, final TaskListener listener) {
     logger = listener.getLogger();
     listener.getLogger().println("Started build!");
+
+    // Grab environment variables
+    EnvVars envVars = null;
+    try {
+      envVars = run.getEnvironment(listener);
+    } catch (IOException ex) {
+      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (InterruptedException ex) {
+      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    }
+
+    // Gather pre-build metadata
+    JSONObject builddata = new JSONObject();
+    builddata.put("hostname", envVars.get("HOSTNAME")); // string
+    builddata.put("job_name", run.getParent().getDisplayName()); // string
+    builddata.put("number", run.number); // int
+    builddata.put("result", null); // null
+    builddata.put("duration", null); // null
+    builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+    long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
+    builddata.put("timestamp", starttime); // string
+
+    JSONArray tags = assembleTags(builddata);
+
+    event(builddata, tags);
   }
 
   /**
@@ -104,7 +131,7 @@ public class DatadogBuildListener extends RunListener<Run>
     // Report Data
     event(builddata, tags);
     gauge("jenkins.job.duration", builddata, "duration", tags);
-    if ( "SUCCESS".equals(payload.get("result")) ) {
+    if ( "SUCCESS".equals(builddata.get("result")) ) {
       serviceCheck("jenkins.job.status", this.OK, builddata, tags);
     } else {
       serviceCheck("jenkins.job.status", this.CRITICAL, builddata, tags);
@@ -138,11 +165,12 @@ public class DatadogBuildListener extends RunListener<Run>
     JSONObject builddata = new JSONObject();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
-    builddata.put("endtime", endtime); // long
+    builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job_name", run.getParent().getDisplayName()); // string
     builddata.put("hostname", envVars.get("HOSTNAME")); // string
+    builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     builddata.put("node", envVars.get("NODE_NAME")); // string
 
     if ( envVars.get("GIT_BRANCH") != null ) {
@@ -191,8 +219,10 @@ public class DatadogBuildListener extends RunListener<Run>
   private JSONArray assembleTags(final JSONObject builddata) {
     JSONArray tags = new JSONArray();
     tags.add("job_name:" + builddata.get("job_name"));
-    tags.add("result:" + builddata.get("result"));
     tags.add("build_number:" + builddata.get("number"));
+    if ( builddata.get("result") != null ) {
+      tags.add("result:" + builddata.get("result"));
+    }
     if ( builddata.get("branch") != null ) {
       tags.add("branch:" + builddata.get("branch"));
     }
@@ -339,22 +369,65 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void event(final JSONObject builddata, final JSONArray tags) {
     logger.println("Sending event");
 
-    // Build payload
+    // Gather data
     JSONObject payload = new JSONObject();
+    String hostname = builddata.get("hostname").toString();
+    String number = builddata.get("number").toString();
+    String buildurl = builddata.get("buildurl").toString();
+    long timestamp = builddata.getLong("timestamp");
+    String message = "";
+
+    // Build title
     String title = builddata.get("job_name").toString();
+    title = title + " build #" + number;
     if ( "SUCCESS".equals( builddata.get("result") ) ) {
       title = title + " succeeded";
-    } else {
+      payload.put("alert_type", "success");
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) ";
+    } else if ( builddata.get("result") != null ) {
       title = title + " failed";
+      payload.put("alert_type", "error");
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) \n %%%";
+    } else {
+      title = title + " started";
+      payload.put("alert_type", "info");
+      message = "%%% \n [Follow build #" + number + " progress](" + buildurl + "console) \n %%%";
     }
-    title = title + " on " + builddata.get("hostname").toString();
+    title = title + " on " + hostname;
+
+    // Add duration
+    if ( builddata.get("duration") != null ) {
+      message = message + durationToString(builddata.getDouble("duration"));
+    }
+
+    // Build payload
     payload.put("title", title);
-    payload.put("text", "");
+    payload.put("text", message);
+    payload.put("date_happened", timestamp);
+    payload.put("host", hostname);
     payload.put("priority", "normal");
     payload.put("tags", tags);
-    payload.put("alert_type", "info");
 
     post(payload, this.EVENT);
+  }
+
+  /**
+   * Converts from a double to a human readable string, representing a time duration.
+   *
+   * @param duration - A Double with a duration in seconds.
+   * @return a human readable String representing a time duration.
+   */
+  public final String durationToString(final double duration) {
+    String output = "(";
+    if ( duration < this.MINUTE ) {
+      output = output + duration + " secs)";
+    } else if ( (this.MINUTE <= duration) && (duration < this.HOUR) ) {
+      output = output + (duration / this.MINUTE) + " mins)";
+    } else if ( this.HOUR <= duration ) {
+      output = output + (duration / this.HOUR) + " hrs)";
+    }
+
+    return output;
   }
 
   /**
