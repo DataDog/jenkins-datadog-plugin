@@ -9,6 +9,9 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import hudson.util.FormValidation;
+import hudson.util.Secret;
+
+import static hudson.Util.fixEmptyAndTrim;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -16,6 +19,7 @@ import net.sf.json.JSONSerializer;
 
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.export.Exported;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -212,7 +216,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a boolean to signify the success or failure of the HTTP POST request.
    */
   public final Boolean post(final JSONObject payload, final String type) {
-    String urlParameters = "?api_key=" + getDescriptor().getApiKey();
+    String urlParameters = "?api_key=" + getDescriptor().getApiKey().getPlainText();
     HttpURLConnection conn = null;
 
     try {
@@ -425,7 +429,7 @@ public class DatadogBuildListener extends RunListener<Run>
      * Persist global configuration information by storing in a field and
      * calling save().
      */
-    private String apiKey;
+    private Secret apiKey = null;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -519,7 +523,7 @@ public class DatadogBuildListener extends RunListener<Run>
     @Override
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
-      apiKey = formData.getString("apiKey");
+      apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
       save(); // persist global configuration information
       return super.configure(req, formData);
     }
@@ -529,7 +533,7 @@ public class DatadogBuildListener extends RunListener<Run>
      *
      * @return a String containing the {@link apiKey} global configuration.
      */
-    public String getApiKey() {
+    public Secret getApiKey() {
       return apiKey;
     }
   }
