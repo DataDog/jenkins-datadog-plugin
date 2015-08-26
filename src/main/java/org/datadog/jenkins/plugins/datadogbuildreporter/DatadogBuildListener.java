@@ -87,7 +87,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     logger = listener.getLogger();
-    listener.getLogger().println("Started build!");
+    printLog("Started build!");
 
     // Grab environment variables
     EnvVars envVars = null;
@@ -125,7 +125,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     logger = listener.getLogger();
-    listener.getLogger().println("Completed build!");
+    printLog("Completed build!");
 
     // Collect Data
     JSONObject builddata = gatherBuildMetadata(run, listener);
@@ -245,20 +245,20 @@ public class DatadogBuildListener extends RunListener<Run>
       rd.close();
       JSONObject json = (JSONObject) JSONSerializer.toJSON( result.toString() );
       if ( "ok".equals(json.getString("status")) ) {
-        logger.println("API call of type '" + type + "' was sent successfully!");
-        logger.println("Payload: " + payload.toString());
+        printLog("API call of type '" + type + "' was sent successfully!");
+        printLog("Payload: " + payload.toString());
         return true;
       } else {
-        logger.println("API call of type '" + type + "' failed!");
-        logger.println("Payload: " + payload.toString());
+        printLog("API call of type '" + type + "' failed!");
+        printLog("Payload: " + payload.toString());
         return false;
       }
     } catch (Exception e) {
       if ( conn.getResponseCode() == this.HTTP_FORBIDDEN ) {
-        logger.println("Hmmm, your API key may be invalid. We received a 403 error.");
+        printLog("Hmmm, your API key may be invalid. We received a 403 error.");
         return false;
       }
-      logger.println("Client error: " + e);
+      printLog("Client error: " + e);
       return false;
     } finally {
       if (conn != null) {
@@ -281,7 +281,7 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final void gauge(final String metricName, final JSONObject builddata, final String key,
                           final JSONArray tags) {
-    logger.println("Sending metric '" + metricName + "' with value "
+    printLog("Sending metric '" + metricName + "' with value "
                    + builddata.get(key).toString());
 
     // Setup data point, of type [<unix_timestamp>, <value>]
@@ -322,7 +322,7 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final void serviceCheck(final String checkName, final Integer status,
                                  final JSONObject builddata, final JSONArray tags) {
-    logger.println("Sending service check '" + checkName + "' with status " + status.toString());
+    printLog("Sending service check '" + checkName + "' with status " + status.toString());
 
     // Build payload
     JSONObject payload = new JSONObject();
@@ -344,7 +344,7 @@ public class DatadogBuildListener extends RunListener<Run>
    *               metadata.
    */
   public final void event(final JSONObject builddata, final JSONArray tags) {
-    logger.println("Sending event");
+    printLog("Sending event");
 
     // Gather data
     JSONObject payload = new JSONObject();
@@ -405,6 +405,16 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     return output;
+  }
+
+  /**
+   * Prints a message to the {@link PrintStream} logger.
+   *
+   * @param message - A String containing a message to be printed to the {@link PrintStream} logger.
+   */
+  public final void printLog(final String message) {
+    final String prefix = "DatadogBuildListener.java: ";
+    logger.println(prefix + message);
   }
 
   /**
