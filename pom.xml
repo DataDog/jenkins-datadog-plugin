@@ -12,7 +12,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog-build-reporter</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Build Reporter Plugin</name>
@@ -38,7 +38,7 @@
     <connection>scm:git:git://github.com/jenkinsci/datadog-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/datadog-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/datadog-plugin</url>
-    <tag>datadog-build-reporter-0.1.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <repositories>
