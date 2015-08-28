@@ -40,10 +40,11 @@ import javax.servlet.ServletException;
  * <p>When the user configures the project and runs a build,
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked and a new
  * {@link DatadogBuildListener} is created. The created instance is persisted to the project
- * configuration XML by using XStream, so this allows you to use instance fields
- * (like {@link #name}) to remember the configuration.
+ * configuration XML by using XStream, allowing you to use instance fields
+ * (like {@literal}link #name) to remember the configuration.
  *
- * <p>When a build finishes, the {@link #onCompleted(Run, TaskListener)} method will be invoked.
+ * <p>When a build starts, the {@link #onStarted(Run, TaskListener)} method will be invoked. And
+ * when a build finishes, the {@link #onCompleted(Run, TaskListener)} method will be invoked.
  *
  * @author John Zeller
  */
@@ -209,7 +210,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
   /**
    * Posts a given {@link JSONObject} payload to the DataDog API, using the
-   * user configured {@link apiKey}.
+   * user configured apiKey.
    *
    * @param payload - A JSONObject containing a specific subset of a builds metadata.
    * @param type - A String containing the URL subpath pertaining to the type of API post required.
