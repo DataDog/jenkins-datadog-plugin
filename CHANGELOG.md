@@ -1,6 +1,12 @@
 Changes
 =======
 
+# 0.1.2
+### Details
+Testing automatic release with new Jenkins job.
+
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.1.1...datadog-build-reporter-0.1.2
+
 # 0.1.1
 ### Details
 Worked out kinks in the release process.
