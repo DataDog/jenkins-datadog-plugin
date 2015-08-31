@@ -23,11 +23,15 @@ This plugin can be installed from the [Update Center](https://wiki.jenkins-ci.or
 To configure your newly installed Datadog Build Reporter plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. Once there, scroll down to find the `Datadog Build Reporter` section. Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen. You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox. Once your configuration changes are finished, simply save them, and you're good to go!
 
 ## Release Process
+### Overview
 Our [DataDog/jenkins-datadog-plugin](https://github.com/DataDog/jenkins-datadog-plugin) repository handles the most up-to-date changes we've made to the Datadog Build Reporter plugin, as well as issue tickets revolving around that work. Releases are merged to the [Jenkins-CI git repo for our plugin](https://github.com/jenkinsci/datadog-plugin), and represents the source used for plugin releases found in the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) in your Jenkins installation.
 
 Every commit to our [DataDog/jenkins-datadog-plugin](https://github.com/DataDog/jenkins-datadog-plugin) repository triggers a Jenkins build on our internal Jenkins installation.
 
 A list of our releases is [here](https://github.com/jenkinsci/datadog-plugin/releases).
+
+### How to Release
+To release a new plugin version, change the project version in the [pom.xml](pom.xml) from x.x.x-SNAPSHOT to the updated version number you'd like to see. Add an entry for the new release number to [CHANGELOG.md](CHANGELOG.md). Then run the `jenkins-datadog-plugin-release` job in our Jenkins installation. If the job completes successfully, then the newly updated plugin should be available from the Jenkins [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) within ~4 hours (plus mirror propogation time).
 
 ## Issue Tracking
 We use Github's built in issue tracking system for all issues tickets relating to this plugin, found [here](https://github.com/DataDog/jenkins-datadog-plugin/issues). However, given how Jenkins Plugins are hosted, there may be issues that are posted to JIRA as well. You can check [here](https://issues.jenkins-ci.org/issues/?jql=project%20%3D%20JENKINS%20AND%20status%20in%20%28Open%2C%20%22In%20Progress%22%2C%20Reopened%29%20AND%20component%20%3D%20datadog-plugin%20ORDER%20BY%20updated%20DESC%2C%20priority%20DESC%2C%20created%20ASC) for those issue postings.
