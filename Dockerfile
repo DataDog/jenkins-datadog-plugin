@@ -9,6 +9,6 @@ FROM quay.io/datadog/jenkins-slave
 
 MAINTAINER John Zeller <johnlzeller@gmail.com>
 
-# Setup maven and jdk
+# Setup maven and jdk7
 RUN apt-get update \
- && apt-get install -y maven default-jdk git
+ && apt-get install -y --no-install-recommends maven git
