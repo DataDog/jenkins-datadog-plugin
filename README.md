@@ -19,6 +19,8 @@ List of service checks:
 ## Installation
 This plugin can be installed from the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) (found at `Manage Jenkins -> Manage Plugins`) in your Jenkins installation. Select the `Available` tab, search for `Datadog` and look for `Datadog Build Reporter`. Once you find it, check the checkbox next to it, and install via your preference by using one of the two install buttons at the bottom of the screen. Check to see that the plugin has been successfully installed by searching for `Datadog Build Reporter` on the `Installed` tab. If the plugin has been successfully installed, then continue on to the configuration step, described below.
 
+Note: If you do not see the version of `Datadog Build Reporter` that you are expecting, make sure you have run `Check Now` from the `Manage Jenkins -> Manage Plugins` screen.
+
 ## Configuration
 To configure your newly installed Datadog Build Reporter plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. Once there, scroll down to find the `Datadog Build Reporter` section. Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen. You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox. Once your configuration changes are finished, simply save them, and you're good to go!
 
