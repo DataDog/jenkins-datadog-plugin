@@ -103,7 +103,7 @@ public class DatadogBuildListener extends RunListener<Run>
     // Gather pre-build metadata
     JSONObject builddata = new JSONObject();
     builddata.put("hostname", envVars.get("HOSTNAME")); // string
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job_name", run.getParent().getDisplayName()); // string
     builddata.put("number", run.number); // int
     builddata.put("result", null); // null
     builddata.put("duration", null); // null
@@ -111,7 +111,9 @@ public class DatadogBuildListener extends RunListener<Run>
     long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
     builddata.put("timestamp", starttime); // string
 
-    event(builddata);
+    JSONArray tags = assembleTags(builddata);
+
+    event(builddata, tags);
   }
 
   /**
@@ -128,14 +130,15 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Collect Data
     JSONObject builddata = gatherBuildMetadata(run, listener);
+    JSONArray tags = assembleTags(builddata);
 
     // Report Data
-    event(builddata);
-    gauge("jenkins.job.duration", builddata, "duration");
+    event(builddata, tags);
+    gauge("jenkins.job.duration", builddata, "duration", tags);
     if ( "SUCCESS".equals(builddata.get("result")) ) {
-      serviceCheck("jenkins.job.status", this.OK, builddata);
+      serviceCheck("jenkins.job.status", this.OK, builddata, tags);
     } else {
-      serviceCheck("jenkins.job.status", this.CRITICAL, builddata);
+      serviceCheck("jenkins.job.status", this.CRITICAL, builddata, tags);
     }
   }
 
@@ -169,7 +172,7 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job_name", run.getParent().getDisplayName()); // string
     builddata.put("hostname", envVars.get("HOSTNAME")); // string
     builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     builddata.put("node", envVars.get("NODE_NAME")); // string
@@ -193,7 +196,7 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   private JSONArray assembleTags(final JSONObject builddata) {
     JSONArray tags = new JSONArray();
-    tags.add("job_name:" + builddata.get("job"));
+    tags.add("job_name:" + builddata.get("job_name"));
     tags.add("build_number:" + builddata.get("number"));
     if ( builddata.get("result") != null ) {
       tags.add("result:" + builddata.get("result"));
@@ -267,17 +270,20 @@ public class DatadogBuildListener extends RunListener<Run>
   }
 
   /**
-   * Sends a metric to the Datadog API, including the gauge name, and value.
+   * Sends a metric to the Datadog API, including the gauge name, value, and
+   * a set of tags.
    *
    * @param metricName - A String with the name of the metric to record.
    * @param builddata - A JSONObject containing a builds metadata.
    * @param key - A String with the name of the build metadata to be found in the {@link JSONObject}
    *              builddata.
+   * @param tags - A JSONArray containing a specific subset of tags retrieved from a builds
+   *               metadata.
    */
-  public final void gauge(final String metricName, final JSONObject builddata,
-                          final String key) {
+  public final void gauge(final String metricName, final JSONObject builddata, final String key,
+                          final JSONArray tags) {
     printLog("Sending metric '" + metricName + "' with value "
-                   + builddata.getString(key, "null"));
+                   + builddata.get(key).toString());
 
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
@@ -292,7 +298,7 @@ public class DatadogBuildListener extends RunListener<Run>
     metric.put("points", points);
     metric.put("type", "gauge");
     metric.put("host", builddata.get("hostname"));
-    metric.put("tags", assembleTags(builddata));
+    metric.put("tags", tags);
 
     // Place metric as item of series list
     JSONArray series = new JSONArray();
@@ -306,14 +312,17 @@ public class DatadogBuildListener extends RunListener<Run>
   }
 
   /**
-   * Sends a service check to the Datadog API, including the check name, and status.
+   * Sends a service check to the Datadog API, including the check name,
+   * status, and a set of tags.
    *
    * @param checkName - A String with the name of the service check to record.
    * @param status - An Integer with the status code to record for this service check.
    * @param builddata - A JSONObject containing a builds metadata.
+   * @param tags - A JSONArray containing a specific subset of tags retrieved from a builds
+   *               metadata.
    */
   public final void serviceCheck(final String checkName, final Integer status,
-                                 final JSONObject builddata) {
+                                 final JSONObject builddata, final JSONArray tags) {
     printLog("Sending service check '" + checkName + "' with status " + status.toString());
 
     // Build payload
@@ -322,57 +331,45 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("host_name", builddata.get("hostname"));
     payload.put("timestamp", System.currentTimeMillis() / this.THOUSAND_LONG); // current time in s
     payload.put("status", status);
-    payload.put("tags", assembleTags(builddata));
+    payload.put("tags", tags);
 
     post(payload, this.SERVICECHECK);
   }
 
   /**
-   * Sends a an event to the Datadog API, including the event payload.
+   * Sends a an event to the Datadog API, including the event payload, and a
+   * set of tags.
    *
    * @param builddata - A JSONObject containing a builds metadata.
+   * @param tags - A JSONArray containing a specific subset of tags retrieved from a builds
+   *               metadata.
    */
-  public final void event(final JSONObject builddata) {
+  public final void event(final JSONObject builddata, final JSONArray tags) {
     printLog("Sending event");
 
     // Gather data
     JSONObject payload = new JSONObject();
-    String hostname = builddata.getString("hostname", "null");
-    String number = builddata.getString("number", "null");
-    String buildurl = builddata.getString("buildurl", "null");
-    String job = builddata.getString("job", "null");
+    String hostname = builddata.get("hostname").toString();
+    String number = builddata.get("number").toString();
+    String buildurl = builddata.get("buildurl").toString();
     long timestamp = builddata.getLong("timestamp");
     String message = "";
 
-    // Assemble Tags
-    JSONArray tags = new JSONArray();
-    tags.add("job:" + builddata.get("job"));
-    if ( builddata.get("result") != null ) {
-      tags.add("result:" + builddata.get("result"));
-    }
-    if ( builddata.get("branch") != null ) {
-      tags.add("branch:" + builddata.get("branch"));
-    }
-
-    // Setting source_type_name here, to allow modification based on type of event
-    payload.put("source_type_name", "jenkins");
-
     // Build title
-    String title = job + " build #" + number;
+    String title = builddata.get("job_name").toString();
+    title = title + " build #" + number;
     if ( "SUCCESS".equals( builddata.get("result") ) ) {
       title = title + " succeeded";
       payload.put("alert_type", "success");
       message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) ";
     } else if ( builddata.get("result") != null ) {
       title = title + " failed";
-      payload.put("alert_type", "failure");
-      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) ";
+      payload.put("alert_type", "error");
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) \n %%%";
     } else {
       title = title + " started";
       payload.put("alert_type", "info");
-      message = "%%% \n [Follow build #" + number + " progress](" + buildurl + "console) ";
-      // Remove source_type_name to keep started events from being rolled up
-      payload.remove("source_type_name");
+      message = "%%% \n [Follow build #" + number + " progress](" + buildurl + "console) \n %%%";
     }
     title = title + " on " + hostname;
 
@@ -381,19 +378,13 @@ public class DatadogBuildListener extends RunListener<Run>
       message = message + durationToString(builddata.getDouble("duration"));
     }
 
-    // Close markdown
-    message = message + " \n %%%";
-    
     // Build payload
     payload.put("title", title);
     payload.put("text", message);
     payload.put("date_happened", timestamp);
-    payload.put("event_type", "build result");
     payload.put("host", hostname);
-    payload.put("number", number);
-    payload.put("result", builddata.get("result"));
+    payload.put("priority", "normal");
     payload.put("tags", tags);
-    payload.put("aggregation_key", job); // Used for job name in event rollups
 
     post(payload, this.EVENT);
   }
