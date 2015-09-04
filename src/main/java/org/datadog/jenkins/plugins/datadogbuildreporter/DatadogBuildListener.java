@@ -277,7 +277,7 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void gauge(final String metricName, final JSONObject builddata,
                           final String key) {
     printLog("Sending metric '" + metricName + "' with value "
-                   + builddata.get(key).toString());
+                   + builddata.getString(key, "null"));
 
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
@@ -337,10 +337,10 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Gather data
     JSONObject payload = new JSONObject();
-    String hostname = builddata.get("hostname").toString();
-    String number = builddata.get("number").toString();
-    String buildurl = builddata.get("buildurl").toString();
-    String job = builddata.get("job").toString();
+    String hostname = builddata.getString("hostname", "null");
+    String number = builddata.getString("number", "null");
+    String buildurl = builddata.getString("buildurl", "null");
+    String job = builddata.getString("job", "null");
     long timestamp = builddata.getLong("timestamp");
     String message = "";
 
