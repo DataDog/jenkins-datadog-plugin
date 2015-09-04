@@ -362,15 +362,15 @@ public class DatadogBuildListener extends RunListener<Run>
     if ( "SUCCESS".equals( builddata.get("result") ) ) {
       title = title + " succeeded";
       payload.put("alert_type", "success");
-      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) ";
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     } else if ( builddata.get("result") != null ) {
       title = title + " failed";
       payload.put("alert_type", "failure");
-      message = "%%% \n [See results for build #" + number + "](" + buildurl + "console) ";
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     } else {
       title = title + " started";
       payload.put("alert_type", "info");
-      message = "%%% \n [Follow build #" + number + " progress](" + buildurl + "console) ";
+      message = "%%% \n [Follow build #" + number + " progress](" + buildurl + ") ";
       // Remove source_type_name to keep started events from being rolled up
       payload.remove("source_type_name");
     }
