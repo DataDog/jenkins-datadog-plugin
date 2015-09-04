@@ -17,6 +17,8 @@ List of service checks:
 * Build status (jenkins.job.status)
 
 ## Installation
+_This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
+
 This plugin can be installed from the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) (found at `Manage Jenkins -> Manage Plugins`) in your Jenkins installation. Select the `Available` tab, search for `Datadog` and look for `Datadog Build Reporter`. Once you find it, check the checkbox next to it, and install via your preference by using one of the two install buttons at the bottom of the screen. Check to see that the plugin has been successfully installed by searching for `Datadog Build Reporter` on the `Installed` tab. If the plugin has been successfully installed, then continue on to the configuration step, described below.
 
 Note: If you do not see the version of `Datadog Build Reporter` that you are expecting, make sure you have run `Check Now` from the `Manage Jenkins -> Manage Plugins` screen.
