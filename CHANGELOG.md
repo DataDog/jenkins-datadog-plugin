@@ -7,6 +7,8 @@ https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.1.3
 
 ### Changes
 * [BUGFIX] Improved method of determining the Jenkins hostname
+* [IMPROVEMENT] Remove build_number tag from metrics and service checks
+* [IMPROVEMENT] Add node tag to events, metrics, and service checks
 
 # 0.1.3 / 09-04-2015
 ### Details

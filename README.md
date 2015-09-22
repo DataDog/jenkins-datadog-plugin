@@ -16,6 +16,12 @@ List of metrics:
 List of service checks:
 * Build status (jenkins.job.status)
 
+All events, metrics, and service checks include the following tags, if they are available:
+* job
+* node
+* result
+* branch
+
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
 
