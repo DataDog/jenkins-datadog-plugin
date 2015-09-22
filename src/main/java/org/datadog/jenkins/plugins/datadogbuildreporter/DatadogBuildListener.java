@@ -100,15 +100,15 @@ public class DatadogBuildListener extends RunListener<Run>
     EnvVars envVars = null;
     try {
       envVars = run.getEnvironment(listener);
-    } catch (IOException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (InterruptedException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException e) {
+      printLog("ERROR: " + e.getMessage());
+    } catch (InterruptedException e) {
+      printLog("ERROR: " + e.getMessage());
     }
 
     // Gather pre-build metadata
     JSONObject builddata = new JSONObject();
-    builddata.put("hostname", envVars.get("HOSTNAME")); // string
+    builddata.put("hostname", getHostname(envVars)); // string
     builddata.put("job", run.getParent().getDisplayName()); // string
     builddata.put("number", run.number); // int
     builddata.put("result", null); // null
@@ -116,6 +116,9 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
     builddata.put("timestamp", starttime); // string
+
+    // Add event_type to assist in roll-ups
+    builddata.put("event_type", "build start"); // string
 
     event(builddata);
   }
@@ -134,6 +137,9 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Collect Data
     JSONObject builddata = gatherBuildMetadata(run, listener);
+
+    // Add event_type to assist in roll-ups
+    builddata.put("event_type", "build result"); // string
 
     // Report Data
     event(builddata);
@@ -159,10 +165,10 @@ public class DatadogBuildListener extends RunListener<Run>
     EnvVars envVars = null;
     try {
       envVars = run.getEnvironment(listener);
-    } catch (IOException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (InterruptedException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException e) {
+      printLog("ERROR: " + e.getMessage());
+    } catch (InterruptedException e) {
+      printLog("ERROR: " + e.getMessage());
     }
 
     // Assemble JSON
@@ -394,13 +400,11 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("title", title);
     payload.put("text", message);
     payload.put("date_happened", timestamp);
-    payload.put("event_type", "build result"); // FIXME: Don't do this for start message, it'll prevent the rollup, try 'build start'
+    payload.put("event_type", builddata.get("event_type"));
     payload.put("host", hostname);
     payload.put("number", number);
     payload.put("result", builddata.get("result"));
     payload.put("tags", tags);
-
-    // Aggregation happens with event_type, aggregation_key, and host (http://docs.datadoghq.com/guides/logs/)
     payload.put("aggregation_key", job); // Used for job name in event rollups
 
     post(payload, this.EVENT);
@@ -408,8 +412,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
   /**
    * Getter function to return either the saved hostname global configuration,
-   * or the hostname that is set in the Jenkins host itself. Returns the null
-   * if no valid hostname is found.
+   * or the hostname that is set in the Jenkins host itself. Returns null if no
+   * valid hostname is found.
    *
    * Tries, in order:
    *    Jenkins configuration
@@ -432,7 +436,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     // Check hostname using jenkins env variables
-    hostname = envVars.get("HOSTNAME").toString();
+    if ( envVars.get("HOSTNAME") != null ) {
+      hostname = envVars.get("HOSTNAME").toString();
+    }
     if ( (hostname != null) && isValidHostname(hostname) ) {
       printLog("Using hostname found in $HOSTNAME host environment variable." +
                " Hostname: " + hostname);

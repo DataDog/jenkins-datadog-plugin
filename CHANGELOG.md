@@ -1,11 +1,12 @@
 Changes
 =======
 
-# 0.1.4 / Unreleased
+# 0.2.0 / Unreleased
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.1.3...datadog-build-reporter-0.1.4
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.1.3...datadog-build-reporter-0.2.0
 
 ### Changes
+* [BUGFIX] Improved method of determining the Jenkins hostname
 
 # 0.1.3 / 09-04-2015
 ### Details
