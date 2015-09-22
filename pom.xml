@@ -12,7 +12,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog-build-reporter</artifactId>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Build Reporter Plugin</name>
@@ -28,9 +28,9 @@
 
   <developers>
     <developer>
-      <id>zeller</id>
-      <name>John L Zeller</name>
-      <email>johnlzeller@gmail.com</email>
+      <id>datadog</id>
+      <name>Datadog</name>
+      <email>dev@datadoghq.com</email>
     </developer>
   </developers>
 

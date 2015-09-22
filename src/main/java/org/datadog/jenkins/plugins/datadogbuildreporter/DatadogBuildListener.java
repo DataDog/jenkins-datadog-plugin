@@ -24,12 +24,18 @@ import org.kohsuke.stapler.export.Exported;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
@@ -71,7 +77,7 @@ public class DatadogBuildListener extends RunListener<Run>
   static final float MINUTE = 60;
   static final float HOUR = 3600;
   static final Integer HTTP_FORBIDDEN = 403;
-  private PrintStream logger = null;
+  static private PrintStream logger = null;
 
   /**
    * Runs when the {@link DatadogBuildListener} class is created.
@@ -94,15 +100,15 @@ public class DatadogBuildListener extends RunListener<Run>
     EnvVars envVars = null;
     try {
       envVars = run.getEnvironment(listener);
-    } catch (IOException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (InterruptedException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException e) {
+      printLog("ERROR: " + e.getMessage());
+    } catch (InterruptedException e) {
+      printLog("ERROR: " + e.getMessage());
     }
 
     // Gather pre-build metadata
     JSONObject builddata = new JSONObject();
-    builddata.put("hostname", envVars.get("HOSTNAME")); // string
+    builddata.put("hostname", getHostname(envVars)); // string
     builddata.put("job", run.getParent().getDisplayName()); // string
     builddata.put("number", run.number); // int
     builddata.put("result", null); // null
@@ -110,6 +116,9 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
     builddata.put("timestamp", starttime); // string
+
+    // Add event_type to assist in roll-ups
+    builddata.put("event_type", "build start"); // string
 
     event(builddata);
   }
@@ -128,6 +137,9 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Collect Data
     JSONObject builddata = gatherBuildMetadata(run, listener);
+
+    // Add event_type to assist in roll-ups
+    builddata.put("event_type", "build result"); // string
 
     // Report Data
     event(builddata);
@@ -153,10 +165,10 @@ public class DatadogBuildListener extends RunListener<Run>
     EnvVars envVars = null;
     try {
       envVars = run.getEnvironment(listener);
-    } catch (IOException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (InterruptedException ex) {
-      Logger.getLogger(DatadogBuildListener.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException e) {
+      printLog("ERROR: " + e.getMessage());
+    } catch (InterruptedException e) {
+      printLog("ERROR: " + e.getMessage());
     }
 
     // Assemble JSON
@@ -170,7 +182,7 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job", run.getParent().getDisplayName()); // string
-    builddata.put("hostname", envVars.get("HOSTNAME")); // string
+    builddata.put("hostname", getHostname(envVars)); // string
     builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     builddata.put("node", envVars.get("NODE_NAME")); // string
 
@@ -193,8 +205,10 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   private JSONArray assembleTags(final JSONObject builddata) {
     JSONArray tags = new JSONArray();
-    tags.add("job_name:" + builddata.get("job"));
-    tags.add("build_number:" + builddata.get("number"));
+    tags.add("job:" + builddata.get("job"));
+    if ( builddata.get("node") != null ) {
+      tags.add("node:" + builddata.get("node"));
+    }
     if ( builddata.get("result") != null ) {
       tags.add("result:" + builddata.get("result"));
     }
@@ -344,16 +358,6 @@ public class DatadogBuildListener extends RunListener<Run>
     long timestamp = builddata.getLong("timestamp");
     String message = "";
 
-    // Assemble Tags
-    JSONArray tags = new JSONArray();
-    tags.add("job:" + builddata.get("job"));
-    if ( builddata.get("result") != null ) {
-      tags.add("result:" + builddata.get("result"));
-    }
-    if ( builddata.get("branch") != null ) {
-      tags.add("branch:" + builddata.get("branch"));
-    }
-
     // Setting source_type_name here, to allow modification based on type of event
     payload.put("source_type_name", "jenkins");
 
@@ -388,14 +392,134 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("title", title);
     payload.put("text", message);
     payload.put("date_happened", timestamp);
-    payload.put("event_type", "build result");
+    payload.put("event_type", builddata.get("event_type"));
     payload.put("host", hostname);
-    payload.put("number", number);
     payload.put("result", builddata.get("result"));
-    payload.put("tags", tags);
+    payload.put("tags", assembleTags(builddata));
     payload.put("aggregation_key", job); // Used for job name in event rollups
 
     post(payload, this.EVENT);
+  }
+
+  /**
+   * Getter function to return either the saved hostname global configuration,
+   * or the hostname that is set in the Jenkins host itself. Returns null if no
+   * valid hostname is found.
+   *
+   * Tries, in order:
+   *    Jenkins configuration
+   *    Jenkins hostname environment variable
+   *    Unix hostname via `/bin/hostname -f`
+   *    Localhost hostname
+   *
+   * @param envVars - An EnvVars object containing a set of environment variables.
+   * @return a human readable String for the hostname.
+   */
+  public final String getHostname(final EnvVars envVars) {
+    String[] UNIX_OS = {"mac", "linux", "freebsd", "sunos"};
+    String hostname = null;
+
+    // Check hostname configuration from Jenkins
+    hostname = getDescriptor().getHostname();
+    if ( (hostname != null) && isValidHostname(hostname) ) {
+      printLog("Using hostname set in 'Manage Plugins'. Hostname: " + hostname);
+      return hostname;
+    }
+
+    // Check hostname using jenkins env variables
+    if ( envVars.get("HOSTNAME") != null ) {
+      hostname = envVars.get("HOSTNAME").toString();
+    }
+    if ( (hostname != null) && isValidHostname(hostname) ) {
+      printLog("Using hostname found in $HOSTNAME host environment variable." +
+               " Hostname: " + hostname);
+      return hostname;
+    }
+
+    // Check OS specific unix commands
+    String os = getOS();
+    if ( Arrays.asList(UNIX_OS).contains(os) ) {
+      // Attempt to grab unix hostname
+      try {
+        String[] cmd = {"/bin/hostname", "-f"};
+        Process proc = Runtime.getRuntime().exec(cmd);
+        InputStream in = proc.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        StringBuilder out = new StringBuilder();
+        String line;
+        while ( (line = reader.readLine()) != null ) {
+            out.append(line);
+        }
+
+        hostname = out.toString();
+      } catch (Exception e) {
+        printLog("ERROR: " + e.getMessage());
+      }
+
+      // Check hostname
+      if ( (hostname != null) && isValidHostname(hostname) ) {
+        printLog("Using unix hostname found via `/bin/hostname -f`." +
+                 " Hostname: " + hostname);
+        return hostname;
+      }
+    }
+
+    // Check localhost hostname
+    String out = null;
+    try {
+      hostname = Inet4Address.getLocalHost().getHostName().toString();
+    } catch (UnknownHostException e) {
+      printLog("Unknown hostname error received for localhost. Error: " + e);
+    }
+    if ( (hostname != null) && isValidHostname(hostname) ) {
+      printLog("Using hostname found via Inet4Address.getLocalHost().getHostName()." +
+               " Hostname: " + hostname);
+      return hostname;
+    }
+
+    // Never found the hostname
+    if ( (hostname == null) || "".equals(hostname) ) {
+      printLog("Unable to reliably determine host name. You can define one in " +
+               "the 'Manage Plugins' section under the 'Datadog Build Reporter' section.");
+    }
+    return null;
+  }
+
+  /**
+   * Validator function to ensure that the hostname is valid. Also, fails on
+   * empty String.
+   *
+   * @return a boolean representing the validity of the hostname
+   */
+  public final static Boolean isValidHostname(final String hostname) {
+    String[] localHosts = {"localhost", "localhost.localdomain",
+                           "localhost6.localdomain6", "ip6-localhost"};
+    String VALID_HOSTNAME_RFC_1123_PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+    String host = hostname.toLowerCase();
+    Integer MAX_HOSTNAME_LEN = 255;
+
+    // Check if hostname is local
+    if ( Arrays.asList(localHosts).contains(host) ) {
+      printLog("Hostname: " + hostname + " is local");
+      return false;
+    }
+
+    // Ensure proper length
+    if ( hostname.length() > MAX_HOSTNAME_LEN ) {
+      printLog("Hostname: " + hostname + " is too long (max length is " + 
+               MAX_HOSTNAME_LEN.toString() + " characters)");
+      return false;
+    }
+
+    // Check compliance with RFC 1123
+    Pattern r = Pattern.compile(VALID_HOSTNAME_RFC_1123_PATTERN);
+    Matcher m = r.matcher(hostname);
+    if ( !m.find() ) {
+      return false;
+    }
+
+    // Passed all checks, so the hostname is valid
+    return true;
   }
 
   /**
@@ -422,9 +546,22 @@ public class DatadogBuildListener extends RunListener<Run>
    *
    * @param message - A String containing a message to be printed to the {@link PrintStream} logger.
    */
-  public final void printLog(final String message) {
+  public final static void printLog(final String message) {
     final String prefix = "DatadogBuildListener.java: ";
     logger.println(prefix + message);
+  }
+
+
+  /**
+  * Human-friendly OS name. Commons return values are windows, linux, mac, sunos, freebsd
+  *
+  * @return a String with a human-friendly OS name
+  */
+  public final String getOS() {
+    String out = System.getProperty("os.name");
+    String os = out.split(" ")[0];
+
+    return os.toLowerCase();
   }
 
   /**
@@ -465,6 +602,7 @@ public class DatadogBuildListener extends RunListener<Run>
      * calling save().
      */
     private Secret apiKey = null;
+    private String hostname = null;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -514,7 +652,7 @@ public class DatadogBuildListener extends RunListener<Run>
         }
       } catch (Exception e) {
         if ( conn.getResponseCode() == DatadogBuildListener.HTTP_FORBIDDEN ) {
-          return FormValidation.error("Hmmm, your API key may to be invalid. "
+          return FormValidation.error("Hmmm, your API key may be invalid. "
                                       + "We received a 403 error.");
         }
         return FormValidation.error("Client error: " + e);
@@ -522,6 +660,28 @@ public class DatadogBuildListener extends RunListener<Run>
         if (conn != null) {
           conn.disconnect();
         }
+      }
+    }
+
+    /**
+     * Tests the {@link hostname} from the configuration screen, to determine if
+     * the hostname is of a valid format, according to the RFC 1123.
+     *
+     * @param formHostname - A String containing the hostname submitted from the form on the
+     *                     configuration screen, which will be used to authenticate a request to the
+     *                     Datadog API.
+     * @return a FormValidation object used to display a message to the user on the configuration
+     *         screen.
+     * @throws IOException if there is an input/output exception.
+     * @throws ServletException if there is a servlet exception.
+     */
+    public FormValidation doTestHostname(@QueryParameter("hostname") final String formHostname)
+        throws IOException, ServletException {
+      if ( DatadogBuildListener.isValidHostname(formHostname) ) {
+        return FormValidation.ok("Great! Your hostname is valid.");
+      } else {
+        return FormValidation.error("Your hostname is invalid, likely because" +
+                                    " it violates the format set in RFC 1123.");
       }
     }
 
@@ -559,6 +719,7 @@ public class DatadogBuildListener extends RunListener<Run>
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
       apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
+      hostname = formData.getString("hostname");
       save(); // persist global configuration information
       return super.configure(req, formData);
     }
@@ -570,6 +731,15 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public Secret getApiKey() {
       return apiKey;
+    }
+
+    /**
+     * Getter function for the {@link hostname} global configuration.
+     *
+     * @return a String containing the {@link hostname} global configuration.
+     */
+    public String getHostname() {
+      return hostname;
     }
   }
 }
