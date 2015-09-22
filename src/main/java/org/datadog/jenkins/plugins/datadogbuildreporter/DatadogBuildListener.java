@@ -205,8 +205,10 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   private JSONArray assembleTags(final JSONObject builddata) {
     JSONArray tags = new JSONArray();
-    tags.add("job_name:" + builddata.get("job"));
-    tags.add("build_number:" + builddata.get("number"));
+    tags.add("job:" + builddata.get("job"));
+    if ( builddata.get("node") != null ) {
+      tags.add("node:" + builddata.get("node"));
+    }
     if ( builddata.get("result") != null ) {
       tags.add("result:" + builddata.get("result"));
     }
@@ -356,16 +358,6 @@ public class DatadogBuildListener extends RunListener<Run>
     long timestamp = builddata.getLong("timestamp");
     String message = "";
 
-    // Assemble Tags
-    JSONArray tags = new JSONArray();
-    tags.add("job:" + builddata.get("job"));
-    if ( builddata.get("result") != null ) {
-      tags.add("result:" + builddata.get("result"));
-    }
-    if ( builddata.get("branch") != null ) {
-      tags.add("branch:" + builddata.get("branch"));
-    }
-
     // Setting source_type_name here, to allow modification based on type of event
     payload.put("source_type_name", "jenkins");
 
@@ -402,9 +394,8 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("date_happened", timestamp);
     payload.put("event_type", builddata.get("event_type"));
     payload.put("host", hostname);
-    payload.put("number", number);
     payload.put("result", builddata.get("result"));
-    payload.put("tags", tags);
+    payload.put("tags", assembleTags(builddata));
     payload.put("aggregation_key", job); // Used for job name in event rollups
 
     post(payload, this.EVENT);
