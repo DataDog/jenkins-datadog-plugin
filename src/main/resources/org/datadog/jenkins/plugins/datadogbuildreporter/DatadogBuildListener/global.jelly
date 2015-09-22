@@ -18,5 +18,11 @@
     <f:validateButton title="${%Test Key}" 
         progress="${%Testing...}" method="testConnection" 
         with="apiKey" />
+    <f:entry title="Hostname" field="hostname">
+        <f:textbox field="hostname" default="${hostname}" />
+    </f:entry>
+    <f:validateButton title="${%Test Hostname}" 
+        progress="${%Testing...}" method="testHostname" 
+        with="hostname" />
   </f:section>
 </j:jelly>
