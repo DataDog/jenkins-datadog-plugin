@@ -514,7 +514,7 @@ public class DatadogBuildListener extends RunListener<Run>
         }
       } catch (Exception e) {
         if ( conn.getResponseCode() == DatadogBuildListener.HTTP_FORBIDDEN ) {
-          return FormValidation.error("Hmmm, your API key may to be invalid. "
+          return FormValidation.error("Hmmm, your API key may be invalid. "
                                       + "We received a 403 error.");
         }
         return FormValidation.error("Client error: " + e);
