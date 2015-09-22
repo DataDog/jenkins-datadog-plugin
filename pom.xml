@@ -13,7 +13,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog-build-reporter</artifactId>
-  <version>0.1.3-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Build Reporter Plugin</name>
