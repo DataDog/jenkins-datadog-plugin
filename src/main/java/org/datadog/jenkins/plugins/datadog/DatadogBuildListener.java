@@ -1,4 +1,4 @@
-package org.datadog.jenkins.plugins.datadogbuildreporter;
+package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
 import hudson.Extension;
@@ -62,7 +62,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * Static variables describing consistent plugin names, Datadog API endpoints/codes, and magic
    * numbers.
    */
-  static final String DISPLAY_NAME = "Datadog Build Reporter";
+  static final String DISPLAY_NAME = "Datadog Plugin";
   static final String BASEURL = "https://app.datadoghq.com/api/";
   static final String VALIDATE = "v1/validate";
   static final String METRIC = "v1/series";
@@ -480,7 +480,7 @@ public class DatadogBuildListener extends RunListener<Run>
     // Never found the hostname
     if ( (hostname == null) || "".equals(hostname) ) {
       printLog("Unable to reliably determine host name. You can define one in " +
-               "the 'Manage Plugins' section under the 'Datadog Build Reporter' section.");
+               "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
     }
     return null;
   }
