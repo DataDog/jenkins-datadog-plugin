@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.2.1 / 09-25-2015
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.2.0...datadog-0.2.1
+
+### Changes
+* [BUGFIX] Changed the plugin id from `datadog-build-reporter` to just `datadog`. See (#18)[https://github.com/DataDog/jenkins-datadog-plugin/pull/18]
+
 # 0.2.0 / 09-22-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.1.3...datadog-build-reporter-0.2.0
