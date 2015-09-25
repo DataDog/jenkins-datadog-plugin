@@ -11,7 +11,7 @@
     tags they use. Views are always organized according to its owner class,
     so it should be straightforward to find them.
   -->
-  <f:section title="Datadog Build Reporter">
+  <f:section title="Datadog Plugin">
     <f:entry title="API Key" field="apiKeyTitle">
         <f:password field="apiKey" default="${apiKey}" />
     </f:entry>
