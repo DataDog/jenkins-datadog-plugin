@@ -94,33 +94,39 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     logger = listener.getLogger();
-    printLog("Started build!");
+    String jobname = run.getParent().getDisplayName();
+    String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
 
-    // Grab environment variables
-    EnvVars envVars = null;
-    try {
-      envVars = run.getEnvironment(listener);
-    } catch (IOException e) {
-      printLog("ERROR: " + e.getMessage());
-    } catch (InterruptedException e) {
-      printLog("ERROR: " + e.getMessage());
+    // Process only if job is NOT in blacklist
+    if ( (blacklist == null) || !Arrays.asList(blacklist).contains(jobname.toLowerCase()) ) {
+      printLog("Started build!");
+
+      // Grab environment variables
+      EnvVars envVars = null;
+      try {
+        envVars = run.getEnvironment(listener);
+      } catch (IOException e) {
+        printLog("ERROR: " + e.getMessage());
+      } catch (InterruptedException e) {
+        printLog("ERROR: " + e.getMessage());
+      }
+
+      // Gather pre-build metadata
+      JSONObject builddata = new JSONObject();
+      builddata.put("hostname", getHostname(envVars)); // string
+      builddata.put("job", jobname); // string
+      builddata.put("number", run.number); // int
+      builddata.put("result", null); // null
+      builddata.put("duration", null); // null
+      builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+      long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
+      builddata.put("timestamp", starttime); // string
+
+      // Add event_type to assist in roll-ups
+      builddata.put("event_type", "build start"); // string
+
+      event(builddata);
     }
-
-    // Gather pre-build metadata
-    JSONObject builddata = new JSONObject();
-    builddata.put("hostname", getHostname(envVars)); // string
-    builddata.put("job", run.getParent().getDisplayName()); // string
-    builddata.put("number", run.number); // int
-    builddata.put("result", null); // null
-    builddata.put("duration", null); // null
-    builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-    long starttime = run.getStartTimeInMillis() / this.THOUSAND_LONG; // adjusted from ms to s
-    builddata.put("timestamp", starttime); // string
-
-    // Add event_type to assist in roll-ups
-    builddata.put("event_type", "build start"); // string
-
-    event(builddata);
   }
 
   /**
@@ -133,21 +139,27 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     logger = listener.getLogger();
-    printLog("Completed build!");
+    String jobname = run.getParent().getDisplayName();
+    String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
 
-    // Collect Data
-    JSONObject builddata = gatherBuildMetadata(run, listener);
+    // Process only if job in NOT in blacklist
+    if ( (blacklist == null) || !Arrays.asList(blacklist).contains(jobname.toLowerCase()) ) {
+      printLog("Completed build!");
 
-    // Add event_type to assist in roll-ups
-    builddata.put("event_type", "build result"); // string
+      // Collect Data
+      JSONObject builddata = gatherBuildMetadata(run, listener);
 
-    // Report Data
-    event(builddata);
-    gauge("jenkins.job.duration", builddata, "duration");
-    if ( "SUCCESS".equals(builddata.get("result")) ) {
-      serviceCheck("jenkins.job.status", this.OK, builddata);
-    } else {
-      serviceCheck("jenkins.job.status", this.CRITICAL, builddata);
+      // Add event_type to assist in roll-ups
+      builddata.put("event_type", "build result"); // string
+
+      // Report Data
+      event(builddata);
+      gauge("jenkins.job.duration", builddata, "duration");
+      if ( "SUCCESS".equals(builddata.get("result")) ) {
+        serviceCheck("jenkins.job.status", this.OK, builddata);
+      } else {
+        serviceCheck("jenkins.job.status", this.CRITICAL, builddata);
+      }
     }
   }
 
@@ -580,6 +592,20 @@ public class DatadogBuildListener extends RunListener<Run>
   }
 
   /**
+   * Converts a blacklist string into a String array.
+   *
+   * @param blacklist - A String containing a set of key/value pairs.
+   * @return a String array representing the job names to be blacklisted. Returns
+   *         empty string if blacklist is null.
+   */
+  public final String[] blacklistStringtoArray(final String blacklist) {
+    if ( blacklist != null ) {
+      return blacklist.split(","); 
+    }
+    return ( new String[0] );
+  }
+
+  /**
    * Getter function for the {@link DescriptorImpl} class.
    *
    * @return a new {@link DescriptorImpl} class.
@@ -603,6 +629,7 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     private Secret apiKey = null;
     private String hostname = null;
+    private String blacklist = null;
     private Boolean tagNode = null;
 
     /**
@@ -719,14 +746,25 @@ public class DatadogBuildListener extends RunListener<Run>
     @Override
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
+      // Grab apiKey and hostname
       apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
       hostname = formData.getString("hostname");
+
+      // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
+      blacklist = formData.getString("blacklist")
+                          .replaceAll("\\s","")
+                          .replaceAll(",,","")
+                          .toLowerCase();
+
+      // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         tagNode = true;
       } else {
         tagNode = false;
       }
-      save(); // persist global configuration information
+
+      // Persist global configuration information
+      save();
       return super.configure(req, formData);
     }
 
@@ -746,6 +784,16 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public String getHostname() {
       return hostname;
+    }
+
+    /**
+     * Getter function for the {@link blacklist} global configuration, containing
+     * a comma-separated list of jobs to blacklist from monitoring.
+     *
+     * @return a String array containing the {@link blacklist} global configuration.
+     */
+    public String getBlacklist() {
+      return blacklist;
     }
 
     /**

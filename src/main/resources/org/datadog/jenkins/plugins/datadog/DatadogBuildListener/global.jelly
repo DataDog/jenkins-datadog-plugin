@@ -22,6 +22,10 @@
     </f:entry>
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
                       method="testHostname" with="hostname" />
+    <f:entry title="Blacklisted Jobs"
+             description="A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod-release)." >
+      <f:textarea field="blacklist" optional="true" default="${blacklist}" />
+    </f:entry>
     <f:entry title="Optional Tags"
              description="Name of node the current build is running on (i.e. 'master' for master node)." >
       <f:checkbox title="node" field="tagNode" optional="true" />
