@@ -13,16 +13,18 @@
   -->
   <f:section title="Datadog Plugin">
     <f:entry title="API Key" field="apiKeyTitle">
-        <f:password field="apiKey" default="${apiKey}" />
+      <f:password field="apiKey" default="${apiKey}" />
     </f:entry>
-    <f:validateButton title="${%Test Key}" 
-        progress="${%Testing...}" method="testConnection" 
-        with="apiKey" />
+    <f:validateButton title="${%Test Key}" progress="${%Testing...}"
+                      method="testConnection" with="apiKey" />
     <f:entry title="Hostname" field="hostname">
-        <f:textbox field="hostname" default="${hostname}" />
+      <f:textbox field="hostname" default="${hostname}" />
     </f:entry>
-    <f:validateButton title="${%Test Hostname}" 
-        progress="${%Testing...}" method="testHostname" 
-        with="hostname" />
+    <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
+                      method="testHostname" with="hostname" />
+    <f:entry title="Optional Tags"
+             description="Name of node the current build is running on (i.e. 'master' for master node)." >
+      <f:checkbox title="node" field="tagNode" optional="true" />
+    </f:entry>
   </f:section>
 </j:jelly>

@@ -206,7 +206,7 @@ public class DatadogBuildListener extends RunListener<Run>
   private JSONArray assembleTags(final JSONObject builddata) {
     JSONArray tags = new JSONArray();
     tags.add("job:" + builddata.get("job"));
-    if ( builddata.get("node") != null ) {
+    if ( (builddata.get("node") != null) && getDescriptor().getTagNode() ) {
       tags.add("node:" + builddata.get("node"));
     }
     if ( builddata.get("result") != null ) {
@@ -603,6 +603,7 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     private Secret apiKey = null;
     private String hostname = null;
+    private Boolean tagNode = null;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -720,6 +721,11 @@ public class DatadogBuildListener extends RunListener<Run>
            throws FormException {
       apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
       hostname = formData.getString("hostname");
+      if ( formData.getString("tagNode").equals("true") ) {
+        tagNode = true;
+      } else {
+        tagNode = false;
+      }
       save(); // persist global configuration information
       return super.configure(req, formData);
     }
@@ -740,6 +746,15 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public String getHostname() {
       return hostname;
+    }
+
+    /**
+     * Getter function for the optional tag {@link node} global configuration.
+     *
+     * @return a Boolean containing the optional tag value for the {@link node} global configuration.
+     */
+    public Boolean getTagNode() {
+      return tagNode;
     }
   }
 }
