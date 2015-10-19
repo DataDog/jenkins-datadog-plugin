@@ -1,9 +1,9 @@
 Changes
 =======
 
-# 0.3.0 / Unreleased
+# 0.3.0 / 10-19-2015
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-build-reporter-0.2.1...datadog-0.3.0
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.2.1...datadog-0.3.0
 
 ### Changes
 * [IMPROVEMENT] Added the ability to include optional preset tags. See [ea17e44](https://github.com/DataDog/jenkins-datadog-plugin/commit/ea17e44496e5d112196f67c26869969ec15211d4)
