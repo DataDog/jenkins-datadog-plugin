@@ -18,9 +18,14 @@ List of service checks:
 
 All events, metrics, and service checks include the following tags, if they are available:
 * job
-* node
 * result
 * branch
+
+These are optional tags that can be included in all events, metrics, and service checks, if enabled from the `Manage Jenkins -> Configure System` page (disabled by default):
+* node
+
+## Customization
+Currently we allow you the ability to blacklist any jobs which you do not want to have events, metrics, and service checks reported for.
 
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
