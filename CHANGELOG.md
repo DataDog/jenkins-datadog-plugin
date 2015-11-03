@@ -1,6 +1,10 @@
 Changes
 =======
 
+# 0.3.1 / 11-03-2015
+### Changes
+* [IMPROVEMENT] Replaced PrintStream with JUL so that logging verbosity can be better controlled based on what the actual user wants - delegates the responsibility to define log groups and levels to Jenkins.
+
 # 0.3.0 / 10-19-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.2.1...datadog-0.3.0
