@@ -94,11 +94,10 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     logger = listener.getLogger();
-    String jobname = run.getParent().getDisplayName();
-    String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
+    String jobName = run.getParent().getDisplayName();
 
     // Process only if job is NOT in blacklist
-    if ( (blacklist == null) || !Arrays.asList(blacklist).contains(jobname.toLowerCase()) ) {
+    if ( isJobTracked(jobName) ) {
       printLog("Started build!");
 
       // Grab environment variables
@@ -114,7 +113,7 @@ public class DatadogBuildListener extends RunListener<Run>
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
       builddata.put("hostname", getHostname(envVars)); // string
-      builddata.put("job", jobname); // string
+      builddata.put("job", jobName); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
@@ -129,6 +128,11 @@ public class DatadogBuildListener extends RunListener<Run>
     }
   }
 
+  private final boolean isJobTracked(final String jobName) {
+    final String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
+    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
+  }
+
   /**
    * Called when a build is completed.
    *
@@ -139,11 +143,10 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     logger = listener.getLogger();
-    String jobname = run.getParent().getDisplayName();
-    String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
+    final String jobName = run.getParent().getDisplayName();
 
     // Process only if job in NOT in blacklist
-    if ( (blacklist == null) || !Arrays.asList(blacklist).contains(jobname.toLowerCase()) ) {
+    if ( isJobTracked(jobName) ) {
       printLog("Completed build!");
 
       // Collect Data
