@@ -487,7 +487,6 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     // Check localhost hostname
-    String out = null;
     try {
       hostname = Inet4Address.getLocalHost().getHostName().toString();
     } catch (UnknownHostException e) {
@@ -505,6 +504,37 @@ public class DatadogBuildListener extends RunListener<Run>
                "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
     }
     return null;
+  }
+  
+  /**
+   * Validator function to ensure that a port number is valid. Also, failes on empty or null string.
+   * 
+   * @return a boolean representing the validity of a port number
+   */
+  public final static Boolean isValidPort(final String port) {
+	  // Fail if it's a null
+	  if ( null == port ) {
+		  return false;
+	  }
+	  
+	  // Fail if it's empty
+	  if ( port.isEmpty() ) {
+		  return false;
+	  }
+	  
+	  // Fail if it's not a 1-5 character long integer string
+	  if ( ! Pattern.matches("^\\d{1,5}$", port) ) {
+		  return false;
+	  }
+
+	  // Fail if it's not in the range of 1-65535
+	  int p = Integer.parseInt(port);
+	  if ( p < 1 || p > 65535 ) {
+		  return false;
+	  }
+	  
+	  // Pass if by some act of nature we made it this far
+	  return true;
   }
 
   /**
@@ -716,20 +746,32 @@ public class DatadogBuildListener extends RunListener<Run>
      * the hostname is of a valid format, according to the RDC 1123.
      * 
      * @param formProxyHostname - A string containing the hostname submitted from the form.
+     * @param formUseProxy - A string containing whether a proxy is to be used
      * 
      * @return a FormValidation object used to display a message to the user on the configuration
      * 			screen.
      * @throws IOException if there is an input/output exception.
      * @throws ServletException if there is a servlet exception.
      */
-    public FormValidation doTestProxyHostname(@QueryParameter("proxyHostname") final String formProxyHostname)
+    public FormValidation doTestProxyHostname(
+    		@QueryParameter("proxyHostname") final String formProxyHostname,
+    		@QueryParameter("useProxy") final String formUseProxy
+    		)
     	throws IOException, ServletException {
-        if ( DatadogBuildListener.isValidHostname(formProxyHostname) ) {
-            return FormValidation.ok("Great! Your proxy hostname is valid.");
-        } else {
-            return FormValidation.error("Your proxy hostname is invalid, likely because" +
+    	FormValidation result = null;
+    			
+    	if ( ! formUseProxy.equals("true") ) {
+    		result = FormValidation.ok("Great! No reason to validate the hostname since we aren't using proxy.");
+    	} else {
+    		if ( null != formProxyHostname && DatadogBuildListener.isValidHostname(formProxyHostname) ) {
+    			result = FormValidation.ok("Great! Your proxy hostname is valid.");
+    		} else {
+    			result = FormValidation.error("Your proxy hostname is invalid, likely because" +
                                         " it violates the format set in RFC 1123.");
-        }    	
+    		}
+    	}
+    	
+    	return result;
     }
 
     /**
@@ -746,12 +788,43 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public FormValidation doTestHostname(@QueryParameter("hostname") final String formHostname)
         throws IOException, ServletException {
-      if ( DatadogBuildListener.isValidHostname(formHostname) ) {
+      if ( null != formHostname && DatadogBuildListener.isValidHostname(formHostname) ) {
         return FormValidation.ok("Great! Your hostname is valid.");
       } else {
         return FormValidation.error("Your hostname is invalid, likely because" +
                                     " it violates the format set in RFC 1123.");
       }
+    }
+    
+    /**
+     * Tests the {@link proxyHostname} from the configuration screen, to determine if
+     * the hostname is of a valid format, according to the RDC 1123.
+     * 
+     * @param formProxyPort - A string containing the proxy port submitted from the form.
+     * @param formUseProxy - A string containing whether a proxy is to be used
+     * 
+     * @return a FormValidation object used to display a message to the user on the configuration
+     * 			screen.
+     * @throws IOException if there is an input/output exception.
+     * @throws ServletException if there is a servlet exception.
+     */
+    public FormValidation doTestProxyPort(
+    		@QueryParameter("proxyPort") final String formProxyPort,
+    		@QueryParameter("useProxy") final String formUseProxy)
+    	throws IOException, ServletException {    	
+    	FormValidation result = null;
+    	
+    	if ( ! formUseProxy.equals("true") ) {
+    		result = FormValidation.ok("Great! Proxy is disabled, no need to validate the port.");
+    	} else {
+    		if ( null != formProxyPort && DatadogBuildListener.isValidPort(formProxyPort) ) {
+    			result = FormValidation.ok("Great! Your proxy port looks good.");
+    		} else {
+    			result = FormValidation.error("A proxy port must be an integer value between 1 and 65535");
+    		}
+    	}
+    	
+    	return result;
     }
 
     /**
@@ -797,15 +870,22 @@ public class DatadogBuildListener extends RunListener<Run>
                           .replaceAll(",,","")
                           .toLowerCase();
       
-      proxyHostname = formData.getString("proxyHostname")
-    		  				  .replaceAll("\\s", "")
-    		  				  .replaceAll(",,", "")
-    		  				  .toLowerCase();
+      // Grab useProxy and coerse to a a boolean
+      if ( formData.getString("useProxy").equals("true") ) {
+    	  useProxy = true;
+      } else {
+    	  useProxy = false;
+      }
+
+      if (null != formData.getString("proxyHostname")) {
+    	  proxyHostname = formData.getString("proxyHostname")
+    			  				  .replaceAll("\\s", "")
+    			  				  .replaceAll(",,", "")
+    			  				  .toLowerCase();
+      }
       
       if (null != formData.getString("proxyPort")) {
           proxyPort = formData.getString("proxyPort");    	  
-      } else {
-    	  proxyPort = "8080";
       }
 
       // Grab tagNode and coerse to a boolean
@@ -815,13 +895,6 @@ public class DatadogBuildListener extends RunListener<Run>
         tagNode = false;
       }
       
-      // Grab useProxy and coerse to a a boolean
-      if ( formData.getString("useProxy").equals("true") ) {
-    	  useProxy = true;
-      } else {
-    	  useProxy = false;
-      }
-
       // Persist global configuration information
       save();
       return super.configure(req, formData);
