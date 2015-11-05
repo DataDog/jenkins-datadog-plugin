@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.Proxy;
+import java.net.InetSocketAddress;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
@@ -242,11 +244,19 @@ public class DatadogBuildListener extends RunListener<Run>
   public final Boolean post(final JSONObject payload, final String type) {
     String urlParameters = "?api_key=" + getDescriptor().getApiKey().getPlainText();
     HttpURLConnection conn = null;
+    Proxy proxy = null;
 
     try {
       // Make request
       URL url = new URL(this.BASEURL + type + urlParameters);
-      conn = (HttpURLConnection) url.openConnection();
+      if (getDescriptor().getUseProxy()) {
+    	  proxy = new Proxy(Proxy.Type.HTTP,
+    			  			new InetSocketAddress(getDescriptor().getProxyHostname(), 
+    			  								  Integer.parseInt(getDescriptor().getProxyPort())));
+    	  conn = (HttpURLConnection) url.openConnection(proxy);
+      } else {
+    	  conn = (HttpURLConnection) url.openConnection();
+      }
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setUseCaches(false);
@@ -631,6 +641,9 @@ public class DatadogBuildListener extends RunListener<Run>
     private String hostname = null;
     private String blacklist = null;
     private Boolean tagNode = null;
+    private Boolean useProxy = null;
+    private String proxyHostname = null;
+    private String proxyPort = null;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -654,12 +667,19 @@ public class DatadogBuildListener extends RunListener<Run>
         throws IOException, ServletException {
       String urlParameters = "?api_key=" + formApiKey;
       HttpURLConnection conn = null;
+      Proxy proxy = null;
 
       try {
         // Make request
         URL url = new URL(DatadogBuildListener.BASEURL + DatadogBuildListener.VALIDATE
                           + urlParameters);
-        conn = (HttpURLConnection) url.openConnection();
+        if (getUseProxy()) {
+    		proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getProxyHostname(),
+    				Integer.parseInt(getProxyPort())));
+        	conn = (HttpURLConnection) url.openConnection(proxy);        	
+        } else {
+        	conn = (HttpURLConnection) url.openConnection();
+        }
         conn.setRequestMethod("GET");
 
         // Get response
@@ -689,6 +709,27 @@ public class DatadogBuildListener extends RunListener<Run>
           conn.disconnect();
         }
       }
+    }
+    
+    /**
+     * Tests the {@link proxyHostname} from the configuration screen, to determine if
+     * the hostname is of a valid format, according to the RDC 1123.
+     * 
+     * @param formProxyHostname - A string containing the hostname submitted from the form.
+     * 
+     * @return a FormValidation object used to display a message to the user on the configuration
+     * 			screen.
+     * @throws IOException if there is an input/output exception.
+     * @throws ServletException if there is a servlet exception.
+     */
+    public FormValidation doTestProxyHostname(@QueryParameter("proxyHostname") final String formProxyHostname)
+    	throws IOException, ServletException {
+        if ( DatadogBuildListener.isValidHostname(formProxyHostname) ) {
+            return FormValidation.ok("Great! Your proxy hostname is valid.");
+        } else {
+            return FormValidation.error("Your proxy hostname is invalid, likely because" +
+                                        " it violates the format set in RFC 1123.");
+        }    	
     }
 
     /**
@@ -755,12 +796,30 @@ public class DatadogBuildListener extends RunListener<Run>
                           .replaceAll("\\s","")
                           .replaceAll(",,","")
                           .toLowerCase();
+      
+      proxyHostname = formData.getString("proxyHostname")
+    		  				  .replaceAll("\\s", "")
+    		  				  .replaceAll(",,", "")
+    		  				  .toLowerCase();
+      
+      if (null != formData.getString("proxyPort")) {
+          proxyPort = formData.getString("proxyPort");    	  
+      } else {
+    	  proxyPort = "8080";
+      }
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         tagNode = true;
       } else {
         tagNode = false;
+      }
+      
+      // Grab useProxy and coerse to a a boolean
+      if ( formData.getString("useProxy").equals("true") ) {
+    	  useProxy = true;
+      } else {
+    	  useProxy = false;
       }
 
       // Persist global configuration information
@@ -803,6 +862,35 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public Boolean getTagNode() {
       return tagNode;
+    }
+    
+    /**
+     * Getter function for the option tag {@link useProxy} global configuration.
+     * 
+     * @return a Boolean containing the optional tag value for the {@link useProxy} global configuration.
+     */
+    public Boolean getUseProxy() {
+    	return useProxy;
+    }
+    
+    /**
+     * Getter function for the {@link proxyHostname} global configuration, containing
+     * the hostname of a proxy server to use.
+     *
+     * @return a String containing the {@link proxyHostname} global configuration.
+     */    
+    public String getProxyHostname() {
+    	return proxyHostname;
+    }
+    
+    /**
+     * Getter function for the {@link proxyPort} global configuration, containing
+     * the port of a proxy server to use.
+     *
+     * @return an String containing the {@link proxyPort} global configuration.
+     */    
+    public String getProxyPort() {
+    	return proxyPort;
     }
   }
 }
