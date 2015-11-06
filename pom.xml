@@ -13,7 +13,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog</artifactId>
-  <version>0.3.1-SNAPSHOT</version>
+  <version>0.3.2-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Plugin</name>
@@ -55,4 +55,11 @@
     </pluginRepository>
   </pluginRepositories>
 
+  <dependencies>
+  	<dependency>
+  		<groupId>org.apache.httpcomponents</groupId>
+  		<artifactId>httpclient</artifactId>
+  		<version>4.2.5</version>
+  	</dependency>
+  </dependencies>
 </project>
