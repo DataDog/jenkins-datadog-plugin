@@ -12,42 +12,23 @@
     so it should be straightforward to find them.
   -->
   <f:section title="Datadog Plugin">
-    
     <f:entry title="API Key" field="apiKeyTitle">
       <f:password field="apiKey" default="${apiKey}" />
     </f:entry>
-    
     <f:validateButton title="${%Test Key}" progress="${%Testing...}"
                       method="testConnection" with="apiKey" />
-
     <f:entry title="Hostname" field="hostname">
       <f:textbox field="hostname" default="${hostname}" />
     </f:entry>
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
-                      method="testHostname" with="hostname" />
-                      
+                      method="testHostname" with="hostname" />        
     <f:entry title="Blacklisted Jobs"
              description="A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod-release)." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />
     </f:entry>
-    
     <f:entry title="Optional Tags"
              description="Name of node the current build is running on (i.e. 'master' for master node)." >
       <f:checkbox title="node" field="tagNode" optional="true" />
     </f:entry>
-    
-    <f:entry title="Use Proxy"
-              description="Enable the use of a HTTP proxy server">
-      <f:checkbox title="useProxy" field="useProxy" optional="true" />
-    </f:entry>
-    
-    <f:entry title="Proxy Hostname" field="proxyHostname">
-      <f:textbox field="proxyHostname" optional="true" default="" />
-    </f:entry>
-    
-    <f:entry title="Proxy Port" field="proxyPort">
-      <f:textbox field="proxyPort" optional="true" default="8080" />
-    </f:entry>
-    
   </f:section>
 </j:jelly>
