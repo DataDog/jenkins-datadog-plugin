@@ -545,37 +545,6 @@ public class DatadogBuildListener extends RunListener<Run>
     }
     return null;
   }
-  
-  /**
-   * Validator function to ensure that a port number is valid. Also, failes on empty or null string.
-   * 
-   * @return a boolean representing the validity of a port number
-   */
-  public final static Boolean isValidPort(final String port) {
-	  // Fail if it's a null
-	  if ( null == port ) {
-		  return false;
-	  }
-	  
-	  // Fail if it's empty
-	  if ( port.isEmpty() ) {
-		  return false;
-	  }
-	  
-	  // Fail if it's not a 1-5 character long integer string
-	  if ( ! Pattern.matches("^\\d{1,5}$", port) ) {
-		  return false;
-	  }
-
-	  // Fail if it's not in the range of 1-65535
-	  int p = Integer.parseInt(port);
-	  if ( p < 1 || p > 65535 ) {
-		  return false;
-	  }
-	  
-	  // Pass if by some act of nature we made it this far
-	  return true;
-  }
 
   /**
    * Validator function to ensure that the hostname is valid. Also, fails on
