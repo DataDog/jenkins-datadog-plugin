@@ -21,7 +21,7 @@
       <f:textbox field="hostname" default="${hostname}" />
     </f:entry>
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
-                      method="testHostname" with="hostname" />
+                      method="testHostname" with="hostname" />        
     <f:entry title="Blacklisted Jobs"
              description="A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod-release)." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />

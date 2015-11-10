@@ -1,2 +1,6 @@
 *.log
 target/*
+/target/
+.classpath
+.project
+.settings/

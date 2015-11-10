@@ -1,6 +1,15 @@
 Changes
 =======
 
+# 0.3.2-SNAPSHOT (Unofficial) / 11-05-2015
+* [IMPROVEMENT] Change proxy support over to use Jenkins proxy settings as configured in plugins->advanced
+* [BUGFIX] Lots of clean up, fixes for warnings (changing access to static properties to access them statically, etc)
+* [BUGFIX] Fixes for a few potential NPEs
+
+# 0.3.1-SNAPSHOT (Unofficial) / 11-04-2015
+* [IMPROVEMENT] Add support to define a proxy server to use to talk to the datadog API
+* [BUGFIX] General cleanup
+
 # 0.3.0 / 10-19-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.2.1...datadog-0.3.0
