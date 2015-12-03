@@ -128,6 +128,12 @@ public class DatadogBuildListener extends RunListener<Run>
     }
   }
 
+  /**     
+   * Checks if a jobName is blacklisted, or not.
+   *
+   * @param jobName - A String containing the name of some job.
+   * @return a boolean to signify if the jobName is or is not blacklisted.
+   */
   private final boolean isJobTracked(final String jobName) {
     final String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
     return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
