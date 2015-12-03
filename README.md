@@ -37,6 +37,9 @@ Note: If you do not see the version of `Datadog Plugin` that you are expecting, 
 ## Configuration
 To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. Once there, scroll down to find the `Datadog Plugin` section. Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen. You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox. Once your configuration changes are finished, simply save them, and you're good to go!
 
+### Logging
+Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.DatadogBuildListener`.
+
 ## Release Process
 ### Overview
 Our [DataDog/jenkins-datadog-plugin](https://github.com/DataDog/jenkins-datadog-plugin) repository handles the most up-to-date changes we've made to the Datadog Plugin, as well as issue tickets revolving around that work. Releases are merged to the [Jenkins-CI git repo for our plugin](https://github.com/jenkinsci/datadog-plugin), and represents the source used for plugin releases found in the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) in your Jenkins installation.
