@@ -58,3 +58,10 @@ We use Github's built in issue tracking system for all issues tickets relating t
 
 ## Changes
 See the [CHANGELOG.md](CHANGELOG.md)
+
+# How to contribute code
+
+First of all and most importantly, **thank you** for sharing.
+
+If you want to submit code, please fork this repository and submit pull requests against the `master` branch.
+For more information, checkout the [contributing guidelines](CONTRIBUTING.md) for our agent. We'll attempt to follow these here, as well, where it makes sense.
