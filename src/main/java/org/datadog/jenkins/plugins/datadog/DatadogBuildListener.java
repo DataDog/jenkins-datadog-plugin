@@ -1,7 +1,10 @@
 package org.datadog.jenkins.plugins.datadog;
 
+import static hudson.Util.fixEmptyAndTrim;
+
 import hudson.EnvVars;
 import hudson.Extension;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractProject;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -11,9 +14,6 @@ import hudson.model.listeners.RunListener;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
-import hudson.ProxyConfiguration;
-
-import static hudson.Util.fixEmptyAndTrim;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -28,20 +28,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Proxy;
-import java.net.SocketAddress;
-import java.net.InetSocketAddress;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
-import java.net.UnknownHostException;
+import java.net.Proxy;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.http.HttpHost;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
@@ -83,33 +78,9 @@ public class DatadogBuildListener extends RunListener<Run>
   static final float MINUTE = 60;
   static final float HOUR = 3600;
   static final Integer HTTP_FORBIDDEN = 403;
+  static final Integer MAX_HOSTNAME_LEN = 255;
   private static final Logger logger =  Logger.getLogger(DatadogBuildListener.class.getName());
 
-  /**
-   * Returns a HTTP url connection given a url object. Supports jenkins configured proxy.
-   * 
-   * @param url - a URL object containing the URL to open a connection to
-   * @return a HttpURLConnection object
-   * @throws IOException
-   */
-  public static HttpURLConnection getHttpURLConnection (URL url) throws IOException {
-	  HttpURLConnection conn = null;
-	  ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
-	  
-	  if (proxyConfig != null) {
-		  Proxy proxy = proxyConfig.createProxy(url.getHost());
-		  if (proxy != null && proxy.type() == Proxy.Type.HTTP) {
-			  conn = (HttpURLConnection) url.openConnection(proxy);
-		  }
-	  }
-	  
-	  if (conn == null) {
-		  conn = (HttpURLConnection) url.openConnection();
-	  }
-	  
-	  return conn;
-  }
-  
   /**
    * Runs when the {@link DatadogBuildListener} class is created.
    */
@@ -148,7 +119,7 @@ public class DatadogBuildListener extends RunListener<Run>
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
       builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // adjusted from ms to s
+      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
       builddata.put("timestamp", starttime); // string
 
       // Add event_type to assist in roll-ups
@@ -156,17 +127,6 @@ public class DatadogBuildListener extends RunListener<Run>
 
       event(builddata);
     }
-  }
-
-  /**     
-   * Checks if a jobName is blacklisted, or not.
-   *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not blacklisted.
-   */
-  private final boolean isJobTracked(final String jobName) {
-    final String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
-    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
   }
 
   /**
@@ -222,9 +182,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     // Assemble JSON
-    long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // adjusted from ms to s
-    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // adjusted from ms to s
-    long endtime = starttime + (long) duration; // adjusted from ms to s
+    long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
+    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
@@ -268,8 +228,6 @@ public class DatadogBuildListener extends RunListener<Run>
 
     return tags;
   }
-  
-
 
   /**
    * Posts a given {@link JSONObject} payload to the DataDog API, using the
@@ -278,16 +236,16 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param payload - A JSONObject containing a specific subset of a builds metadata.
    * @param type - A String containing the URL subpath pertaining to the type of API post required.
    * @return a boolean to signify the success or failure of the HTTP POST request.
- * @throws IOException 
+   * @throws IOException
    */
   public final Boolean post(final JSONObject payload, final String type) throws IOException {
     String urlParameters = "?api_key=" + getDescriptor().getApiKey().getPlainText();
     HttpURLConnection conn = null;
-    boolean returnValue = false;
 
     try {
       // Make request
-      conn = DatadogBuildListener.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type + urlParameters));
+      conn = DatadogBuildListener.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type
+                                                               + urlParameters));
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setUseCaches(false);
@@ -326,14 +284,12 @@ public class DatadogBuildListener extends RunListener<Run>
       }
       return false;
     } finally {
-      printLog("An error occurred in the exception handler.");
+      logger.fine(String.format("An error occurred in the exception handler."));
       if (conn != null) {
-          conn.disconnect();
+        conn.disconnect();
       }
-      returnValue = false;
+      return false;
     }
-    
-    return returnValue;
   }
 
   /**
@@ -352,7 +308,7 @@ public class DatadogBuildListener extends RunListener<Run>
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
     JSONArray point = new JSONArray();
-    point.add(System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time in s
+    point.add(System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     point.add(builddata.get(key));
     points.add(point); // api expects a list of points
 
@@ -373,9 +329,9 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("series", series);
 
     try {
-    	post(payload, DatadogBuildListener.METRIC);
+      post(payload, DatadogBuildListener.METRIC);
     } catch (Exception e) {
-    	logger.println(e.toString());
+      logger.severe(e.toString());
     }
   }
 
@@ -394,14 +350,15 @@ public class DatadogBuildListener extends RunListener<Run>
     JSONObject payload = new JSONObject();
     payload.put("check", checkName);
     payload.put("host_name", builddata.get("hostname"));
-    payload.put("timestamp", System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time in s
+    payload.put("timestamp",
+                System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     payload.put("status", status);
     payload.put("tags", assembleTags(builddata));
 
     try {
-    	post(payload, DatadogBuildListener.SERVICECHECK);
+      post(payload, DatadogBuildListener.SERVICECHECK);
     } catch (Exception e) {
-    	logger.println(e.toString());
+      logger.severe(e.toString());
     }
   }
 
@@ -464,9 +421,9 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("aggregation_key", job); // Used for job name in event rollups
 
     try {
-    	post(payload, DatadogBuildListener.EVENT);
+      post(payload, DatadogBuildListener.EVENT);
     } catch (Exception e) {
-    	logger.println(e.toString());
+      logger.severe(e.toString());
     }
   }
 
@@ -474,7 +431,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * Getter function to return either the saved hostname global configuration,
    * or the hostname that is set in the Jenkins host itself. Returns null if no
    * valid hostname is found.
-   *
+   * <p>
    * Tries, in order:
    *    Jenkins configuration
    *    Jenkins hostname environment variable
@@ -500,7 +457,8 @@ public class DatadogBuildListener extends RunListener<Run>
       hostname = envVars.get("HOSTNAME").toString();
     }
     if ( (hostname != null) && isValidHostname(hostname) ) {
-      logger.fine(String.format("Using hostname found in $HOSTNAME host environment variable. Hostname: %s", hostname));
+      logger.fine(String.format("Using hostname found in $HOSTNAME host environment variable. "
+                                + "Hostname: %s", hostname));
       return hostname;
     }
 
@@ -516,7 +474,7 @@ public class DatadogBuildListener extends RunListener<Run>
         StringBuilder out = new StringBuilder();
         String line;
         while ( (line = reader.readLine()) != null ) {
-            out.append(line);
+          out.append(line);
         }
 
         hostname = out.toString();
@@ -526,7 +484,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Check hostname
       if ( (hostname != null) && isValidHostname(hostname) ) {
-        logger.fine(String.format("Using unix hostname found via `/bin/hostname -f`. Hostname: %s", hostname));
+        logger.fine(String.format("Using unix hostname found via `/bin/hostname -f`. Hostname: %s",
+                                  hostname));
         return hostname;
       }
     }
@@ -538,14 +497,16 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine(String.format("Unknown hostname error received for localhost. Error: %s", e));
     }
     if ( (hostname != null) && isValidHostname(hostname) ) {
-      logger.fine(String.format("Using hostname found via Inet4Address.getLocalHost().getHostName(). Hostname: %s", hostname));
+      logger.fine(String.format("Using hostname found via "
+                                + "Inet4Address.getLocalHost().getHostName()."
+                                + " Hostname: %s", hostname));
       return hostname;
     }
 
     // Never found the hostname
     if ( (hostname == null) || "".equals(hostname) ) {
-      logger.warning("Unable to reliably determine host name. You can define one in " +
-               "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
+      logger.warning("Unable to reliably determine host name. You can define one in "
+                     + "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
     }
     return null;
   }
@@ -554,14 +515,17 @@ public class DatadogBuildListener extends RunListener<Run>
    * Validator function to ensure that the hostname is valid. Also, fails on
    * empty String.
    *
+   * @param hostname - A String object containing the name of a host.
    * @return a boolean representing the validity of the hostname
    */
-  public final static Boolean isValidHostname(final String hostname) {
+  public static final Boolean isValidHostname(final String hostname) {
     String[] localHosts = {"localhost", "localhost.localdomain",
                            "localhost6.localdomain6", "ip6-localhost"};
-    String VALID_HOSTNAME_RFC_1123_PATTERN = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+    String VALID_HOSTNAME_RFC_1123_PATTERN = "^(([a-zA-Z0-9]|"
+                                             + "[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*"
+                                             + "([A-Za-z0-9]|"
+                                             + "[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
     String host = hostname.toLowerCase();
-    Integer MAX_HOSTNAME_LEN = 255;
 
     // Check if hostname is local
     if ( Arrays.asList(localHosts).contains(host) ) {
@@ -570,8 +534,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     // Ensure proper length
-    if ( hostname.length() > MAX_HOSTNAME_LEN ) {
-      logger.fine(String.format("Hostname: %s is too long (max length is %s characters)", hostname, MAX_HOSTNAME_LEN));
+    if ( hostname.length() > DatadogBuildListener.MAX_HOSTNAME_LEN ) {
+      logger.fine(String.format("Hostname: %s is too long (max length is %s characters)",
+                                hostname, DatadogBuildListener.MAX_HOSTNAME_LEN));
       return false;
     }
 
@@ -587,6 +552,47 @@ public class DatadogBuildListener extends RunListener<Run>
   }
 
   /**
+   * Returns an HTTP url connection given a url object. Supports jenkins configured proxy.
+   *
+   * @param url - a URL object containing the URL to open a connection to.
+   * @return a HttpURLConnection object.
+   * @throws IOException
+   */
+  public static HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
+    HttpURLConnection conn = null;
+    ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
+
+    if (proxyConfig != null) {
+      Proxy proxy = proxyConfig.createProxy(url.getHost());
+      if (proxy != null && proxy.type() == Proxy.Type.HTTP) {
+        logger.fine("Attempting to use the Jenkins proxy configuration");
+        conn = (HttpURLConnection) url.openConnection(proxy);
+        if (conn == null) {
+          logger.fine("Failed to use the Jenkins proxy configuration");
+        }
+      }
+    }
+
+    if (conn == null) {
+      conn = (HttpURLConnection) url.openConnection();
+      logger.fine("Using the Jenkins proxy configuration");
+    }
+
+    return conn;
+  }
+
+  /**     
+   * Checks if a jobName is blacklisted, or not.
+   *
+   * @param jobName - A String containing the name of some job.
+   * @return a boolean to signify if the jobName is or is not blacklisted.
+   */
+  private final boolean isJobTracked(final String jobName) {
+    final String[] blacklist = blacklistStringtoArray( getDescriptor().getBlacklist() );
+    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
+  }
+
+  /**
    * Converts from a double to a human readable string, representing a time duration.
    *
    * @param duration - A Double with a duration in seconds.
@@ -596,7 +602,8 @@ public class DatadogBuildListener extends RunListener<Run>
     String output = "(";
     if ( duration < DatadogBuildListener.MINUTE ) {
       output = output + duration + " secs)";
-    } else if ( (DatadogBuildListener.MINUTE <= duration) && (duration < DatadogBuildListener.HOUR) ) {
+    } else if ( (DatadogBuildListener.MINUTE <= duration)
+                && (duration < DatadogBuildListener.HOUR) ) {
       output = output + (duration / DatadogBuildListener.MINUTE) + " mins)";
     } else if ( DatadogBuildListener.HOUR <= duration ) {
       output = output + (duration / DatadogBuildListener.HOUR) + " hrs)";
@@ -604,7 +611,6 @@ public class DatadogBuildListener extends RunListener<Run>
 
     return output;
   }
-
 
   /**
   * Human-friendly OS name. Commons return values are windows, linux, mac, sunos, freebsd
@@ -642,7 +648,7 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final String[] blacklistStringtoArray(final String blacklist) {
     if ( blacklist != null ) {
-      return blacklist.split(","); 
+      return blacklist.split(",");
     }
     return ( new String[0] );
   }
@@ -699,8 +705,9 @@ public class DatadogBuildListener extends RunListener<Run>
 
       try {
         // Make request
-        conn = DatadogBuildListener.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + DatadogBuildListener.VALIDATE
-                          + urlParameters));
+        conn = DatadogBuildListener.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL
+                                                                 + DatadogBuildListener.VALIDATE
+                                                                 + urlParameters));
         conn.setRequestMethod("GET");
 
         // Get response
@@ -731,7 +738,6 @@ public class DatadogBuildListener extends RunListener<Run>
         }
       }
     }
-    
 
     /**
      * Tests the {@link hostname} from the configuration screen, to determine if
@@ -747,14 +753,14 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public FormValidation doTestHostname(@QueryParameter("hostname") final String formHostname)
         throws IOException, ServletException {
-      if ( null != formHostname && DatadogBuildListener.isValidHostname(formHostname) ) {
+      if ( ( null != formHostname ) && DatadogBuildListener.isValidHostname(formHostname) ) {
         return FormValidation.ok("Great! Your hostname is valid.");
       } else {
-        return FormValidation.error("Your hostname is invalid, likely because" +
-                                    " it violates the format set in RFC 1123.");
+        return FormValidation.error("Your hostname is invalid, likely because"
+                                    + " it violates the format set in RFC 1123.");
       }
     }
-    
+
     /**
      * Indicates if this builder can be used with all kinds of project types.
      *
@@ -794,17 +800,17 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
       blacklist = formData.getString("blacklist")
-                          .replaceAll("\\s","")
-                          .replaceAll(",,","")
+                          .replaceAll("\\s", "")
+                          .replaceAll(",,", "")
                           .toLowerCase();
-      
+
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         tagNode = true;
       } else {
         tagNode = false;
       }
-      
+
       // Persist global configuration information
       save();
       return super.configure(req, formData);
@@ -841,11 +847,11 @@ public class DatadogBuildListener extends RunListener<Run>
     /**
      * Getter function for the optional tag {@link node} global configuration.
      *
-     * @return a Boolean containing the optional tag value for the {@link node} global configuration.
+     * @return a Boolean containing optional tag value for the {@link node} global configuration.
      */
     public Boolean getTagNode() {
       return tagNode;
-    }    
+    }
   }
 }
 
