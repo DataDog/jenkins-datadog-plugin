@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.3.1 / Unreleased
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.3.0...datadog-0.3.1
+
+### Changes
+* [OTHER] Cleaned up blacklist code; thanks @dmabamboo
+
 # 0.3.0 / 10-19-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.2.1...datadog-0.3.0
