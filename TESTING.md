@@ -53,3 +53,18 @@ Now that this window is following all the traffic coming through port 3128, let'
 
 Repeat this by enabling/disabling the proxy configuration in Jenkins and repeating the test to prove to yourself that it was not a fluke.
 **Note: I've noticed that Jenkins seems to send a disconnection series of packets to the proxy server with the first connection attempt (when you run your test build), after you've disabled the proxy configration. Run the test job a second time, and you'll again not see any output.**
+
+## Check Style
+In order to check that the Java style meets the recommendations of Sun and Google, as closely as possible, here is a way to test it.
+
+1. Download the most recent [checkstyle jar](http://sourceforge.net/projects/checkstyle/files/checkstyle/) from SourceForge.
+2. Grab the style checks from [Sun](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/sun_checks.xml) and [Google](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/google_checks.xml).
+ * Note: We following 100 character line length, so remove the `<module name="LineLength"/>` line from sun_check.xml.
+3. Run each check, one at a time:
+
+    ```bash
+    java -jar checkstyle-6.13-all.jar -c /sun_checks.xml MyClass.java
+    java -jar checkstyle-6.13-all.jar -c /google_checks.xml MyClass.java
+    ```
+
+More detailed instructions on using checkstyle can be found [here](http://checkstyle.sourceforge.net/cmdline.html).
