@@ -6,6 +6,7 @@ Changes
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.3.0...datadog-0.3.1
 
 ### Changes
+* [IMPROVEMENT] Add support for using a proxy server, utilizing Jenkins proxy settings. (Thanks @seattletechie)
 * [IMPROVEMENT] Replace PrintStream with java.util.Logger, to produce log verbosity control, allowing use of log groups and levels in Jenkins. (Thanks @dmabamboo)
 * [OTHER] Cleaned up blacklist code. (Thanks @dmabamboo)
 
