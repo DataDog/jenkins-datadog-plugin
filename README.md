@@ -65,3 +65,6 @@ First of all and most importantly, **thank you** for sharing.
 
 If you want to submit code, please fork this repository and submit pull requests against the `master` branch.
 For more information, checkout the [contributing guidelines](CONTRIBUTING.md) for our agent. We'll attempt to follow these here, as well, where it makes sense.
+
+# Manual Testing
+In order to keep track of some testing procedures for ensuring proper functionality of the Datadog Plugin on Jenkins, there is a [testing document](TESTING.md).
