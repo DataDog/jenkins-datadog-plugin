@@ -1,9 +1,9 @@
 Changes
 =======
 
-# 0.3.1 / Unreleased
+# 0.4.0 / 12-04-2015
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.3.0...datadog-0.3.1
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.3.0...datadog-0.4.0
 
 ### Changes
 * [IMPROVEMENT] Add support for using a proxy server, utilizing Jenkins proxy settings. See [#30](https://github.com/DataDog/jenkins-datadog-plugin/pull/30) (Thanks @seattletechie)
