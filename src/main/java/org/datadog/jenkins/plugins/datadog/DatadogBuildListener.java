@@ -284,11 +284,10 @@ public class DatadogBuildListener extends RunListener<Run>
       }
       return false;
     } finally {
-      logger.fine(String.format("An error occurred in the exception handler."));
       if (conn != null) {
         conn.disconnect();
       }
-      return false;
+      return true;
     }
   }
 
