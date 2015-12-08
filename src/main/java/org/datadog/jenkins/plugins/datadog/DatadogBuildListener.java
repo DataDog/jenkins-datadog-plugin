@@ -239,7 +239,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @throws IOException
    */
   public final Boolean post(final JSONObject payload, final String type) throws IOException {
-    String urlParameters = "?api_key=" + getDescriptor().getApiKey().getPlainText();
+    String urlParameters = "?api_key=" + getDescriptor().getApiKey();
     HttpURLConnection conn = null;
 
     try {
@@ -821,8 +821,8 @@ public class DatadogBuildListener extends RunListener<Run>
      *
      * @return a String containing the {@link apiKey} global configuration.
      */
-    public Secret getApiKey() {
-      return apiKey;
+    public String getApiKey() {
+      return apiKey.getPlainText();
     }
 
     /**

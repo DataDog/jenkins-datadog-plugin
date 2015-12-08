@@ -6,6 +6,7 @@ Changes
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.4.0...datadog-0.4.1
 
 ### Changes
+* [BUGFIX] Fixed issue where apiKey was being returned to the configuration form as hash, causing a test of the key to fail.
 * [BUGFIX] Removed a false error log, which was reporting successful POSTs as an error.
 * [BUGFIX] Round job duration text to the nearest 2 decimals on event messages.
 * [IMPROVEMENT] Reporting all events as Jenkins source type, enabling proper event display.
