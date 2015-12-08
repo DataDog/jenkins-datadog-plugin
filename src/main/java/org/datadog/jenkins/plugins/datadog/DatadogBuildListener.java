@@ -597,13 +597,16 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final String durationToString(final double duration) {
     String output = "(";
+    String format = "%.2f";
     if ( duration < DatadogBuildListener.MINUTE ) {
-      output = output + duration + " secs)";
+      output = output + String.format(format, duration) + " secs)";
     } else if ( (DatadogBuildListener.MINUTE <= duration)
                 && (duration < DatadogBuildListener.HOUR) ) {
-      output = output + (duration / DatadogBuildListener.MINUTE) + " mins)";
+      output = output + String.format(format, duration / DatadogBuildListener.MINUTE)
+               + " mins)";
     } else if ( DatadogBuildListener.HOUR <= duration ) {
-      output = output + (duration / DatadogBuildListener.HOUR) + " hrs)";
+      output = output + String.format(format, duration / DatadogBuildListener.HOUR)
+               + " hrs)";
     }
 
     return output;
