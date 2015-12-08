@@ -396,8 +396,6 @@ public class DatadogBuildListener extends RunListener<Run>
       title.append(" started");
       payload.put("alert_type", "info");
       message = "%%% \n [Follow build #" + number + " progress](" + buildurl + ") ";
-      // Remove source_type_name to keep started events from being rolled up
-      payload.remove("source_type_name");
     }
     title.append(" on ").append(hostname);
 
