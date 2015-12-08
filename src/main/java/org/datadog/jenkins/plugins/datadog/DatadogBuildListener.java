@@ -239,7 +239,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @throws IOException
    */
   public final Boolean post(final JSONObject payload, final String type) throws IOException {
-    String urlParameters = "?api_key=" + getDescriptor().getApiKey().getPlainText();
+    String urlParameters = "?api_key=" + getDescriptor().getApiKey();
     HttpURLConnection conn = null;
 
     try {
@@ -284,11 +284,10 @@ public class DatadogBuildListener extends RunListener<Run>
       }
       return false;
     } finally {
-      logger.fine(String.format("An error occurred in the exception handler."));
       if (conn != null) {
         conn.disconnect();
       }
-      return false;
+      return true;
     }
   }
 
@@ -397,8 +396,6 @@ public class DatadogBuildListener extends RunListener<Run>
       title.append(" started");
       payload.put("alert_type", "info");
       message = "%%% \n [Follow build #" + number + " progress](" + buildurl + ") ";
-      // Remove source_type_name to keep started events from being rolled up
-      payload.remove("source_type_name");
     }
     title.append(" on ").append(hostname);
 
@@ -600,13 +597,16 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   public final String durationToString(final double duration) {
     String output = "(";
+    String format = "%.2f";
     if ( duration < DatadogBuildListener.MINUTE ) {
-      output = output + duration + " secs)";
+      output = output + String.format(format, duration) + " secs)";
     } else if ( (DatadogBuildListener.MINUTE <= duration)
                 && (duration < DatadogBuildListener.HOUR) ) {
-      output = output + (duration / DatadogBuildListener.MINUTE) + " mins)";
+      output = output + String.format(format, duration / DatadogBuildListener.MINUTE)
+               + " mins)";
     } else if ( DatadogBuildListener.HOUR <= duration ) {
-      output = output + (duration / DatadogBuildListener.HOUR) + " hrs)";
+      output = output + String.format(format, duration / DatadogBuildListener.HOUR)
+               + " hrs)";
     }
 
     return output;
@@ -821,8 +821,8 @@ public class DatadogBuildListener extends RunListener<Run>
      *
      * @return a String containing the {@link apiKey} global configuration.
      */
-    public Secret getApiKey() {
-      return apiKey;
+    public String getApiKey() {
+      return apiKey.getPlainText();
     }
 
     /**

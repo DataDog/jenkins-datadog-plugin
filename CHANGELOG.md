@@ -1,6 +1,16 @@
 Changes
 =======
 
+# 0.4.1 / 12-08-2015
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.4.0...datadog-0.4.1
+
+### Changes
+* [BUGFIX] Fixed issue where apiKey was being returned to the configuration form as hash, causing a test of the key to fail. See [ee95325](https://github.com/DataDog/jenkins-datadog-plugin/commit/ee9532532df99ab998e5f7eb171636905aec6f8c)
+* [BUGFIX] Removed a false error log, which was reporting successful POSTs as an error. See [094fbe8](https://github.com/DataDog/jenkins-datadog-plugin/commit/094fbe80cc00378d03d2e357e8e9cfc6f04e86ad)
+* [BUGFIX] Round job duration text to the nearest 2 decimals on event messages. See [7bdef98](https://github.com/DataDog/jenkins-datadog-plugin/commit/7bdef98260fc2b42b8c041f39cade6ae3fdb37f8)
+* [IMPROVEMENT] Reporting all events as Jenkins source type, enabling proper event display. See [f00b261](https://github.com/DataDog/jenkins-datadog-plugin/commit/f00b26165f040e9bd1996bb1f4fb63ff05c1156f)
+
 # 0.4.0 / 12-04-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.3.0...datadog-0.4.0
