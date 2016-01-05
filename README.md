@@ -11,7 +11,7 @@ List of events:
 * Finished build
 
 List of metrics:
-* Build duration (jenkins.job.duration)
+* Build duration, in seconds (jenkins.job.duration)
 
 List of service checks:
 * Build status (jenkins.job.status)
