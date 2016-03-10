@@ -21,7 +21,6 @@ import net.sf.json.JSONSerializer;
 
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.export.Exported;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -34,6 +33,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,7 +96,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getDisplayName();
-
+    HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
     if ( isJobTracked(jobName) ) {
       logger.fine("Started build!");
@@ -105,6 +105,7 @@ public class DatadogBuildListener extends RunListener<Run>
       EnvVars envVars = null;
       try {
         envVars = run.getEnvironment(listener);
+        tags = parseTagList(run, listener);
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
@@ -124,8 +125,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Add event_type to assist in roll-ups
       builddata.put("event_type", "build start"); // string
-
-      event(builddata);
+      event(builddata, tags);
     }
   }
 
@@ -136,27 +136,35 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param listener - A TaskListener object which receives events that happen during some
    *                   operation.
    */
+
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     final String jobName = run.getParent().getDisplayName();
-
     // Process only if job in NOT in blacklist
     if ( isJobTracked(jobName) ) {
       logger.fine("Completed build!");
 
       // Collect Data
       JSONObject builddata = gatherBuildMetadata(run, listener);
+      HashMap<String,String> extraTags = new HashMap<String, String>();
+      try {
+        extraTags = parseTagList(run, listener);
+      } catch (IOException ex) {
+        logger.severe(ex.getMessage());
+      } catch (InterruptedException ex) {
+        logger.severe(ex.getMessage());
+      }
 
       // Add event_type to assist in roll-ups
       builddata.put("event_type", "build result"); // string
 
       // Report Data
-      event(builddata);
-      gauge("jenkins.job.duration", builddata, "duration");
+      event(builddata, extraTags);
+      gauge("jenkins.job.duration", builddata, "duration", extraTags);
       if ( "SUCCESS".equals(builddata.get("result")) ) {
-        serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata);
+        serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
       } else {
-        serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata);
+        serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
       }
     }
   }
@@ -201,7 +209,6 @@ public class DatadogBuildListener extends RunListener<Run>
     } else if ( envVars.get("CVS_BRANCH") != null ) {
       builddata.put("branch", envVars.get("CVS_BRANCH")); // string
     }
-
     return builddata;
   }
 
@@ -211,22 +218,84 @@ public class DatadogBuildListener extends RunListener<Run>
    * of tags.
    *
    * @param builddata - A JSONObject containing a builds metadata.
+   * @param extra - A list of tags, that are contributed via {@link DataDogJobProperty}.
    * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
    */
-  private JSONArray assembleTags(final JSONObject builddata) {
+  private JSONArray assembleTags(final JSONObject builddata, final HashMap<String,String> extra) {
     JSONArray tags = new JSONArray();
+
     tags.add("job:" + builddata.get("job"));
     if ( (builddata.get("node") != null) && getDescriptor().getTagNode() ) {
       tags.add("node:" + builddata.get("node"));
     }
+
     if ( builddata.get("result") != null ) {
       tags.add("result:" + builddata.get("result"));
     }
-    if ( builddata.get("branch") != null ) {
+
+    if ( builddata.get("branch") != null && !extra.containsKey("branch") ) {
       tags.add("branch:" + builddata.get("branch"));
     }
 
+    //Add the extra tags here
+    for(String key : extra.keySet()) {
+      tags.add(String.format("%s:%s", key, extra.get(key)));
+      logger.info(String.format("Emitted tag %s:%s", key, extra.get(key)));
+    }
+
     return tags;
+  }
+
+  /**
+   * This method parses the contents of the configured DataDog tags. If they are present.
+   * Takes the current build as a parameter. And returns the expanded tags and their
+   * values in a HashMap.
+   *
+   * Always returns a HashMap, that can be empty, if no tagging is configured.
+   *
+   * @param run - Current build
+   * @param listener - Current listener
+   * @return A {@link HashMap} containing the key,value pairs of tags. Never null.
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  @Nonnull
+  private HashMap<String,String> parseTagList(Run run, TaskListener listener) throws IOException,
+          InterruptedException {
+    HashMap<String,String> map = new HashMap<String, String>();
+
+    DataDogJobProperty property = (DataDogJobProperty)run.getParent()
+            .getProperty(DataDogJobProperty.class);
+    String prop = property.getTagProperties();
+
+    if( !property.isTagFileEmpty() ) {
+      String dataFromFile = property.readTagFile(run);
+      if(dataFromFile != null) {
+        for(String tag : dataFromFile.split("\\r?\\n")) {
+          String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
+          if( expanded.length > 1 ) {
+            map.put(expanded[0], expanded[1]);
+            logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+          } else {
+            logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+          }
+        }
+      }
+    }
+
+    if( !property.isTagPropertiesEmpty() ) {
+      for(String tag : prop.split("\\r?\\n")) {
+        String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
+        if( expanded.length > 1 ) {
+          map.put(expanded[0], expanded[1]);
+          logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+        } else {
+          logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+        }
+      }
+    }
+
+    return map;
   }
 
   /**
@@ -298,16 +367,19 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param builddata - A JSONObject containing a builds metadata.
    * @param key - A String with the name of the build metadata to be found in the {@link JSONObject}
    *              builddata.
+   * @param extraTags - A list of tags, that are contributed via {@link DataDogJobProperty}.
    */
   public final void gauge(final String metricName, final JSONObject builddata,
-                          final String key) {
+                          final String key, final HashMap<String,String> extraTags) {
     String builddataKey = nullSafeGetString(builddata, key);
     logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
 
     // Setup data point, of type [<unix_timestamp>, <value>]
     JSONArray points = new JSONArray();
     JSONArray point = new JSONArray();
-    point.add(System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
+
+    long currentTime = System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG;
+    point.add(currentTime); // current time, s
     point.add(builddata.get(key));
     points.add(point); // api expects a list of points
 
@@ -317,7 +389,7 @@ public class DatadogBuildListener extends RunListener<Run>
     metric.put("points", points);
     metric.put("type", "gauge");
     metric.put("host", builddata.get("hostname"));
-    metric.put("tags", assembleTags(builddata));
+    metric.put("tags", assembleTags(builddata, extraTags));
 
     // Place metric as item of series list
     JSONArray series = new JSONArray();
@@ -326,6 +398,8 @@ public class DatadogBuildListener extends RunListener<Run>
     // Add series to payload
     JSONObject payload = new JSONObject();
     payload.put("series", series);
+
+    logger.fine(String.format("Resulting payload: %s", payload.toString() ));
 
     try {
       post(payload, DatadogBuildListener.METRIC);
@@ -340,9 +414,10 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param checkName - A String with the name of the service check to record.
    * @param status - An Integer with the status code to record for this service check.
    * @param builddata - A JSONObject containing a builds metadata.
+   * @param extraTags - A list of tags, that are contributed through the {@link DataDogJobProperty}.
    */
   public final void serviceCheck(final String checkName, final Integer status,
-                                 final JSONObject builddata) {
+                                 final JSONObject builddata, final HashMap<String,String> extraTags) {
     logger.fine(String.format("Sending service check '%s' with status %s", checkName, status));
 
     // Build payload
@@ -352,7 +427,7 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("timestamp",
                 System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     payload.put("status", status);
-    payload.put("tags", assembleTags(builddata));
+    payload.put("tags", assembleTags(builddata, extraTags));
 
     try {
       post(payload, DatadogBuildListener.SERVICECHECK);
@@ -365,8 +440,9 @@ public class DatadogBuildListener extends RunListener<Run>
    * Sends a an event to the Datadog API, including the event payload.
    *
    * @param builddata - A JSONObject containing a builds metadata.
+   * @param extraTags - A list of tags, that are contributed through the {@link DataDogJobProperty}.
    */
-  public final void event(final JSONObject builddata) {
+  public final void event(final JSONObject builddata, HashMap<String,String> extraTags) {
     logger.fine("Sending event");
 
     // Gather data
@@ -414,7 +490,7 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("event_type", builddata.get("event_type"));
     payload.put("host", hostname);
     payload.put("result", builddata.get("result"));
-    payload.put("tags", assembleTags(builddata));
+    payload.put("tags", assembleTags(builddata, extraTags));
     payload.put("aggregation_key", job); // Used for job name in event rollups
 
     try {
@@ -578,7 +654,7 @@ public class DatadogBuildListener extends RunListener<Run>
     return conn;
   }
 
-  /**     
+  /**
    * Checks if a jobName is blacklisted, or not.
    *
    * @param jobName - A String containing the name of some job.
