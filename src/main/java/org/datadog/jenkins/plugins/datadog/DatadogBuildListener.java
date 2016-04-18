@@ -795,20 +795,17 @@ public class DatadogBuildListener extends RunListener<Run>
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
       // Grab apiKey and hostname
-      apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
-      hostname = formData.getString("hostname");
+      setApiKey(formData.getString("apiKey"));
+      setHostname(formData.getString("hostname"));
 
-      // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
-      blacklist = formData.getString("blacklist")
-                          .replaceAll("\\s", "")
-                          .replaceAll(",,", "")
-                          .toLowerCase();
+      // Grab blacklist
+      setBlacklist(formData.getString("blacklist"));
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
-        tagNode = true;
+        setTagNode(true);
       } else {
-        tagNode = false;
+        setTagNode(false);
       }
 
       // Persist global configuration information
