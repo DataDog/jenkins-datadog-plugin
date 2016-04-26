@@ -24,6 +24,7 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   private static final String DISPLAY_NAME = "DataDog Job Tagging";
   private String tagProperties = null;
   private String tagFile = null;
+  private boolean emitOnCheckout = false;
 
   /**
    * Runs when the {@link DataDogJobProperty} class is created.
@@ -59,16 +60,18 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
           throws Descriptor.FormException {
 
     DataDogJobProperty prop = (DataDogJobProperty) super.reconfigure(req, form);
-
+    System.out.println(form);
     boolean isEnableFile = form.getBoolean("enableFile");
     boolean isEnableTagProperties = form.getBoolean("enableProperty");
 
     if(!isEnableFile) {
         prop.tagFile = null;
+        prop.emitOnCheckout = false;
     }
     if(!isEnableTagProperties) {
         prop.tagProperties = null;
     }
+
 
     return prop;
   }
@@ -108,6 +111,15 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
    */
   public boolean isTagPropertiesEmpty() {
     return StringUtils.isBlank(this.tagProperties);
+  }
+
+  public boolean isEmitOnCheckout() {
+    return emitOnCheckout;
+  }
+
+  @DataBoundSetter
+  public void setEmitOnCheckout(boolean emitOnCheckout) {
+    this.emitOnCheckout = emitOnCheckout;
   }
 
   /**
@@ -162,6 +174,5 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
     public boolean isApplicable(Class<? extends Job> jobType) {
         return true;
     }
-
   }
 }
