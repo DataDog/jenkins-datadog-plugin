@@ -284,11 +284,8 @@ public class DatadogBuildListener extends RunListener<Run>
   public static String getOS() {
     String out = System.getProperty("os.name");
     String os = out.split(" ")[0];
-
     return os.toLowerCase();
   }
-
-
 
   /**
    * Getter function for the {@link DescriptorImpl} class.

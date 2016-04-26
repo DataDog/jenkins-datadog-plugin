@@ -33,14 +33,25 @@ public class DataDogUtilities {
     return desc;
   }
 
+  /**
+   *
+   * @return - The hostname configured in the global configuration. Shortcut method.
+   */
   public static String getHostName()  {
     return DataDogUtilities.getDataDogDescriptor().getHostname();
   }
 
+  /**
+   *
+   * @return - The api key configured in the global configuration. Shortcut method.
+   */
   public static  String getApiKey() {
     return DataDogUtilities.getDataDogDescriptor().getApiKey();
   }
-
+  /**
+   *
+   * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
+   */
   public static String getBlacklist() {
     return DataDogUtilities.getDataDogDescriptor().getBlacklist();
   }
@@ -158,7 +169,7 @@ public class DataDogUtilities {
 
     // Check hostname using jenkins env variables
     if ( envVars.get("HOSTNAME") != null ) {
-      hostname = envVars.get("HOSTNAME").toString();
+      hostname = envVars.get("HOSTNAME");
     }
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname found in $HOSTNAME host environment variable. "
@@ -196,7 +207,7 @@ public class DataDogUtilities {
 
     // Check localhost hostname
     try {
-      hostname = Inet4Address.getLocalHost().getHostName().toString();
+      hostname = Inet4Address.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
       logger.fine(String.format("Unknown hostname error received for localhost. Error: %s", e));
     }
@@ -247,12 +258,9 @@ public class DataDogUtilities {
     // Check compliance with RFC 1123
     Pattern r = Pattern.compile(VALID_HOSTNAME_RFC_1123_PATTERN);
     Matcher m = r.matcher(hostname);
-    if ( !m.find() ) {
-      return false;
-    }
 
-    // Passed all checks, so the hostname is valid
-    return true;
+    // Final check: Hostname matches RFC1123?
+    return m.find();
   }
 
 

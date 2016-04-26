@@ -5,7 +5,7 @@
                 <f:textbox/>
             </f:entry>
             <f:entry title="Emit an extra event after checkout" field="emitOnCheckout"
-description="Note: Check this if you want to emit an extra event after checkout. Files are not immediately available when the build leaves the queue." >
+description="Note: Check this if you want to emit an extra event after checkout. Files are not immediately available when the build leaves the queue. If a checkout fails, the event will not be emitted." >
                 <f:checkbox/>
             </f:entry>
         </f:optionalBlock>

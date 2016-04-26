@@ -24,6 +24,17 @@ public class DataDogSCMListener extends SCMListener {
 
   private static final Logger logger =  Logger.getLogger(DataDogSCMListener.class.getName());
 
+  /**
+   * Invoked right after the source code for th build has been checked out.
+   *
+   * @param build - Current build
+   * @param scm - Configured SCM
+   * @param workspace - Current workspace
+   * @param listener - Current build listener
+   * @param changelogFile - Changelog
+   * @param pollingBaseline - Polling
+   * @throws Exception
+   */
   @Override
   public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
           File changelogFile, SCMRevisionState pollingBaseline) throws Exception {

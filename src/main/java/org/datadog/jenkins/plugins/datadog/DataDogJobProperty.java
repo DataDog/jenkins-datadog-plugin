@@ -41,6 +41,10 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
     return tagProperties;
   }
 
+  /**
+   *
+   * @param tagProperties - The configured tag properties. Text area in the job configuration
+   */
   @DataBoundSetter
   public void setTagProperties(final String tagProperties) {
     this.tagProperties = tagProperties;
@@ -113,10 +117,20 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
     return StringUtils.isBlank(this.tagProperties);
   }
 
+  /**
+   *
+   * @return - A {@link Boolean} indicating if the user has configured DataDog to emit the
+   *         - an event after checkout.
+   */
   public boolean isEmitOnCheckout() {
     return emitOnCheckout;
   }
 
+  /**
+   *
+   * Set the checkbox in the UI, used for Jenkins databbinding
+   * @param emitOnCheckout - The checkbox status (checked/unchecked)
+   */
   @DataBoundSetter
   public void setEmitOnCheckout(boolean emitOnCheckout) {
     this.emitOnCheckout = emitOnCheckout;

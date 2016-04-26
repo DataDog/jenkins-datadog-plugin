@@ -4,8 +4,8 @@ import java.util.HashMap;
 import net.sf.json.JSONObject;
 
 /**
- *
- * @author Mads
+ * Class that implements the {@link DataDogEvent}. This event produces an event payload with a
+ * with a proper description for a finished build.
  */
 public class BuildFinishedEventImpl implements DataDogEvent {
 

@@ -5,9 +5,10 @@ import net.sf.json.JSONObject;
 
 /**
  *
- * @author Mads
+ * Class that implements the {@link DataDogEvent}. This event produces an event payload with a
+ * with a proper description for a completed checkout.
  */
-public class CheckoutCompletedEventImpl implements DataDogEvent  {
+public class CheckoutCompletedEventImpl implements DataDogEvent {
 
   private JSONObject builddata;
   private HashMap<String,String> tags;
