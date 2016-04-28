@@ -18,9 +18,9 @@ import net.sf.json.JSONSerializer;
  * This class is used to collect all methods that has to do with transmitting
  * data to Datadog.
  */
-public class DataDogHttpRequests {
+public class DatadogHttpRequests {
 
-  private static final Logger logger =  Logger.getLogger(DataDogHttpRequests.class.getName());
+  private static final Logger logger =  Logger.getLogger(DatadogHttpRequests.class.getName());
   /**
    * Returns an HTTP url connection given a url object. Supports jenkins configured proxy.
    *
@@ -51,19 +51,19 @@ public class DataDogHttpRequests {
   /**
    * Sends a an event to the Datadog API, including the event payload.
    *
-   * @param evt - The finished {@link DataDogEvent} to send
+   * @param evt - The finished {@link DatadogEvent} to send
    */
-  public static void sendEvent(DataDogEvent evt) {
+  public static void sendEvent(DatadogEvent evt) {
     logger.fine("Sending event");
     try {
-      DataDogHttpRequests.post(evt.createPayload(), DatadogBuildListener.EVENT);
+      DatadogHttpRequests.post(evt.createPayload(), DatadogBuildListener.EVENT);
     } catch (Exception e) {
       logger.severe(e.toString());
     }
   }
 
   /**
-   * Posts a given {@link JSONObject} payload to the DataDog API, using the
+   * Posts a given {@link JSONObject} payload to the Datadog API, using the
    * user configured apiKey.
    *
    * @param payload - A JSONObject containing a specific subset of a builds metadata.
@@ -72,10 +72,10 @@ public class DataDogHttpRequests {
    * @throws IOException
    */
   public static Boolean post(final JSONObject payload, final String type) throws IOException {
-    String urlParameters = "?api_key=" + DataDogUtilities.getApiKey();
+    String urlParameters = "?api_key=" + DatadogUtilities.getApiKey();
     HttpURLConnection conn = null;
     try {
-      conn = DataDogHttpRequests.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type + urlParameters));
+      conn = DatadogHttpRequests.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type + urlParameters));
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setUseCaches(false);

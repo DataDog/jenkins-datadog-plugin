@@ -20,12 +20,13 @@ import net.sf.json.JSONObject;
  *
  */
 @Extension
-public class DataDogSCMListener extends SCMListener {
+public class DatadogSCMListener extends SCMListener {
 
-  private static final Logger logger =  Logger.getLogger(DataDogSCMListener.class.getName());
+  private static final Logger logger =  Logger.getLogger(DatadogSCMListener.class.getName());
 
   /**
-   * Invoked right after the source code for th build has been checked out.
+   * Invoked right after the source code for the build has been checked out. It will NOT be
+   * called if a checkout fails.
    *
    * @param build - Current build
    * @param scm - Configured SCM
@@ -42,15 +43,15 @@ public class DataDogSCMListener extends SCMListener {
     String jobName = build.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DataDogUtilities.isJobTracked(jobName)
-            && DataDogUtilities.retrieveProperty(build).isEmitOnCheckout() ) {
+    if ( DatadogUtilities.isJobTracked(jobName)
+            && DatadogUtilities.retrieveProperty(build).isEmitOnCheckout() ) {
       logger.fine("Checkout! in onCheckout()");
 
       // Grab environment variables
       EnvVars envVars = null;
       try {
         envVars = build.getEnvironment(listener);
-        tags = DataDogUtilities.parseTagList(build, listener);
+        tags = DatadogUtilities.parseTagList(build, listener);
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
@@ -59,7 +60,7 @@ public class DataDogSCMListener extends SCMListener {
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      builddata.put("hostname", DataDogUtilities.getHostname(envVars)); // string
+      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
       builddata.put("job", jobName); // string
       builddata.put("number", build.number); // int
       builddata.put("result", null); // null
@@ -68,9 +69,9 @@ public class DataDogSCMListener extends SCMListener {
       long starttime = build.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
       builddata.put("timestamp", starttime); // string
 
-      DataDogEvent evt = new CheckoutCompletedEventImpl(builddata, tags);
+      DatadogEvent evt = new CheckoutCompletedEventImpl(builddata, tags);
 
-      DataDogHttpRequests.sendEvent(evt);
+      DatadogHttpRequests.sendEvent(evt);
     }
   }
 }

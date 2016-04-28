@@ -4,9 +4,9 @@ import net.sf.json.JSONObject;
 
 /**
  *
- * Marker interface for DataDog events.
+ * Marker interface for Datadog events.
  */
-public interface DataDogEvent  {
+public interface DatadogEvent  {
   /**
    *
    * @return The payload for the given event. Events usually have a custom message

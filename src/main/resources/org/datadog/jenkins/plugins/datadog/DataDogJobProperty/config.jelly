@@ -1,11 +1,12 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <f:section title="DataDog Tagging">
+    <f:section title="Datadog Tagging">
         <f:optionalBlock name="enableFile" checked="${!instance.isTagFileEmpty()}" title="Add tags from file in workspace" inline="true">
             <f:entry title="File" field="tagFile">
                 <f:textbox/>
             </f:entry>
-            <f:entry title="Emit an extra event after checkout" field="emitOnCheckout"
-description="Note: Check this if you want to emit an extra event after checkout. Files are not immediately available when the build leaves the queue. If a checkout fails, the event will not be emitted." >
+            <f:entry title="Send extra event after each successful checkout" field="emitOnCheckout"
+description="Note: Tags set this way, in the workspace, won't appear in started events.
+To provide visibility of a jobs lifespan, this option will send an extra event, in addition to the started and completed events." >
                 <f:checkbox/>
             </f:entry>
         </f:optionalBlock>

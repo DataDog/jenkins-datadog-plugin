@@ -16,24 +16,24 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * Create a job property for use with DataDog plugin.
+ * Create a job property for use with Datadog plugin.
  * @param <T>
  */
-public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
+public class DatadogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   private static final Logger LOGGER =  Logger.getLogger(DatadogBuildListener.class.getName());
-  private static final String DISPLAY_NAME = "DataDog Job Tagging";
+  private static final String DISPLAY_NAME = "Datadog Job Tagging";
   private String tagProperties = null;
   private String tagFile = null;
   private boolean emitOnCheckout = false;
 
   /**
-   * Runs when the {@link DataDogJobProperty} class is created.
+   * Runs when the {@link DatadogJobProperty} class is created.
    */
   @DataBoundConstructor
-  public DataDogJobProperty( ) { }
+  public DatadogJobProperty( ) { }
 
   /**
-   * Gets a list of tag properties to be submitted with the Build to DataDog.
+   * Gets a list of tag properties to be submitted with the Build to Datadog.
    *
    * @return a String representing a list of tag properties.
    */
@@ -63,7 +63,7 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   public JobProperty<?> reconfigure(StaplerRequest req, JSONObject form)
           throws Descriptor.FormException {
 
-    DataDogJobProperty prop = (DataDogJobProperty) super.reconfigure(req, form);
+    DatadogJobProperty prop = (DatadogJobProperty) super.reconfigure(req, form);
     System.out.println(form);
     boolean isEnableFile = form.getBoolean("enableFile");
     boolean isEnableTagProperties = form.getBoolean("enableProperty");
@@ -119,7 +119,7 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
 
   /**
    *
-   * @return - A {@link Boolean} indicating if the user has configured DataDog to emit the
+   * @return - A {@link Boolean} indicating if the user has configured Datadog to emit the
    *         - an event after checkout.
    */
   public boolean isEmitOnCheckout() {
@@ -137,7 +137,7 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   }
 
   /**
-   * Method to read the contents of the specified file in the {@link DataDogJobProperty}
+   * Method to read the contents of the specified file in the {@link DatadogJobProperty}
    *
    * @param r - Current build
    * @return - A String containing the contents of the scanned file. Returns null when
@@ -165,7 +165,7 @@ public class DataDogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   }
 
   @Extension
-  public static final class DataDogJobPropertyDescriptorImpl
+  public static final class DatadogJobPropertyDescriptorImpl
     extends JobPropertyDescriptor {
 
     /**

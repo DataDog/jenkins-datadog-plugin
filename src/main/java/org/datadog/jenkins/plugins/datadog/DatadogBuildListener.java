@@ -88,14 +88,14 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DataDogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build! in onStarted()");
 
       // Grab environment variables
       EnvVars envVars = null;
       try {
         envVars = run.getEnvironment(listener);
-        tags = DataDogUtilities.parseTagList(run, listener);
+        tags = DatadogUtilities.parseTagList(run, listener);
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
@@ -104,7 +104,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      builddata.put("hostname", DataDogUtilities.getHostname(envVars)); // string
+      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
       builddata.put("job", jobName); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
@@ -115,7 +115,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
 
-      DataDogHttpRequests.sendEvent(evt);
+      DatadogHttpRequests.sendEvent(evt);
     }
   }
 
@@ -131,22 +131,22 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     final String jobName = run.getParent().getDisplayName();
     // Process only if job in NOT in blacklist
-    if ( DataDogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Completed build!");
 
       // Collect Data
       JSONObject builddata = gatherBuildMetadata(run, listener);
       HashMap<String,String> extraTags = new HashMap<String, String>();
       try {
-        extraTags = DataDogUtilities.parseTagList(run, listener);
+        extraTags = DatadogUtilities.parseTagList(run, listener);
       } catch (IOException ex) {
         logger.severe(ex.getMessage());
       } catch (InterruptedException ex) {
         logger.severe(ex.getMessage());
       }
 
-      DataDogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
-      DataDogHttpRequests.sendEvent(evt);
+      DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
+      DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.duration", builddata, "duration", extraTags);
       if ( "SUCCESS".equals(builddata.get("result")) ) {
         serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
@@ -187,7 +187,7 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job", run.getParent().getDisplayName()); // string
-    builddata.put("hostname", DataDogUtilities.getHostname(envVars)); // string
+    builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
     builddata.put("buildurl", envVars.get("BUILD_URL")); // string
     builddata.put("node", envVars.get("NODE_NAME")); // string
 
@@ -207,11 +207,11 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param builddata - A JSONObject containing a builds metadata.
    * @param key - A String with the name of the build metadata to be found in the {@link JSONObject}
    *              builddata.
-   * @param extraTags - A list of tags, that are contributed via {@link DataDogJobProperty}.
+   * @param extraTags - A list of tags, that are contributed via {@link DatadogJobProperty}.
    */
   public final void gauge(final String metricName, final JSONObject builddata,
                           final String key, final HashMap<String,String> extraTags) {
-    String builddataKey = DataDogUtilities.nullSafeGetString(builddata, key);
+    String builddataKey = DatadogUtilities.nullSafeGetString(builddata, key);
     logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
 
     // Setup data point, of type [<unix_timestamp>, <value>]
@@ -229,7 +229,7 @@ public class DatadogBuildListener extends RunListener<Run>
     metric.put("points", points);
     metric.put("type", "gauge");
     metric.put("host", builddata.get("hostname"));
-    metric.put("tags", DataDogUtilities.assembleTags(builddata, extraTags));
+    metric.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
 
     // Place metric as item of series list
     JSONArray series = new JSONArray();
@@ -242,7 +242,7 @@ public class DatadogBuildListener extends RunListener<Run>
     logger.fine(String.format("Resulting payload: %s", payload.toString() ));
 
     try {
-      DataDogHttpRequests.post(payload, METRIC);
+      DatadogHttpRequests.post(payload, METRIC);
     } catch (Exception e) {
       logger.severe(e.toString());
     }
@@ -254,7 +254,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param checkName - A String with the name of the service check to record.
    * @param status - An Integer with the status code to record for this service check.
    * @param builddata - A JSONObject containing a builds metadata.
-   * @param extraTags - A list of tags, that are contributed through the {@link DataDogJobProperty}.
+   * @param extraTags - A list of tags, that are contributed through the {@link DatadogJobProperty}.
    */
   public final void serviceCheck(final String checkName, final Integer status,
                                  final JSONObject builddata, final HashMap<String,String> extraTags) {
@@ -267,10 +267,10 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("timestamp",
                 System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     payload.put("status", status);
-    payload.put("tags", DataDogUtilities.assembleTags(builddata, extraTags));
+    payload.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
 
     try {
-      DataDogHttpRequests.post(payload, SERVICECHECK);
+      DatadogHttpRequests.post(payload, SERVICECHECK);
     } catch (Exception e) {
       logger.severe(e.toString());
     }
@@ -292,6 +292,7 @@ public class DatadogBuildListener extends RunListener<Run>
    *
    * @return a new {@link DescriptorImpl} class.
    */
+  @Override
   public final DescriptorImpl getDescriptor() {
     return new DescriptorImpl();
   }
@@ -339,7 +340,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       try {
         // Make request
-        conn = DataDogHttpRequests.getHttpURLConnection(new URL(BASEURL
+        conn = DatadogHttpRequests.getHttpURLConnection(new URL(BASEURL
                                                                  + VALIDATE
                                                                  + urlParameters));
         conn.setRequestMethod("GET");
@@ -387,7 +388,7 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public FormValidation doTestHostname(@QueryParameter("hostname") final String formHostname)
         throws IOException, ServletException {
-      if ( ( null != formHostname ) && DataDogUtilities.isValidHostname(formHostname) ) {
+      if ( ( null != formHostname ) && DatadogUtilities.isValidHostname(formHostname) ) {
         return FormValidation.ok("Great! Your hostname is valid.");
       } else {
         return FormValidation.error("Your hostname is invalid, likely because"
@@ -412,6 +413,7 @@ public class DatadogBuildListener extends RunListener<Run>
      *
      * @return a String containing the human readable display name for this plugin.
      */
+    @Override
     public String getDisplayName() {
       return DatadogBuildListener.DISPLAY_NAME;
     }
@@ -456,7 +458,7 @@ public class DatadogBuildListener extends RunListener<Run>
      * @return a String containing the {@link apiKey} global configuration.
      */
     public String getApiKey() {
-      return apiKey.getPlainText();
+      return Secret.toString(apiKey);
     }
 
     /**

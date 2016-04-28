@@ -20,15 +20,15 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import static org.datadog.jenkins.plugins.datadog.DatadogBuildListener.getOS;
 
-public class DataDogUtilities {
+public class DatadogUtilities {
 
-  private static final Logger logger =  Logger.getLogger(DataDogSCMListener.class.getName());
+  private static final Logger logger =  Logger.getLogger(DatadogSCMListener.class.getName());
   /**
    *
    * @return - The descriptor for the Datadog plugin. In this case the global
    *         - configuration.
    */
-  public static DatadogBuildListener.DescriptorImpl getDataDogDescriptor() {
+  public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
     DatadogBuildListener.DescriptorImpl desc = (DatadogBuildListener.DescriptorImpl)Jenkins.getInstance().getDescriptorOrDie(DatadogBuildListener.class);
     return desc;
   }
@@ -38,7 +38,7 @@ public class DataDogUtilities {
    * @return - The hostname configured in the global configuration. Shortcut method.
    */
   public static String getHostName()  {
-    return DataDogUtilities.getDataDogDescriptor().getHostname();
+    return DatadogUtilities.getDatadogDescriptor().getHostname();
   }
 
   /**
@@ -46,14 +46,14 @@ public class DataDogUtilities {
    * @return - The api key configured in the global configuration. Shortcut method.
    */
   public static  String getApiKey() {
-    return DataDogUtilities.getDataDogDescriptor().getApiKey();
+    return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
   /**
    *
    * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
    */
   public static String getBlacklist() {
-    return DataDogUtilities.getDataDogDescriptor().getBlacklist();
+    return DatadogUtilities.getDatadogDescriptor().getBlacklist();
   }
 
   /**
@@ -63,7 +63,7 @@ public class DataDogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
   public static boolean isJobTracked(final String jobName) {
-    final String[] blacklist = DataDogUtilities.blacklistStringtoArray( DataDogUtilities.getBlacklist() );
+    final String[] blacklist = DatadogUtilities.blacklistStringtoArray(DatadogUtilities.getBlacklist() );
     return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
   }
 
@@ -82,7 +82,7 @@ public class DataDogUtilities {
   }
 
   /**
-   * This method parses the contents of the configured DataDog tags. If they are present.
+   * This method parses the contents of the configured Datadog tags. If they are present.
    * Takes the current build as a parameter. And returns the expanded tags and their
    * values in a HashMap.
    *
@@ -99,7 +99,7 @@ public class DataDogUtilities {
           InterruptedException {
     HashMap<String,String> map = new HashMap<String, String>();
 
-    DataDogJobProperty property = DataDogUtilities.retrieveProperty(run);
+    DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
     String prop = property.getTagProperties();
 
     if( !property.isTagFileEmpty() ) {
@@ -135,11 +135,11 @@ public class DataDogUtilities {
   /**
    *
    * @param r - Current build.
-   * @return - The configured {@link DataDogJobProperty}. Null if not there
+   * @return - The configured {@link DatadogJobProperty}. Null if not there
    */
-  public static DataDogJobProperty retrieveProperty(Run r) {
-    DataDogJobProperty property = (DataDogJobProperty)r.getParent()
-            .getProperty(DataDogJobProperty.class);
+  public static DatadogJobProperty retrieveProperty(Run r) {
+    DatadogJobProperty property = (DatadogJobProperty)r.getParent()
+            .getProperty(DatadogJobProperty.class);
     return property;
   }
   /**
@@ -161,7 +161,7 @@ public class DataDogUtilities {
     String hostname = null;
 
     // Check hostname configuration from Jenkins
-    hostname = DataDogUtilities.getHostName();
+    hostname = DatadogUtilities.getHostName();
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname set in 'Manage Plugins'. Hostname: %s", hostname));
       return hostname;
@@ -285,14 +285,14 @@ public class DataDogUtilities {
    * of tags.
    *
    * @param builddata - A JSONObject containing a builds metadata.
-   * @param extra - A list of tags, that are contributed via {@link DataDogJobProperty}.
+   * @param extra - A list of tags, that are contributed via {@link DatadogJobProperty}.
    * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
    */
   public static JSONArray assembleTags(final JSONObject builddata, final HashMap<String,String> extra) {
     JSONArray tags = new JSONArray();
 
     tags.add("job:" + builddata.get("job"));
-    if ( (builddata.get("node") != null) && DataDogUtilities.getDataDogDescriptor().getTagNode() ) {
+    if ( (builddata.get("node") != null) && DatadogUtilities.getDatadogDescriptor().getTagNode() ) {
       tags.add("node:" + builddata.get("node"));
     }
 
