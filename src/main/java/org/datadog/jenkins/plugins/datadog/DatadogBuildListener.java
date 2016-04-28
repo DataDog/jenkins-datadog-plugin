@@ -1,5 +1,8 @@
 package org.datadog.jenkins.plugins.datadog;
 
+import com.timgroup.statsd.NonBlockingStatsDClient;
+import com.timgroup.statsd.StatsDClient;
+import com.timgroup.statsd.StatsDClientException;
 import static hudson.Util.fixEmptyAndTrim;
 
 import hudson.EnvVars;
@@ -26,10 +29,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * DatadogBuildListener {@link RunListener}.
@@ -75,7 +81,6 @@ public class DatadogBuildListener extends RunListener<Run>
    * Runs when the {@link DatadogBuildListener} class is created.
    */
   public DatadogBuildListener() { }
-
   /**
    * Called when a build is first started.
    *
@@ -152,6 +157,31 @@ public class DatadogBuildListener extends RunListener<Run>
         serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
       } else {
         serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
+      }
+
+      //At this point. We will always have some tags. So no defensive checks needed.
+      //We add the tags into our array, so we can easily pass the to the stats counter.
+      //Tags after this point will be propertly formatted.
+      JSONArray arr = evt.createPayload().getJSONArray("tags");
+      String[] tagsToCounter = new String[arr.size()];
+      for(int i=0; i<arr.size()-1; i++) {
+        tagsToCounter[i] = arr.getString(i);
+      }
+
+
+      if(DatadogUtilities.isValidDaemon(getDescriptor().getDaemonHost()))  {
+        logger.fine(String.format("Sending completed counter to %s ", getDescriptor().getDaemonHost()));
+        try {
+          //The client is a threadpool so instead of creating a new instance of the pool
+          //we lease the exiting one registerd with Jenkins.
+          StatsDClient statsd = getDescriptor().leaseClient();
+          statsd.increment("completed", tagsToCounter);
+          logger.fine("Jenkins completed counter sent!");
+        } catch (StatsDClientException e) {
+          logger.log(Level.SEVERE, "Runtime exception thrown using the StatsDClient", e);
+        }
+      } else {
+        logger.warning("Invalid dogstats daemon host specificed");
       }
     }
   }
@@ -306,6 +336,22 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Extension // Indicates to Jenkins that this is an extension point implementation.
   public static final class DescriptorImpl extends Descriptor<DatadogBuildListener> {
+
+    /**
+     * @return - A {@link StatsDClient} lease for this registered {@link RunListener}
+     */
+    public StatsDClient leaseClient() {
+      try {
+        if(client == null) {
+          client = new NonBlockingStatsDClient("jenkins.job", daemonHost.split(":")[0],
+                  Integer.parseInt(daemonHost.split(":")[1]));
+        }
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Error while configuring client", e);
+      }
+      return client;
+    }
+
     /**
      * Persist global configuration information by storing in a field and
      * calling save().
@@ -314,12 +360,20 @@ public class DatadogBuildListener extends RunListener<Run>
     private String hostname = null;
     private String blacklist = null;
     private Boolean tagNode = null;
+    private String daemonHost = "localhost:8125";
+    //The StatsDClient instance variable. This variable is leased by the RunLIstener
+    private static StatsDClient client;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
      */
     public DescriptorImpl() {
       load(); // load the persisted global configuration
+    }
+
+    @Override
+    public DatadogBuildListener newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+      return super.newInstance(req, formData); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
@@ -397,6 +451,34 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+    *
+    * @param daemonHost - The hostname for the dogstatsdaemon. Defaults to localhost:8125
+    * @return a FormValidation object used to display a message to the user on the configuration
+    *         screen.
+    */
+    public FormValidation doCheckDaemonHost(@QueryParameter("daemonHost") final String daemonHost) {
+      if(!daemonHost.contains(":")) {
+        return FormValidation.error("The field must be configured in the form <hostname>:<port>");
+      }
+
+      String hn = daemonHost.split(":")[0];
+      String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
+
+      if(StringUtils.isBlank(hn)) {
+        return FormValidation.error("Empty hostname");
+      }
+
+      //Match ports [1024-65535]
+      Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
+              + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
+      if(!p.matcher(pn).find()) {
+        return FormValidation.error("Invalid port specified. Range must be 1024-65535");
+      }
+
+      return FormValidation.ok("Everything ok");
+    }
+
+    /**
      * Indicates if this builder can be used with all kinds of project types.
      *
      * @param aClass - An extension of the AbstractProject class representing a specific type of
@@ -447,6 +529,22 @@ public class DatadogBuildListener extends RunListener<Run>
         tagNode = false;
       }
 
+      daemonHost = formData.getString("daemonHost");
+      //When form is saved...reinitialize the StatsDClient.
+      //We need to stop the old one first. And crete a new one with the new data from
+      //The global configuration
+      if (client != null) {
+        try {
+          client.stop();
+          String hp = daemonHost.split(":")[0];
+          int pp = Integer.parseInt(daemonHost.split(":")[1]);
+          client = new NonBlockingStatsDClient("jenkins.job", hp, pp);
+          logger.finer(String.format("Created new dogstatsdaemon client (%s:%S)!", hp, pp));
+        } catch (Exception e) {
+          logger.log(Level.SEVERE, "Unable to crete new DogstatsClient", e);
+        }
+      }
+
       // Persist global configuration information
       save();
       return super.configure(req, formData);
@@ -487,6 +585,20 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public Boolean getTagNode() {
       return tagNode;
+    }
+
+    /**
+     * @return The host definition for the dogstats daemon
+     */
+    public String getDaemonHost() {
+      return daemonHost;
+    }
+
+    /**
+     * @param daemonHost - The host specification for the dogstats daemon
+     */
+    public void setDaemonHost(String daemonHost) {
+      this.daemonHost = daemonHost;
     }
   }
 }
