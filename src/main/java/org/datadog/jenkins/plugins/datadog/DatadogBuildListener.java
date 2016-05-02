@@ -431,20 +431,17 @@ public class DatadogBuildListener extends RunListener<Run>
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
       // Grab apiKey and hostname
-      apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
-      hostname = formData.getString("hostname");
+      setApiKey(formData.getString("apiKey"));
+      setHostname(formData.getString("hostname"));
 
-      // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
-      blacklist = formData.getString("blacklist")
-                          .replaceAll("\\s", "")
-                          .replaceAll(",,", "")
-                          .toLowerCase();
+      // Grab blacklist
+      setBlacklist(formData.getString("blacklist"));
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
-        tagNode = true;
+        setTagNode(true);
       } else {
-        tagNode = false;
+        setTagNode(false);
       }
 
       // Persist global configuration information
@@ -462,12 +459,31 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter fuction for the {@link apiKey} global configuration.
+     *
+     * @param key = A string containing the plaintext representation of a
+     *     DataDog API Key
+     */
+    public void setApiKey(final String key) {
+      apiKey = Secret.fromString(fixEmptyAndTrim(key));
+    }
+
+    /**
      * Getter function for the {@link hostname} global configuration.
      *
      * @return a String containing the {@link hostname} global configuration.
      */
     public String getHostname() {
       return hostname;
+    }
+
+    /**
+     * Setter function for the {@link hostname} global configuration.
+     *
+     * @param host - A String containing the hostname of the Jenkins host.
+     */
+    public void setHostname(final String host) {
+      hostname = host;
     }
 
     /**
@@ -481,12 +497,37 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter function for the {@link blacklist} global configuration,
+     * accepting a comma-separated string of jobs that will be sanitized.
+     *
+     * @param jobs - a comma-separated list of jobs to blacklist from monitoring.
+     */
+    public void setBlacklist(final String jobs) {
+      // strip whitespace, remove duplicate commas, and make lowercase
+      blacklist = jobs
+        .replaceAll("\\s", "")
+        .replaceAll(",,", "")
+        .toLowerCase();
+    }
+
+    /**
      * Getter function for the optional tag {@link node} global configuration.
      *
-     * @return a Boolean containing optional tag value for the {@link node} global configuration.
+     * @return a Boolean containing optional tag value for the {@link node}
+     *     global configuration.
      */
     public Boolean getTagNode() {
       return tagNode;
+    }
+
+    /**
+     * Setter function for the optional tag {@link node} global configuration.
+     *
+     * @param willTag - A Boolean expressing whether the {@link node} tag will
+     *     be included.
+     */
+    public void setTagNode(final Boolean willTag) {
+      tagNode = willTag;
     }
   }
 }

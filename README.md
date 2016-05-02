@@ -37,6 +37,23 @@ Note: If you do not see the version of `Datadog Plugin` that you are expecting, 
 ## Configuration
 To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. Once there, scroll down to find the `Datadog Plugin` section. Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen. You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox. Once your configuration changes are finished, simply save them, and you're good to go!
 
+Alternatively, you have the option of configuring your Datadog plugin using a Groovy script like this one:
+
+```groovy
+import jenkins.model.*
+import org.datadog.jenkins.plugins.datadog.DatadogBuildListener
+
+def j = Jenkins.getInstance()
+def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.DatadogBuildListener")
+d.setHostname('https://your-jenkins.com:8080')
+d.setTagNode(true)
+d.setApiKey('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+d.setBlacklist('job1,job2')
+d.save()
+```
+
+Configuring the plugin this way might be useful if you're running your Jenkins Master in a Docker container using the [Official Jenkins Docker Image](https://github.com/jenkinsci/docker) or any derivative that supports plugins.txt and Groovy init scripts.
+
 ### Logging
 Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.DatadogBuildListener`.
 
