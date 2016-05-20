@@ -18,6 +18,7 @@ import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import static org.datadog.jenkins.plugins.datadog.DatadogBuildListener.getOS;
 
 public class DatadogUtilities {
@@ -261,6 +262,38 @@ public class DatadogUtilities {
 
     // Final check: Hostname matches RFC1123?
     return m.find();
+  }
+
+  /**
+   * @param daemonHost - The host to check
+   *
+   * @return - A boolean that checks if the daemonHost is valid
+   */
+  public static boolean isValidDaemon(final String daemonHost) {
+    if(!daemonHost.contains(":")) {
+      logger.info("Daemon host does not contain the port seperator ':'");
+      return false;
+    }
+
+    String hn = daemonHost.split(":")[0];
+    String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
+
+    if(StringUtils.isBlank(hn)) {
+      logger.info("Daemon host part is empty");
+      return false;
+    }
+
+    //Match ports [1024-65535]
+    Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
+            + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
+
+    boolean match = p.matcher(pn).find();
+
+    if(!match) {
+      logger.info("Port number is invalid must be in the range [1024-65535]");
+    }
+
+    return match;
   }
 
 
