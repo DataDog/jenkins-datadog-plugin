@@ -159,9 +159,9 @@ public class DatadogBuildListener extends RunListener<Run>
         serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
       }
 
-      //At this point. We will always have some tags. So no defensive checks needed.
-      //We add the tags into our array, so we can easily pass the to the stats counter.
-      //Tags after this point will be propertly formatted.
+      // At this point. We will always have some tags. So no defensive checks needed.
+      // We add the tags into our array, so we can easily pass the to the stats counter.
+      // Tags after this point will be propertly formatted.
       JSONArray arr = evt.createPayload().getJSONArray("tags");
       String[] tagsToCounter = new String[arr.size()];
       for(int i=0; i<arr.size()-1; i++) {
@@ -475,7 +475,7 @@ public class DatadogBuildListener extends RunListener<Run>
         return FormValidation.error("Invalid port specified. Range must be 1024-65535");
       }
 
-      return FormValidation.ok("Everything ok");
+      return FormValidation.ok("Valid host specification");
     }
 
     /**
@@ -531,7 +531,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       daemonHost = formData.getString("daemonHost");
       //When form is saved...reinitialize the StatsDClient.
-      //We need to stop the old one first. And crete a new one with the new data from
+      //We need to stop the old one first. And create a new one with the new data from
       //The global configuration
       if (client != null) {
         try {
@@ -539,9 +539,9 @@ public class DatadogBuildListener extends RunListener<Run>
           String hp = daemonHost.split(":")[0];
           int pp = Integer.parseInt(daemonHost.split(":")[1]);
           client = new NonBlockingStatsDClient("jenkins.job", hp, pp);
-          logger.finer(String.format("Created new dogstatsdaemon client (%s:%S)!", hp, pp));
+          logger.finer(String.format("Created new DogStatsD client (%s:%S)!", hp, pp));
         } catch (Exception e) {
-          logger.log(Level.SEVERE, "Unable to crete new DogstatsClient", e);
+          logger.log(Level.SEVERE, "Unable to create new DogstatsClient", e);
         }
       }
 
