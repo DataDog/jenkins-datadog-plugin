@@ -1,6 +1,14 @@
 Changes
 =======
 
+# 0.5.0 / 05-24-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.4.1...datadog-0.5.0
+
+### Changes
+* [IMPROVEMENT] Adding tags by job, via job configuration screen or via workspace text file. See [#38](https://github.com/DataDog/jenkins-datadog-plugin/pull/38) (Thanks @MadsNielsen)
+* [IMPROVEMENT] Count metric for completed jobs. See [#39](https://github.com/DataDog/jenkins-datadog-plugin/pull/39) (Thanks @MadsNielsen)
+
 # 0.4.1 / 12-08-2015
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.4.0...datadog-0.4.1

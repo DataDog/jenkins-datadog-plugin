@@ -579,9 +579,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
-     * Getter function for the optional tag {@link node} global configuration.
+     * Getter function for the optional tag {@link tagNode} global configuration.
      *
-     * @return a Boolean containing optional tag value for the {@link node} global configuration.
+     * @return a Boolean containing optional tag value for the {@link tagNode} global configuration.
      */
     public Boolean getTagNode() {
       return tagNode;
