@@ -30,5 +30,10 @@
              description="Name of node the current build is running on (i.e. 'master' for master node)." >
       <f:checkbox title="node" field="tagNode" optional="true" />
     </f:entry>
+    <f:advanced>
+        <f:entry title="DogStatsD Host" field="daemonHost">
+          <f:textbox field="daemonHost" default="${daemonHost}" />
+        </f:entry>
+    </f:advanced>
   </f:section>
 </j:jelly>

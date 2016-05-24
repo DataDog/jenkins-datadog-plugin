@@ -4,3 +4,5 @@ target/*
 .classpath
 .project
 .settings/
+/work/
+nb-configuration.xml

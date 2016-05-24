@@ -1,0 +1,25 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:section title="Datadog Tagging">
+        <f:optionalBlock name="enableFile" checked="${!instance.isTagFileEmpty()}" title="Add tags from file in workspace" inline="true">
+            <f:entry title="File" field="tagFile">
+                <f:textbox/>
+            </f:entry>
+            <f:entry title="Send extra event after each successful checkout" field="emitOnCheckout"
+description="Note: Tags set this way, in the workspace, won't appear in started events.
+To provide visibility of a jobs lifespan, this option will send an extra event, in addition to the started and completed events." >
+                <f:checkbox/>
+            </f:entry>
+        </f:optionalBlock>
+        <f:optionalBlock name="enableProperty" checked="${!instance.isTagPropertiesEmpty()}" title="Add tags from list of properties" inline="true">
+            <f:entry title="Properties" field="tagProperties">
+                <f:textarea/>
+            </f:entry>
+        </f:optionalBlock>
+    </f:section>
+    <tr>
+        <td colspan="4">
+            <hr style="background-color:#e5e5e5;height:1px;border:1px"/>
+        </td>
+    </tr>
+</j:jelly>
+

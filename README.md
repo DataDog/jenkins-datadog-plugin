@@ -11,7 +11,8 @@ List of events:
 * Finished build
 
 List of metrics:
-* Build duration (jenkins.job.duration)
+* Build duration, in seconds (jenkins.job.duration)
+* Jobs completed (jenkins.job.completed) - _Requires the Datadog Agent_
 
 List of service checks:
 * Build status (jenkins.job.status)
@@ -21,11 +22,18 @@ All events, metrics, and service checks include the following tags, if they are 
 * result
 * branch
 
-These are optional tags that can be included in all events, metrics, and service checks, if enabled from the `Manage Jenkins -> Configure System` page (disabled by default):
-* node
+Optional tags, included in events, metrics, and service checks. (Toggle from `Manage Jenkins -> Configure System`) 
+* node (disabled by default)
 
 ## Customization
-Currently we allow you the ability to blacklist any jobs which you do not want to have events, metrics, and service checks reported for.
+From the global configuration page, at `Manage Jenkins -> Configure System`.
+* Blacklisted Jobs
+	* A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod-release).
+
+From a job specific configuration page
+* Custom tags
+	* Added from a file in the job workspace, or
+	* Added as text directly from the configuration page
 
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
