@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
@@ -138,6 +139,7 @@ public class DatadogUtilities {
    * @param r - Current build.
    * @return - The configured {@link DatadogJobProperty}. Null if not there
    */
+  @CheckForNull
   public static DatadogJobProperty retrieveProperty(Run r) {
     DatadogJobProperty property = (DatadogJobProperty)r.getParent()
             .getProperty(DatadogJobProperty.class);

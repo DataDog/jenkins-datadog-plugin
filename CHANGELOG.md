@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.5.1 / 06-01-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.0...datadog-0.5.1
+
+### Changes
+* [BUGFIX] Fixed an unhandled NPE caused when DataDog Job Properties were not selected. See [#44](https://github.com/DataDog/jenkins-datadog-plugin/pull/44) (Thanks @MadsNielsen)
+
 # 0.5.0 / 05-24-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.4.1...datadog-0.5.0
