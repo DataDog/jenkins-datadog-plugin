@@ -102,6 +102,12 @@ public class DatadogUtilities {
     HashMap<String,String> map = new HashMap<String, String>();
 
     DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
+
+    // If Null, nothing to retrieve
+    if( property == null ) {
+      return map;
+    }
+
     String prop = property.getTagProperties();
 
     if( !property.isTagFileEmpty() ) {
