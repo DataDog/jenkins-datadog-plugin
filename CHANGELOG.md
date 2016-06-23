@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.5.2 / 06-23-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.1...datadog-0.5.2
+
+### Changes
+* [BUGFIX] Catch and react to null property in DatadogUtilities.parseTagList(). See [84ec03](https://github.com/DataDog/jenkins-datadog-plugin/commit/84ec0385459928d6f408b7e2c0fe215555550da1)
+
 # 0.5.1 / 06-01-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.0...datadog-0.5.1
