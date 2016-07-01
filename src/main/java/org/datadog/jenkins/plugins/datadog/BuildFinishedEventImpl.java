@@ -59,6 +59,7 @@ public class BuildFinishedEventImpl implements DatadogEvent {
     payload.put("result", builddata.get("result"));
     payload.put("tags", DatadogUtilities.assembleTags(builddata, tags));
     payload.put("aggregation_key", job);
+    payload.put("source_type_name", "jenkins");
 
     return payload;
   }
