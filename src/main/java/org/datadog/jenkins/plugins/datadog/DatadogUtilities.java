@@ -45,12 +45,29 @@ public class DatadogUtilities {
   }
 
   /**
+   * Set Hostname for global configuration.
+   *
+   */
+  public static void setHostName(String hostName)  {
+    DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
+  }
+
+  /**
    *
    * @return - The api key configured in the global configuration. Shortcut method.
    */
   public static  String getApiKey() {
     return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
+
+  /**
+   *
+   * Set ApiKey for global configuration.
+   */
+  public static  void setApiKey(String apiKey) {
+    DatadogUtilities.getDatadogDescriptor().setApiKey(apiKey);
+  }
+
   /**
    *
    * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
