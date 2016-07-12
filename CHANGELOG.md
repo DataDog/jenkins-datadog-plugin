@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.5.3 / 07-12-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.2...datadog-0.5.3
+
+### Changes
+* [BUGFIX] Reintroduce Jenkins source type for all events.
+
 # 0.5.2 / 06-23-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.1...datadog-0.5.2
