@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -81,11 +82,10 @@ public class DatadogHttpRequests {
       conn.setUseCaches(false);
       conn.setDoInput(true);
       conn.setDoOutput(true);
-      DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-      wr.writeBytes(payload.toString());
-      wr.flush();
+      OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+      wr.write(payload.toString());
       wr.close();
-      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
       StringBuilder result = new StringBuilder();
       String line;
       while ((line = rd.readLine()) != null) {

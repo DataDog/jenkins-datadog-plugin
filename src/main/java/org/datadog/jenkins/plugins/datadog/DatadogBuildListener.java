@@ -93,7 +93,7 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Started build! in onStarted()");
 
       // Grab environment variables
@@ -134,9 +134,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    final String jobName = run.getParent().getDisplayName();
     // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -208,7 +207,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-    double duration = System.currentTimeMillis() / DatadogBuildListener.THOUSAND_DOUBLE - (double) starttime; // ms to s
+    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
     builddata.put("starttime", starttime); // long
