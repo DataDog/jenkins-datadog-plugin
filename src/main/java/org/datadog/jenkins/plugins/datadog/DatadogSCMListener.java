@@ -44,7 +44,7 @@ public class DatadogSCMListener extends SCMListener {
     HashMap<String,String> tags = new HashMap<String,String>();
     DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName)
+    if ( DatadogUtilities.isJobTracked(build.getParent().getName())
             && prop != null && prop.isEmitOnCheckout() ) {
       logger.fine("Checkout! in onCheckout()");
 
