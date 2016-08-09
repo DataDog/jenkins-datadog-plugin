@@ -92,7 +92,7 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
-    // Process only if job is NOT in blacklist
+    // Process only if job is NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build! in onStarted()");
 
@@ -135,7 +135,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     final String jobName = run.getParent().getDisplayName();
-    // Process only if job in NOT in blacklist
+    // Process only if job in NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Completed build!");
 
@@ -359,6 +359,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private Secret apiKey = null;
     private String hostname = null;
     private String blacklist = null;
+    private String whitelist = null;
     private Boolean tagNode = null;
     private String daemonHost = "localhost:8125";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
@@ -522,6 +523,12 @@ public class DatadogBuildListener extends RunListener<Run>
                           .replaceAll(",,", "")
                           .toLowerCase();
 
+      // Grab whitelist, strip whitespace, remove duplicate commas, and make lowercase
+      whitelist = formData.getString("whitelist")
+                          .replaceAll("\\s", "")
+                          .replaceAll(",,", "")
+                          .toLowerCase();
+
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         tagNode = true;
@@ -576,6 +583,17 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public String getBlacklist() {
       return blacklist;
+    }
+
+    /**
+     * Getter function for the {@link whitelist} global configuration, containing
+     * a comma-separated list of jobs to whitelist for monitoring. An empty or missing
+     * list means all jobs are whitelisted.
+     *
+     * @return a String array containing the {@link whitelist} global configuration.
+     */
+    public String getWhitelist() {
+      return whitelist;
     }
 
     /**
