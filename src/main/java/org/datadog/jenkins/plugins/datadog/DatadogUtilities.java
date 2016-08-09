@@ -78,6 +78,13 @@ public class DatadogUtilities {
   public static String getBlacklist() {
     return DatadogUtilities.getDatadogDescriptor().getBlacklist();
   }
+  /**
+   *
+   * @return - The list of included jobs configured in the global configuration. Shortcut method.
+   */
+  public static String getWhitelist() {
+    return DatadogUtilities.getDatadogDescriptor().getWhitelist();
+  }
 
   /**
    *
@@ -88,20 +95,23 @@ public class DatadogUtilities {
   }
 
   /**
-   * Checks if a jobName is blacklisted, or not.
+   * Checks if a jobName is blacklisted, whitelisted, or neither.
    *
    * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not blacklisted.
+   * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
    */
   public static boolean isJobTracked(final String jobName) {
     final String[] blacklist = DatadogUtilities.blacklistStringtoArray(DatadogUtilities.getBlacklist() );
-    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
+    final String[] whitelist = DatadogUtilities.whitelistStringtoArray(DatadogUtilities.getWhitelist() );
+    final String jobNameLowerCase = jobName.toLowerCase();
+    return ((blacklist == null) || !Arrays.asList(blacklist).contains(jobNameLowerCase) &&
+            (whitelist == null) || Arrays.asList(whitelist).contains(jobNameLowerCase));
   }
 
   /**
    * Converts a blacklist string into a String array.
    *
-   * @param blacklist - A String containing a set of key/value pairs.
+   * @param blacklist - A String containing a set of job names.
    * @return a String array representing the job names to be blacklisted. Returns
    *         empty string if blacklist is null.
    */
@@ -110,6 +120,16 @@ public class DatadogUtilities {
       return blacklist.split(",");
     }
     return ( new String[0] );
+  }
+  /**
+   * Converts a whitelist string into a String array.
+   *
+   * @param whitelist - A String containing a set of job names.
+   * @return a String array representing the job names to be whitelisted. Returns
+   *         empty string if whitelist is null.
+   */
+  private static String[] whitelistStringtoArray(final String whitelist) {
+    return blacklistStringtoArray(whitelist);
   }
 
   /**
