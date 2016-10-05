@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -32,6 +33,8 @@ public class DatadogHttpRequests {
   public static HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
     HttpURLConnection conn = null;
     ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
+
+    /* Attempt to use proxy */
     if (proxyConfig != null) {
       Proxy proxy = proxyConfig.createProxy(url.getHost());
       if (proxy != null && proxy.type() == Proxy.Type.HTTP) {
@@ -41,11 +44,16 @@ public class DatadogHttpRequests {
           logger.fine("Failed to use the Jenkins proxy configuration");
         }
       }
+    } else {
+      logger.fine("Jenkins proxy configuration not found");
     }
+
+    /* If proxy fails, use HttpURLConnection */
     if (conn == null) {
       conn = (HttpURLConnection) url.openConnection();
-      logger.fine("Using the Jenkins proxy configuration");
+      logger.fine("Using HttpURLConnection, without proxy");
     }
+
     return conn;
   }
 
@@ -76,13 +84,16 @@ public class DatadogHttpRequests {
     String urlParameters = "?api_key=" + DatadogUtilities.getApiKey();
     HttpURLConnection conn = null;
     try {
-      conn = DatadogHttpRequests.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type + urlParameters));
+      logger.finer("Setting up HttpURLConnection...");
+      conn = DatadogHttpRequests.getHttpURLConnection(new URL(DatadogUtilities.getTargetMetricURL() + type + urlParameters));
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setUseCaches(false);
       conn.setDoInput(true);
       conn.setDoOutput(true);
-      DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
+      OutputStream outs = conn.getOutputStream();
+      DataOutputStream wr = new DataOutputStream(outs);
+      logger.finer("Writing to DataOutputStream...");
       wr.writeBytes(payload.toString());
       wr.flush();
       wr.close();

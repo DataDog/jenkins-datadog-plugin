@@ -60,6 +60,14 @@ public class DatadogUtilities {
   }
 
   /**
+   *
+   * @return - The target API URL
+   */
+  public static String getTargetMetricURL()  {
+    return DatadogUtilities.getDatadogDescriptor().getTargetMetricURL();
+  }
+
+  /**
    * Checks if a jobName is blacklisted, or not.
    *
    * @param jobName - A String containing the name of some job.
@@ -305,6 +313,24 @@ public class DatadogUtilities {
     return match;
   }
 
+  /**
+   * @param targetMetricURL - The API URL which the plugin will report to.
+   *
+   * @return - A boolean that checks if the targetMetricURL is valid
+   */
+  public static boolean isValidMetricURL(final String targetMetricURL) {
+    if(!targetMetricURL.contains("http")) {
+      logger.info("The field must be configured in the form <http|https>://<url>/");
+      return false;
+    }
+
+    if(StringUtils.isBlank(targetMetricURL)) {
+      logger.info("Empty API URL");
+      return false;
+    }
+
+    return true;
+  }
 
   /**
    * Safe getter function to make sure an exception is not reached.

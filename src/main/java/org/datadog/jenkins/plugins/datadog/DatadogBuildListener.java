@@ -61,7 +61,6 @@ public class DatadogBuildListener extends RunListener<Run>
    * numbers.
    */
   static final String DISPLAY_NAME = "Datadog Plugin";
-  static final String BASEURL = "https://app.datadoghq.com/api/";
   static final String VALIDATE = "v1/validate";
   static final String METRIC = "v1/series";
   static final String EVENT = "v1/events";
@@ -360,6 +359,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private String blacklist = null;
     private Boolean tagNode = null;
     private String daemonHost = "localhost:8125";
+    private String targetMetricURL = "https://app.datadoghq.com/api/";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
     private StatsDClient client;
 
@@ -393,9 +393,9 @@ public class DatadogBuildListener extends RunListener<Run>
 
       try {
         // Make request
-        conn = DatadogHttpRequests.getHttpURLConnection(new URL(BASEURL
-                                                                + VALIDATE
-                                                                + urlParameters));
+        conn = DatadogHttpRequests.getHttpURLConnection(new URL(this.getTargetMetricURL()
+                                                                 + VALIDATE
+                                                                 + urlParameters));
         conn.setRequestMethod("GET");
 
         // Get response
@@ -476,6 +476,24 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+    *
+    * @param targetMetricURL - The API URL which the plugin will report to.
+    * @return a FormValidation object used to display a message to the user on the configuration
+    *         screen.
+    */
+    public FormValidation doCheckTargetMetricURL(@QueryParameter("targetMetricURL") final String targetMetricURL) {
+      if(!targetMetricURL.contains("http")) {
+        return FormValidation.error("The field must be configured in the form <http|https>://<url>/");
+      }
+
+      if(StringUtils.isBlank(targetMetricURL)) {
+        return FormValidation.error("Empty API URL");
+      }
+
+      return FormValidation.ok("Valid URL");
+    }
+
+    /**
      * Indicates if this builder can be used with all kinds of project types.
      *
      * @param aClass - An extension of the AbstractProject class representing a specific type of
@@ -542,6 +560,9 @@ public class DatadogBuildListener extends RunListener<Run>
         }
       }
 
+      // Grab API URL
+      targetMetricURL = formData.getString("targetMetricURL");
+
       // Persist global configuration information
       save();
       return super.configure(req, formData);
@@ -592,10 +613,24 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * @return The target API URL
+     */
+    public String getTargetMetricURL() {
+      return targetMetricURL;
+    }
+
+    /**
      * @param daemonHost - The host specification for the dogstats daemon
      */
     public void setDaemonHost(String daemonHost) {
       this.daemonHost = daemonHost;
+    }
+
+    /**
+     * @param targetMetricURL - The target API URL
+     */
+    public void setTargetMetricURL(String targetMetricURL) {
+      this.targetMetricURL = targetMetricURL;
     }
   }
 }
