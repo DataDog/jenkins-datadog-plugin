@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.5.4 / 10-11-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.3...datadog-0.5.4
+
+### Changes
+* [BUGFIX] Fix tags generation
+
 # 0.5.3 / 07-12-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.2...datadog-0.5.3
