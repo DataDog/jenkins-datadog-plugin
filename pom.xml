@@ -41,6 +41,10 @@
     <url>http://github.com/jenkinsci/datadog-plugin</url>
   </scm>
 
+  <properties>
+    <findbugs.skip>true</findbugs.skip>
+  </properties>
+
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
