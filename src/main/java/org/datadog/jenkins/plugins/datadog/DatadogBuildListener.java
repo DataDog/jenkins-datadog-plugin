@@ -164,7 +164,7 @@ public class DatadogBuildListener extends RunListener<Run>
       // Tags after this point will be propertly formatted.
       JSONArray arr = evt.createPayload().getJSONArray("tags");
       String[] tagsToCounter = new String[arr.size()];
-      for(int i=0; i<arr.size()-1; i++) {
+      for(int i=0; i<arr.size(); i++) {
         tagsToCounter[i] = arr.getString(i);
       }
 

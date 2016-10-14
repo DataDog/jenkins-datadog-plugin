@@ -6,8 +6,8 @@
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
     <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
-    <version>1.580.1</version>
-    <relativePath />
+    <version>2.17</version>
+    <relativePath/>
   </parent>
 
   <groupId>org.datadog.jenkins.plugins</groupId>
@@ -40,6 +40,10 @@
     <url>http://github.com/jenkinsci/datadog-plugin</url>
     <tag>HEAD</tag>
   </scm>
+
+  <properties>
+    <findbugs.skip>true</findbugs.skip>
+  </properties>
 
   <repositories>
     <repository>
