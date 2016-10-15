@@ -11,6 +11,7 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -167,10 +168,9 @@ public class DatadogUtilities {
    */
   public static String getHostname(final EnvVars envVars) {
     String[] UNIX_OS = {"mac", "linux", "freebsd", "sunos"};
-    String hostname = null;
 
     // Check hostname configuration from Jenkins
-    hostname = DatadogUtilities.getHostName();
+    String hostname = DatadogUtilities.getHostName();
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname set in 'Manage Plugins'. Hostname: %s", hostname));
       return hostname;
@@ -200,6 +200,7 @@ public class DatadogUtilities {
         while ( (line = reader.readLine()) != null ) {
           out.append(line);
         }
+        reader.close();
 
         hostname = out.toString();
       } catch (Exception e) {
@@ -346,9 +347,9 @@ public class DatadogUtilities {
     }
 
     //Add the extra tags here
-    for(String key : extra.keySet()) {
-      tags.add(String.format("%s:%s", key, extra.get(key)));
-      logger.info(String.format("Emitted tag %s:%s", key, extra.get(key)));
+    for(Map.Entry entry : extra.entrySet()) {
+      tags.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
+      logger.info(String.format("Emitted tag %s:%s", entry.getKey(), entry.getValue()));
     }
 
     return tags;

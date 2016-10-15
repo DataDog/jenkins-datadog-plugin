@@ -49,7 +49,7 @@ public class DatadogSCMListener extends SCMListener {
       logger.fine("Checkout! in onCheckout()");
 
       // Grab environment variables
-      EnvVars envVars = null;
+      EnvVars envVars = new EnvVars();
       try {
         envVars = build.getEnvironment(listener);
         tags = DatadogUtilities.parseTagList(build, listener);

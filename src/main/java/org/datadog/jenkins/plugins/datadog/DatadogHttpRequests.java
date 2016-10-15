@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -85,7 +86,7 @@ public class DatadogHttpRequests {
       wr.writeBytes(payload.toString());
       wr.flush();
       wr.close();
-      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
       StringBuilder result = new StringBuilder();
       String line;
       while ((line = rd.readLine()) != null) {
