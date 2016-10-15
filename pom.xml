@@ -41,10 +41,6 @@
     <url>http://github.com/jenkinsci/datadog-plugin</url>
   </scm>
 
-  <properties>
-    <findbugs.skip>true</findbugs.skip>
-  </properties>
-
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
@@ -95,6 +91,14 @@
             </reports>
           </reportSet>
         </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.4</version>
+        <configuration>
+          <!-- Optional directory to put findbugs xml report -->
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
