@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,27 +97,27 @@ public class DatadogBuildListener extends RunListener<Run>
     if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build! in onStarted()");
 
+      // Gather pre-build metadata
+      JSONObject builddata = new JSONObject();
+      builddata.put("job", jobName); // string
+      builddata.put("number", run.number); // int
+      builddata.put("result", null); // null
+      builddata.put("duration", null); // null
+      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
+      builddata.put("timestamp", starttime); // string
+
       // Grab environment variables
-      EnvVars envVars = null;
+      EnvVars envVars = new EnvVars();
       try {
         envVars = run.getEnvironment(listener);
         tags = DatadogUtilities.parseTagList(run, listener);
+        builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
+        builddata.put("buildurl", envVars.get("BUILD_URL")); // string
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
         logger.severe(e.getMessage());
       }
-
-      // Gather pre-build metadata
-      JSONObject builddata = new JSONObject();
-      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-      builddata.put("job", jobName); // string
-      builddata.put("number", run.number); // int
-      builddata.put("result", null); // null
-      builddata.put("duration", null); // null
-      builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-      builddata.put("timestamp", starttime); // string
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
 
@@ -196,16 +197,6 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a JSONObject containing a builds metadata.
    */
   private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
-    // Grab environment variables
-    EnvVars envVars = null;
-    try {
-      envVars = run.getEnvironment(listener);
-    } catch (IOException e) {
-      logger.severe(e.getMessage());
-    } catch (InterruptedException e) {
-      logger.severe(e.getMessage());
-    }
-
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
     double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
@@ -217,15 +208,25 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job", run.getParent().getDisplayName()); // string
-    builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-    builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-    builddata.put("node", envVars.get("NODE_NAME")); // string
 
-    if ( envVars.get("GIT_BRANCH") != null ) {
-      builddata.put("branch", envVars.get("GIT_BRANCH")); // string
-    } else if ( envVars.get("CVS_BRANCH") != null ) {
-      builddata.put("branch", envVars.get("CVS_BRANCH")); // string
+    // Grab environment variables
+    EnvVars envVars = new EnvVars();
+    try {
+      envVars = run.getEnvironment(listener);
+      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
+      builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+      builddata.put("node", envVars.get("NODE_NAME")); // string
+      if ( envVars.get("GIT_BRANCH") != null ) {
+        builddata.put("branch", envVars.get("GIT_BRANCH")); // string
+      } else if ( envVars.get("CVS_BRANCH") != null ) {
+        builddata.put("branch", envVars.get("CVS_BRANCH")); // string
+      }
+    } catch (IOException e) {
+      logger.severe(e.getMessage());
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
     }
+
     return builddata;
   }
 
@@ -362,7 +363,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private Boolean tagNode = null;
     private String daemonHost = "localhost:8125";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
-    private static StatsDClient client;
+    private StatsDClient client;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -395,12 +396,12 @@ public class DatadogBuildListener extends RunListener<Run>
       try {
         // Make request
         conn = DatadogHttpRequests.getHttpURLConnection(new URL(BASEURL
-                                                                 + VALIDATE
-                                                                 + urlParameters));
+                                                                + VALIDATE
+                                                                + urlParameters));
         conn.setRequestMethod("GET");
 
         // Get response
-        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
         StringBuilder result = new StringBuilder();
         String line;
         while ((line = rd.readLine()) != null) {
@@ -422,9 +423,7 @@ public class DatadogBuildListener extends RunListener<Run>
         }
         return FormValidation.error("Client error: " + e);
       } finally {
-        if (conn != null) {
-          conn.disconnect();
-        }
+        conn.disconnect();
       }
     }
 

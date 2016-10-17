@@ -9,6 +9,7 @@ import hudson.model.JobPropertyDescriptor;
 import hudson.model.Run;
 import java.io.IOException;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -60,7 +61,7 @@ public class DatadogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
    * @throws hudson.model.Descriptor.FormException
    */
   @Override
-  public JobProperty<?> reconfigure(StaplerRequest req, JSONObject form)
+  public JobProperty<?> reconfigure(StaplerRequest req, @Nonnull JSONObject form)
           throws Descriptor.FormException {
 
     DatadogJobProperty prop = (DatadogJobProperty) super.reconfigure(req, form);
