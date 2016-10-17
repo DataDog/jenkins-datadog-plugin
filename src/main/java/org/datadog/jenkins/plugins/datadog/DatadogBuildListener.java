@@ -580,12 +580,30 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter function for the {@link apiKey} global configuration.
+     *
+     * @param apiKey - A string representing an apiKey
+     */
+    public void setApiKey(String apiKey) {
+      this.apiKey = Secret.fromString(apiKey);
+    }
+
+    /**
      * Getter function for the {@link hostname} global configuration.
      *
      * @return a String containing the {@link hostname} global configuration.
      */
     public String getHostname() {
       return hostname;
+    }
+
+    /**
+     * Setter function for the {@link hostname} global configuration.
+     *
+     * @param hostname - A string representing the hostname
+     */
+    public void setHostname(String hostname) {
+      this.hostname = hostname;
     }
 
     /**
