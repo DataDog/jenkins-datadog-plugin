@@ -28,7 +28,7 @@ public class DatadogHttpRequests {
    *
    * @param url - a URL object containing the URL to open a connection to.
    * @return a HttpURLConnection object.
-   * @throws IOException
+   * @throws IOException if HttpURLConnection fails to open connection
    */
   public static HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
     HttpURLConnection conn = null;
@@ -78,7 +78,7 @@ public class DatadogHttpRequests {
    * @param payload - A JSONObject containing a specific subset of a builds metadata.
    * @param type - A String containing the URL subpath pertaining to the type of API post required.
    * @return a boolean to signify the success or failure of the HTTP POST request.
-   * @throws IOException
+   * @throws IOException if HttpURLConnection fails to open connection
    */
   public static Boolean post(final JSONObject payload, final String type) throws IOException {
     String urlParameters = "?api_key=" + DatadogUtilities.getApiKey();
