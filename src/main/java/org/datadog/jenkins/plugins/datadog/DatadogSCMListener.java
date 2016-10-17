@@ -34,7 +34,7 @@ public class DatadogSCMListener extends SCMListener {
    * @param listener - Current build listener
    * @param changelogFile - Changelog
    * @param pollingBaseline - Polling
-   * @throws Exception
+   * @throws Exception if an error is encountered
    */
   @Override
   public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
