@@ -47,6 +47,7 @@ public class DatadogUtilities {
   /**
    * Set Hostname for global configuration.
    *
+   * @param hostName - A string representing the hostname
    */
   public static void setHostName(String hostName)  {
     DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
@@ -63,8 +64,10 @@ public class DatadogUtilities {
   /**
    *
    * Set ApiKey for global configuration.
+   * 
+   * @param apiKey - A string representing an apiKey
    */
-  public static  void setApiKey(String apiKey) {
+  public static void setApiKey(String apiKey) {
     DatadogUtilities.getDatadogDescriptor().setApiKey(apiKey);
   }
 
@@ -119,8 +122,8 @@ public class DatadogUtilities {
    * @param run - Current build
    * @param listener - Current listener
    * @return A {@link HashMap} containing the key,value pairs of tags. Never null.
-   * @throws IOException
-   * @throws InterruptedException
+   * @throws IOException if an error occurs when reading from any objects
+   * @throws InterruptedException if an interrupt error occurs
    */
   @Nonnull
   public static HashMap<String,String> parseTagList(Run run, TaskListener listener) throws IOException,
