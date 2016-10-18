@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -398,7 +397,7 @@ public class DatadogBuildListener extends RunListener<Run>
         conn.setRequestMethod("GET");
 
         // Get response
-        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
         StringBuilder result = new StringBuilder();
         String line;
         while ((line = rd.readLine()) != null) {
