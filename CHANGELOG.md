@@ -1,6 +1,15 @@
 Changes
 =======
 
+# 0.5.5 / 10-18-2016
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.4...datadog-0.5.5
+
+### Changes
+* [IMPROVEMENT] Add setters to allow for use of Groovy scripts. See [#64](https://github.com/DataDog/jenkins-datadog-plugin/pull/64) (Thanks @jniesen)
+* [BUGFIX] Fix string handling by using utf-8. See [#63](https://github.com/DataDog/jenkins-datadog-plugin/pull/63) (Thanks @k_kitamura)
+* [BUGFIX] Fix service checks listing separate groups for each result. See [#65](https://github.com/DataDog/jenkins-datadog-plugin/pull/65)
+
 # 0.5.4 / 10-11-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.3...datadog-0.5.4
