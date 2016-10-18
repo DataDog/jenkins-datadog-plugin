@@ -625,9 +625,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
-     * Getter function for the optional tag {@link node} global configuration.
+     * Getter function for the optional tag {@link tagNode} global configuration.
      *
-     * @return a Boolean containing optional tag value for the {@link node}
+     * @return a Boolean containing optional tag value for the {@link tagNode}
      *     global configuration.
      */
     public Boolean getTagNode() {
@@ -635,9 +635,9 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
-     * Setter function for the optional tag {@link node} global configuration.
+     * Setter function for the optional tag {@link tagNode} global configuration.
      *
-     * @param willTag - A Boolean expressing whether the {@link node} tag will
+     * @param willTag - A Boolean expressing whether the {@link tagNode} tag will
      *     be included.
      */
     public void setTagNode(final Boolean willTag) {
