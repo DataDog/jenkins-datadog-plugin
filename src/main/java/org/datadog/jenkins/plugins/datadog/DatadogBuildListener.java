@@ -528,20 +528,17 @@ public class DatadogBuildListener extends RunListener<Run>
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
       // Grab apiKey and hostname
-      apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
-      hostname = formData.getString("hostname");
+      this.setApiKey(formData.getString("apiKey"));
+      this.setHostname(formData.getString("hostname"));
 
-      // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
-      blacklist = formData.getString("blacklist")
-                          .replaceAll("\\s", "")
-                          .replaceAll(",,", "")
-                          .toLowerCase();
+      // Grab blacklist
+      this.setBlacklist(formData.getString("blacklist"));
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
-        tagNode = true;
+        this.setTagNode(true);
       } else {
-        tagNode = false;
+        this.setTagNode(false);
       }
 
       daemonHost = formData.getString("daemonHost");
@@ -580,10 +577,11 @@ public class DatadogBuildListener extends RunListener<Run>
     /**
      * Setter function for the {@link apiKey} global configuration.
      *
-     * @param apiKey - A string representing an apiKey
+     * @param key = A string containing the plaintext representation of a
+     *     DataDog API Key
      */
-    public void setApiKey(String apiKey) {
-      this.apiKey = Secret.fromString(apiKey);
+    public void setApiKey(final String key) {
+      this.apiKey = Secret.fromString(fixEmptyAndTrim(key));
     }
 
     /**
@@ -598,9 +596,9 @@ public class DatadogBuildListener extends RunListener<Run>
     /**
      * Setter function for the {@link hostname} global configuration.
      *
-     * @param hostname - A string representing the hostname
+     * @param hostname - A String containing the hostname of the Jenkins host.
      */
-    public void setHostname(String hostname) {
+    public void setHostname(final String hostname) {
       this.hostname = hostname;
     }
 
@@ -615,12 +613,37 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter function for the {@link blacklist} global configuration,
+     * accepting a comma-separated string of jobs that will be sanitized.
+     *
+     * @param jobs - a comma-separated list of jobs to blacklist from monitoring.
+     */
+    public void setBlacklist(final String jobs) {
+      // strip whitespace, remove duplicate commas, and make lowercase
+      this.blacklist = jobs
+        .replaceAll("\\s", "")
+        .replaceAll(",,", "")
+        .toLowerCase();
+    }
+
+    /**
      * Getter function for the optional tag {@link tagNode} global configuration.
      *
-     * @return a Boolean containing optional tag value for the {@link tagNode} global configuration.
+     * @return a Boolean containing optional tag value for the {@link tagNode}
+     *     global configuration.
      */
     public Boolean getTagNode() {
       return tagNode;
+    }
+
+    /**
+     * Setter function for the optional tag {@link tagNode} global configuration.
+     *
+     * @param willTag - A Boolean expressing whether the {@link tagNode} tag will
+     *     be included.
+     */
+    public void setTagNode(final Boolean willTag) {
+      this.tagNode = willTag;
     }
 
     /**
@@ -631,17 +654,17 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
-     * @return The target API URL
-     */
-    public String getTargetMetricURL() {
-      return targetMetricURL;
-    }
-
-    /**
      * @param daemonHost - The host specification for the dogstats daemon
      */
     public void setDaemonHost(String daemonHost) {
       this.daemonHost = daemonHost;
+    }
+
+    /**
+     * @return The target API URL
+     */
+    public String getTargetMetricURL() {
+      return targetMetricURL;
     }
 
     /**
