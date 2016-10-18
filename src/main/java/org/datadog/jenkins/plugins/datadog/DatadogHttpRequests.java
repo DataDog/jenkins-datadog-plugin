@@ -92,6 +92,7 @@ public class DatadogHttpRequests {
       conn.setDoInput(true);
       conn.setDoOutput(true);
       OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+      logger.finer("Writing to OutputStreamWriter...");
       wr.write(payload.toString());
       wr.close();
       BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
