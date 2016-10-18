@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +92,7 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Started build! in onStarted()");
 
       // Gather pre-build metadata
@@ -134,9 +133,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    final String jobName = run.getParent().getDisplayName();
     // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -401,7 +399,7 @@ public class DatadogBuildListener extends RunListener<Run>
         conn.setRequestMethod("GET");
 
         // Get response
-        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), Charset.defaultCharset()));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
         StringBuilder result = new StringBuilder();
         String line;
         while ((line = rd.readLine()) != null) {
