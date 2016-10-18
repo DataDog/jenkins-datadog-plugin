@@ -293,6 +293,9 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("timestamp",
                 System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     payload.put("status", status);
+
+    // Remove result tag, so we don't create multiple service check groups
+    builddata.remove("result");
     payload.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
 
     try {
