@@ -11,6 +11,7 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,18 +45,46 @@ public class DatadogUtilities {
   }
 
   /**
+   * Set Hostname for global configuration.
+   *
+   * @param hostName - A string representing the hostname
+   */
+  public static void setHostName(String hostName)  {
+    DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
+  }
+
+  /**
    *
    * @return - The api key configured in the global configuration. Shortcut method.
    */
   public static  String getApiKey() {
     return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
+
+  /**
+   *
+   * Set ApiKey for global configuration.
+   * 
+   * @param apiKey - A string representing an apiKey
+   */
+  public static void setApiKey(String apiKey) {
+    DatadogUtilities.getDatadogDescriptor().setApiKey(apiKey);
+  }
+
   /**
    *
    * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
    */
   public static String getBlacklist() {
     return DatadogUtilities.getDatadogDescriptor().getBlacklist();
+  }
+
+  /**
+   *
+   * @return - The target API URL
+   */
+  public static String getTargetMetricURL()  {
+    return DatadogUtilities.getDatadogDescriptor().getTargetMetricURL();
   }
 
   /**
@@ -93,8 +122,8 @@ public class DatadogUtilities {
    * @param run - Current build
    * @param listener - Current listener
    * @return A {@link HashMap} containing the key,value pairs of tags. Never null.
-   * @throws IOException
-   * @throws InterruptedException
+   * @throws IOException if an error occurs when reading from any objects
+   * @throws InterruptedException if an interrupt error occurs
    */
   @Nonnull
   public static HashMap<String,String> parseTagList(Run run, TaskListener listener) throws IOException,
@@ -167,10 +196,9 @@ public class DatadogUtilities {
    */
   public static String getHostname(final EnvVars envVars) {
     String[] UNIX_OS = {"mac", "linux", "freebsd", "sunos"};
-    String hostname = null;
 
     // Check hostname configuration from Jenkins
-    hostname = DatadogUtilities.getHostName();
+    String hostname = DatadogUtilities.getHostName();
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname set in 'Manage Plugins'. Hostname: %s", hostname));
       return hostname;
@@ -200,6 +228,7 @@ public class DatadogUtilities {
         while ( (line = reader.readLine()) != null ) {
           out.append(line);
         }
+        reader.close();
 
         hostname = out.toString();
       } catch (Exception e) {
@@ -304,6 +333,24 @@ public class DatadogUtilities {
     return match;
   }
 
+  /**
+   * @param targetMetricURL - The API URL which the plugin will report to.
+   *
+   * @return - A boolean that checks if the targetMetricURL is valid
+   */
+  public static boolean isValidMetricURL(final String targetMetricURL) {
+    if(!targetMetricURL.contains("http")) {
+      logger.info("The field must be configured in the form <http|https>://<url>/");
+      return false;
+    }
+
+    if(StringUtils.isBlank(targetMetricURL)) {
+      logger.info("Empty API URL");
+      return false;
+    }
+
+    return true;
+  }
 
   /**
    * Safe getter function to make sure an exception is not reached.
@@ -346,9 +393,9 @@ public class DatadogUtilities {
     }
 
     //Add the extra tags here
-    for(String key : extra.keySet()) {
-      tags.add(String.format("%s:%s", key, extra.get(key)));
-      logger.info(String.format("Emitted tag %s:%s", key, extra.get(key)));
+    for(Map.Entry entry : extra.entrySet()) {
+      tags.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
+      logger.info(String.format("Emitted tag %s:%s", entry.getKey(), entry.getValue()));
     }
 
     return tags;

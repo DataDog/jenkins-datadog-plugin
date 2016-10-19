@@ -34,7 +34,7 @@ public class DatadogSCMListener extends SCMListener {
    * @param listener - Current build listener
    * @param changelogFile - Changelog
    * @param pollingBaseline - Polling
-   * @throws Exception
+   * @throws Exception if an error is encountered
    */
   @Override
   public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
@@ -44,12 +44,12 @@ public class DatadogSCMListener extends SCMListener {
     HashMap<String,String> tags = new HashMap<String,String>();
     DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName)
+    if ( DatadogUtilities.isJobTracked(build.getParent().getName())
             && prop != null && prop.isEmitOnCheckout() ) {
       logger.fine("Checkout! in onCheckout()");
 
       // Grab environment variables
-      EnvVars envVars = null;
+      EnvVars envVars = new EnvVars();
       try {
         envVars = build.getEnvironment(listener);
         tags = DatadogUtilities.parseTagList(build, listener);

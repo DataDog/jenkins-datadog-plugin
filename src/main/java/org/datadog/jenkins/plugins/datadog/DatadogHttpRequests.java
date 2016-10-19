@@ -5,9 +5,11 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -26,11 +28,13 @@ public class DatadogHttpRequests {
    *
    * @param url - a URL object containing the URL to open a connection to.
    * @return a HttpURLConnection object.
-   * @throws IOException
+   * @throws IOException if HttpURLConnection fails to open connection
    */
   public static HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
     HttpURLConnection conn = null;
     ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
+
+    /* Attempt to use proxy */
     if (proxyConfig != null) {
       Proxy proxy = proxyConfig.createProxy(url.getHost());
       if (proxy != null && proxy.type() == Proxy.Type.HTTP) {
@@ -40,11 +44,16 @@ public class DatadogHttpRequests {
           logger.fine("Failed to use the Jenkins proxy configuration");
         }
       }
+    } else {
+      logger.fine("Jenkins proxy configuration not found");
     }
+
+    /* If proxy fails, use HttpURLConnection */
     if (conn == null) {
       conn = (HttpURLConnection) url.openConnection();
-      logger.fine("Using the Jenkins proxy configuration");
+      logger.fine("Using HttpURLConnection, without proxy");
     }
+
     return conn;
   }
 
@@ -69,23 +78,24 @@ public class DatadogHttpRequests {
    * @param payload - A JSONObject containing a specific subset of a builds metadata.
    * @param type - A String containing the URL subpath pertaining to the type of API post required.
    * @return a boolean to signify the success or failure of the HTTP POST request.
-   * @throws IOException
+   * @throws IOException if HttpURLConnection fails to open connection
    */
   public static Boolean post(final JSONObject payload, final String type) throws IOException {
     String urlParameters = "?api_key=" + DatadogUtilities.getApiKey();
     HttpURLConnection conn = null;
     try {
-      conn = DatadogHttpRequests.getHttpURLConnection(new URL(DatadogBuildListener.BASEURL + type + urlParameters));
+      logger.finer("Setting up HttpURLConnection...");
+      conn = DatadogHttpRequests.getHttpURLConnection(new URL(DatadogUtilities.getTargetMetricURL() + type + urlParameters));
       conn.setRequestMethod("POST");
       conn.setRequestProperty("Content-Type", "application/json");
       conn.setUseCaches(false);
       conn.setDoInput(true);
       conn.setDoOutput(true);
-      DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-      wr.writeBytes(payload.toString());
-      wr.flush();
+      OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+      logger.finer("Writing to OutputStreamWriter...");
+      wr.write(payload.toString());
       wr.close();
-      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
       StringBuilder result = new StringBuilder();
       String line;
       while ((line = rd.readLine()) != null) {

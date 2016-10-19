@@ -60,7 +60,6 @@ public class DatadogBuildListener extends RunListener<Run>
    * numbers.
    */
   static final String DISPLAY_NAME = "Datadog Plugin";
-  static final String BASEURL = "https://app.datadoghq.com/api/";
   static final String VALIDATE = "v1/validate";
   static final String METRIC = "v1/series";
   static final String EVENT = "v1/events";
@@ -93,30 +92,29 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Started build! in onStarted()");
 
+      // Gather pre-build metadata
+      JSONObject builddata = new JSONObject();
+      builddata.put("job", jobName); // string
+      builddata.put("number", run.number); // int
+      builddata.put("result", null); // null
+      builddata.put("duration", null); // null
+      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
+      builddata.put("timestamp", starttime); // string
+
       // Grab environment variables
-      EnvVars envVars = null;
       try {
-        envVars = run.getEnvironment(listener);
+        EnvVars envVars = run.getEnvironment(listener);
         tags = DatadogUtilities.parseTagList(run, listener);
+        builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
+        builddata.put("buildurl", envVars.get("BUILD_URL")); // string
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
         logger.severe(e.getMessage());
       }
-
-      // Gather pre-build metadata
-      JSONObject builddata = new JSONObject();
-      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-      builddata.put("job", jobName); // string
-      builddata.put("number", run.number); // int
-      builddata.put("result", null); // null
-      builddata.put("duration", null); // null
-      builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-      long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-      builddata.put("timestamp", starttime); // string
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
 
@@ -134,9 +132,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    final String jobName = run.getParent().getDisplayName();
     // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(jobName) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -196,16 +193,6 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a JSONObject containing a builds metadata.
    */
   private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
-    // Grab environment variables
-    EnvVars envVars = null;
-    try {
-      envVars = run.getEnvironment(listener);
-    } catch (IOException e) {
-      logger.severe(e.getMessage());
-    } catch (InterruptedException e) {
-      logger.severe(e.getMessage());
-    }
-
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
     double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
@@ -217,15 +204,24 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
     builddata.put("job", run.getParent().getDisplayName()); // string
-    builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-    builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-    builddata.put("node", envVars.get("NODE_NAME")); // string
 
-    if ( envVars.get("GIT_BRANCH") != null ) {
-      builddata.put("branch", envVars.get("GIT_BRANCH")); // string
-    } else if ( envVars.get("CVS_BRANCH") != null ) {
-      builddata.put("branch", envVars.get("CVS_BRANCH")); // string
+    // Grab environment variables
+    try {
+      EnvVars envVars = run.getEnvironment(listener);
+      builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
+      builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+      builddata.put("node", envVars.get("NODE_NAME")); // string
+      if ( envVars.get("GIT_BRANCH") != null ) {
+        builddata.put("branch", envVars.get("GIT_BRANCH")); // string
+      } else if ( envVars.get("CVS_BRANCH") != null ) {
+        builddata.put("branch", envVars.get("CVS_BRANCH")); // string
+      }
+    } catch (IOException e) {
+      logger.severe(e.getMessage());
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
     }
+
     return builddata;
   }
 
@@ -297,6 +293,9 @@ public class DatadogBuildListener extends RunListener<Run>
     payload.put("timestamp",
                 System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
     payload.put("status", status);
+
+    // Remove result tag, so we don't create multiple service check groups
+    builddata.remove("result");
     payload.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
 
     try {
@@ -361,8 +360,9 @@ public class DatadogBuildListener extends RunListener<Run>
     private String blacklist = null;
     private Boolean tagNode = null;
     private String daemonHost = "localhost:8125";
+    private String targetMetricURL = "https://app.datadoghq.com/api/";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
-    private static StatsDClient client;
+    private StatsDClient client;
 
     /**
      * Runs when the {@link DescriptorImpl} class is created.
@@ -394,13 +394,13 @@ public class DatadogBuildListener extends RunListener<Run>
 
       try {
         // Make request
-        conn = DatadogHttpRequests.getHttpURLConnection(new URL(BASEURL
+        conn = DatadogHttpRequests.getHttpURLConnection(new URL(this.getTargetMetricURL()
                                                                  + VALIDATE
                                                                  + urlParameters));
         conn.setRequestMethod("GET");
 
         // Get response
-        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
         StringBuilder result = new StringBuilder();
         String line;
         while ((line = rd.readLine()) != null) {
@@ -422,9 +422,7 @@ public class DatadogBuildListener extends RunListener<Run>
         }
         return FormValidation.error("Client error: " + e);
       } finally {
-        if (conn != null) {
-          conn.disconnect();
-        }
+        conn.disconnect();
       }
     }
 
@@ -479,6 +477,24 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+    *
+    * @param targetMetricURL - The API URL which the plugin will report to.
+    * @return a FormValidation object used to display a message to the user on the configuration
+    *         screen.
+    */
+    public FormValidation doCheckTargetMetricURL(@QueryParameter("targetMetricURL") final String targetMetricURL) {
+      if(!targetMetricURL.contains("http")) {
+        return FormValidation.error("The field must be configured in the form <http|https>://<url>/");
+      }
+
+      if(StringUtils.isBlank(targetMetricURL)) {
+        return FormValidation.error("Empty API URL");
+      }
+
+      return FormValidation.ok("Valid URL");
+    }
+
+    /**
      * Indicates if this builder can be used with all kinds of project types.
      *
      * @param aClass - An extension of the AbstractProject class representing a specific type of
@@ -513,20 +529,17 @@ public class DatadogBuildListener extends RunListener<Run>
     public boolean configure(final StaplerRequest req, final JSONObject formData)
            throws FormException {
       // Grab apiKey and hostname
-      apiKey = Secret.fromString(fixEmptyAndTrim(formData.getString("apiKey")));
-      hostname = formData.getString("hostname");
+      this.setApiKey(formData.getString("apiKey"));
+      this.setHostname(formData.getString("hostname"));
 
-      // Grab blacklist, strip whitespace, remove duplicate commas, and make lowercase
-      blacklist = formData.getString("blacklist")
-                          .replaceAll("\\s", "")
-                          .replaceAll(",,", "")
-                          .toLowerCase();
+      // Grab blacklist
+      this.setBlacklist(formData.getString("blacklist"));
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
-        tagNode = true;
+        this.setTagNode(true);
       } else {
-        tagNode = false;
+        this.setTagNode(false);
       }
 
       daemonHost = formData.getString("daemonHost");
@@ -545,6 +558,9 @@ public class DatadogBuildListener extends RunListener<Run>
         }
       }
 
+      // Grab API URL
+      targetMetricURL = formData.getString("targetMetricURL");
+
       // Persist global configuration information
       save();
       return super.configure(req, formData);
@@ -560,12 +576,31 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter function for the {@link apiKey} global configuration.
+     *
+     * @param key = A string containing the plaintext representation of a
+     *     DataDog API Key
+     */
+    public void setApiKey(final String key) {
+      this.apiKey = Secret.fromString(fixEmptyAndTrim(key));
+    }
+
+    /**
      * Getter function for the {@link hostname} global configuration.
      *
      * @return a String containing the {@link hostname} global configuration.
      */
     public String getHostname() {
       return hostname;
+    }
+
+    /**
+     * Setter function for the {@link hostname} global configuration.
+     *
+     * @param hostname - A String containing the hostname of the Jenkins host.
+     */
+    public void setHostname(final String hostname) {
+      this.hostname = hostname;
     }
 
     /**
@@ -579,12 +614,37 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     /**
+     * Setter function for the {@link blacklist} global configuration,
+     * accepting a comma-separated string of jobs that will be sanitized.
+     *
+     * @param jobs - a comma-separated list of jobs to blacklist from monitoring.
+     */
+    public void setBlacklist(final String jobs) {
+      // strip whitespace, remove duplicate commas, and make lowercase
+      this.blacklist = jobs
+        .replaceAll("\\s", "")
+        .replaceAll(",,", "")
+        .toLowerCase();
+    }
+
+    /**
      * Getter function for the optional tag {@link tagNode} global configuration.
      *
-     * @return a Boolean containing optional tag value for the {@link tagNode} global configuration.
+     * @return a Boolean containing optional tag value for the {@link tagNode}
+     *     global configuration.
      */
     public Boolean getTagNode() {
       return tagNode;
+    }
+
+    /**
+     * Setter function for the optional tag {@link tagNode} global configuration.
+     *
+     * @param willTag - A Boolean expressing whether the {@link tagNode} tag will
+     *     be included.
+     */
+    public void setTagNode(final Boolean willTag) {
+      this.tagNode = willTag;
     }
 
     /**
@@ -599,6 +659,20 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public void setDaemonHost(String daemonHost) {
       this.daemonHost = daemonHost;
+    }
+
+    /**
+     * @return The target API URL
+     */
+    public String getTargetMetricURL() {
+      return targetMetricURL;
+    }
+
+    /**
+     * @param targetMetricURL - The target API URL
+     */
+    public void setTargetMetricURL(String targetMetricURL) {
+      this.targetMetricURL = targetMetricURL;
     }
   }
 }

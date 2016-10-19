@@ -9,6 +9,7 @@ import hudson.model.JobPropertyDescriptor;
 import hudson.model.Run;
 import java.io.IOException;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -17,7 +18,6 @@ import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * Create a job property for use with Datadog plugin.
- * @param <T>
  */
 public class DatadogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
   private static final Logger LOGGER =  Logger.getLogger(DatadogBuildListener.class.getName());
@@ -57,10 +57,10 @@ public class DatadogJobProperty<T extends Job<?,?>> extends JobProperty<T> {
    * @param req - The request
    * @param form - A JSONObject containing the submitted form data from the job configuration
    * @return a {@link JobProperty} object representing the tagging added to the job
-   * @throws hudson.model.Descriptor.FormException
+   * @throws hudson.model.Descriptor.FormException if querying of form throws an error
    */
   @Override
-  public JobProperty<?> reconfigure(StaplerRequest req, JSONObject form)
+  public JobProperty<?> reconfigure(StaplerRequest req, @Nonnull JSONObject form)
           throws Descriptor.FormException {
 
     DatadogJobProperty prop = (DatadogJobProperty) super.reconfigure(req, form);

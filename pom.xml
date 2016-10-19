@@ -7,7 +7,7 @@
     <artifactId>plugin</artifactId>
     <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
     <version>2.17</version>
-    <relativePath />
+    <relativePath/>
   </parent>
 
   <groupId>org.datadog.jenkins.plugins</groupId>
@@ -95,6 +95,14 @@
             </reports>
           </reportSet>
         </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.4</version>
+        <configuration>
+          <!-- Optional directory to put findbugs xml report -->
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
