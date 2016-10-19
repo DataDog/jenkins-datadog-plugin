@@ -196,7 +196,7 @@ public class DatadogBuildListener extends RunListener<Run>
   private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    double duration = System.currentTimeMillis() / DatadogBuildListener.THOUSAND_DOUBLE - (double) starttime; // ms to s
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
     builddata.put("starttime", starttime); // long
