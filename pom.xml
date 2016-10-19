@@ -7,12 +7,12 @@
     <artifactId>plugin</artifactId>
     <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
     <version>2.17</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog</artifactId>
-  <version>0.5.5-SNAPSHOT</version>
+  <version>0.5.5</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Plugin</name>
@@ -38,7 +38,7 @@
     <connection>scm:git:git://github.com/jenkinsci/datadog-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/datadog-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/datadog-plugin</url>
-    <tag>HEAD</tag>
+    <tag>datadog-0.5.5</tag>
   </scm>
 
   <properties>
