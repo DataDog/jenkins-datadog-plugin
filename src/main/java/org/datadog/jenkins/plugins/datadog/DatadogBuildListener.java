@@ -217,7 +217,7 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job", run.getParent().getFullDisplayName()); // string
 
     // Grab environment variables
     try {
