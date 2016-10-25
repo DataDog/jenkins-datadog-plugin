@@ -8,3 +8,4 @@ target/*
 nb-configuration.xml
 /datadog.iml
 /.idea/*
+.idea/
