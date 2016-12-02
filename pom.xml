@@ -13,7 +13,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog</artifactId>
-  <version>0.5.5-SNAPSHOT</version>
+  <version>0.5.6-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Plugin</name>
@@ -29,9 +29,9 @@
 
   <developers>
     <developer>
-      <id>datadog</id>
-      <name>Datadog</name>
-      <email>dev@datadoghq.com</email>
+      <id>davidartplus</id>
+      <name>David Guzman</name>
+      <email>davidartplus@gmail.com</email>
     </developer>
   </developers>
 
@@ -66,10 +66,25 @@
       <version>4.2.5</version>
     </dependency>
     <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-step-api</artifactId>
+      <version>2.2</version>
+    </dependency>
+    <dependency>
         <groupId>com.datadoghq</groupId>
         <artifactId>java-dogstatsd-client</artifactId>
         <version>2.1.1</version>
     </dependency>
+    <dependency>
+	  <groupId>org.apache.commons</groupId>
+	  <artifactId>commons-lang3</artifactId>
+	  <version>3.5</version>
+	</dependency>
+	<dependency>
+	  <groupId>joda-time</groupId>
+	  <artifactId>joda-time</artifactId>
+	  <version>2.9.6</version>
+	</dependency>
   </dependencies>
 
   <build>
