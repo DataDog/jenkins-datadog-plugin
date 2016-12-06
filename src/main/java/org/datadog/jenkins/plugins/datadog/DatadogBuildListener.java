@@ -322,7 +322,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a new {@link DescriptorImpl} class.
    */
   @Override
-  public final DescriptorImpl getDescriptor() {
+  public DescriptorImpl getDescriptor() {
     return new DescriptorImpl();
   }
 
@@ -334,7 +334,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * for the configuration screen.
    */
   @Extension // Indicates to Jenkins that this is an extension point implementation.
-  public static final class DescriptorImpl extends Descriptor<DatadogBuildListener> {
+  public static class DescriptorImpl extends Descriptor<DatadogBuildListener> {
 
     /**
      * @return - A {@link StatsDClient} lease for this registered {@link RunListener}
