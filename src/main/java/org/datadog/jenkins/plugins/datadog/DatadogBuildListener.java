@@ -168,14 +168,19 @@ public class DatadogBuildListener extends RunListener<Run>
 
       if(DatadogUtilities.isValidDaemon(getDescriptor().getDaemonHost()))  {
         logger.fine(String.format("Sending completed counter to %s ", getDescriptor().getDaemonHost()));
+        StatsDClient statsd = null;
         try {
           //The client is a threadpool so instead of creating a new instance of the pool
           //we lease the exiting one registerd with Jenkins.
-          StatsDClient statsd = getDescriptor().leaseClient();
+          statsd = getDescriptor().leaseClient();
           statsd.increment("completed", tagsToCounter);
           logger.fine("Jenkins completed counter sent!");
         } catch (StatsDClientException e) {
           logger.log(Level.SEVERE, "Runtime exception thrown using the StatsDClient", e);
+        } finally {
+          if(statsd != null){
+            statsd.stop();
+          }
         }
       } else {
         logger.warning("Invalid dogstats daemon host specificed");
