@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.5.6 / 01-27-2017
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.5...datadog-0.5.6
+
+### Changes
+* [BUGFIX] Fix memory leak, by stoping the StatsD client after every send. See [#73](https://github.com/DataDog/jenkins-datadog-plugin/pull/73) (Thanks @suxor42)
+
 # 0.5.5 / 10-18-2016
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.4...datadog-0.5.5
