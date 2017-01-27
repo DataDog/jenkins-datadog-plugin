@@ -149,7 +149,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
-      gauge("jenkins.job.duration", builddata, "duration", extraTags);
+      DatadogUtilities.gauge("jenkins.job.duration", builddata, "duration", extraTags);
       if ( "SUCCESS".equals(builddata.get("result")) ) {
         serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
       } else {
@@ -228,55 +228,6 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     return builddata;
-  }
-
-
-  /**
-   * Sends a metric to the Datadog API, including the gauge name, and value.
-   *
-   * @param metricName - A String with the name of the metric to record.
-   * @param builddata - A JSONObject containing a builds metadata.
-   * @param key - A String with the name of the build metadata to be found in the {@link JSONObject}
-   *              builddata.
-   * @param extraTags - A list of tags, that are contributed via {@link DatadogJobProperty}.
-   */
-  public final void gauge(final String metricName, final JSONObject builddata,
-                          final String key, final HashMap<String,String> extraTags) {
-    String builddataKey = DatadogUtilities.nullSafeGetString(builddata, key);
-    logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
-
-    // Setup data point, of type [<unix_timestamp>, <value>]
-    JSONArray points = new JSONArray();
-    JSONArray point = new JSONArray();
-
-    long currentTime = System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG;
-    point.add(currentTime); // current time, s
-    point.add(builddata.get(key));
-    points.add(point); // api expects a list of points
-
-    // Build metric
-    JSONObject metric = new JSONObject();
-    metric.put("metric", metricName);
-    metric.put("points", points);
-    metric.put("type", "gauge");
-    metric.put("host", builddata.get("hostname"));
-    metric.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
-
-    // Place metric as item of series list
-    JSONArray series = new JSONArray();
-    series.add(metric);
-
-    // Add series to payload
-    JSONObject payload = new JSONObject();
-    payload.put("series", series);
-
-    logger.fine(String.format("Resulting payload: %s", payload.toString() ));
-
-    try {
-      DatadogHttpRequests.post(payload, METRIC);
-    } catch (Exception e) {
-      logger.severe(e.toString());
-    }
   }
 
   /**
