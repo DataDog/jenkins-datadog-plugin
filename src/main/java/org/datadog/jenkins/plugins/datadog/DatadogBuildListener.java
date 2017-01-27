@@ -89,10 +89,10 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
-    String jobName = run.getParent().getDisplayName();
+    String jobName = run.getParent().getFullDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
       logger.fine("Started build! in onStarted()");
 
       // Gather pre-build metadata
@@ -133,7 +133,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -208,7 +208,7 @@ public class DatadogBuildListener extends RunListener<Run>
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job", run.getParent().getFullDisplayName()); // string
 
     // Grab environment variables
     try {

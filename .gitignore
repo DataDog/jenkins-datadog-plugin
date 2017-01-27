@@ -6,3 +6,6 @@ target/*
 .settings/
 /work/
 nb-configuration.xml
+/datadog.iml
+/.idea/*
+.idea/
