@@ -7,7 +7,7 @@ https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.5...datadog-0.5.
 
 ### Changes
 * [BUGFIX] Fix memory leak, by stoping the StatsD client after every send. See [#73](https://github.com/DataDog/jenkins-datadog-plugin/pull/73) (Thanks @suxor42)
-* [BUGFIX] Include the result tag in the jenkins.job.completed metric.
+* [BUGFIX] Include the result tag in the jenkins.job.completed metric. See [#76](https://github.com/DataDog/jenkins-datadog-plugin/pull/76)
 
 # 0.5.5 / 10-18-2016
 ### Details
