@@ -95,7 +95,7 @@ public class DatadogBuildListener extends RunListener<Run>
     HashMap<String,String> tags = new HashMap<String,String>();
     // Process only if job is NOT in blacklist
     if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
-      logger.fine("Started build! in onStarted()");
+      logger.fine("Started build!");
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
@@ -121,6 +121,7 @@ public class DatadogBuildListener extends RunListener<Run>
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
 
       DatadogHttpRequests.sendEvent(evt);
+      logger.fine("Finished onStarted()");
     }
   }
 
@@ -191,6 +192,7 @@ public class DatadogBuildListener extends RunListener<Run>
       } else {
         logger.warning("Invalid dogstats daemon host specificed");
       }
+      logger.fine("Finished onCompleted()");
     }
   }
 
