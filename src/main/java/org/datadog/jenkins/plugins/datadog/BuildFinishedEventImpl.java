@@ -12,9 +12,9 @@ public class BuildFinishedEventImpl implements DatadogEvent {
   private JSONObject builddata;
   private HashMap<String,String> tags;
 
-  public BuildFinishedEventImpl(JSONObject buildData, HashMap<String,String> tags)  {
+  public BuildFinishedEventImpl(JSONObject buildData, HashMap<String,String> buildTags)  {
     this.builddata = buildData;
-    this.tags = tags;
+    this.tags = buildTags;
   }
 
   //Creates the raw json payload for this event.
