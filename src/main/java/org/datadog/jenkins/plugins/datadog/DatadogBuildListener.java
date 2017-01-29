@@ -28,10 +28,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
@@ -167,18 +169,24 @@ public class DatadogBuildListener extends RunListener<Run>
 
 
       if(DatadogUtilities.isValidDaemon(getDescriptor().getDaemonHost()))  {
-        logger.fine(String.format("Sending completed counter to %s ", getDescriptor().getDaemonHost()));
+        logger.fine(String.format("Sending 'completed' counter to %s ", getDescriptor().getDaemonHost()));
         StatsDClient statsd = null;
         try {
           //The client is a threadpool so instead of creating a new instance of the pool
           //we lease the exiting one registerd with Jenkins.
           statsd = getDescriptor().leaseClient();
-          statsd.increment("completed", tagsToCounter);
-          logger.fine("Jenkins completed counter sent!");
+          statsd.incrementCounter("completed", tagsToCounter);
+          logger.fine(String.format("Attempted to send 'completed' counter with tags: %s", Arrays.toString(tagsToCounter)));
         } catch (StatsDClientException e) {
-          logger.log(Level.SEVERE, "Runtime exception thrown using the StatsDClient", e);
+          logger.severe(String.format("Runtime exception thrown using the StatsDClient. Exception: %s", e.getMessage()));
         } finally {
           if(statsd != null){
+            try {
+              // StatsDClient needs time to do its' thing. UDP messages fail to send at all without this sleep
+              TimeUnit.MILLISECONDS.sleep(100);
+            } catch (InterruptedException ex) {
+              logger.severe(ex.getMessage());
+            }
             statsd.stop();
           }
         }
@@ -349,9 +357,11 @@ public class DatadogBuildListener extends RunListener<Run>
         if(client == null) {
           client = new NonBlockingStatsDClient("jenkins.job", daemonHost.split(":")[0],
                   Integer.parseInt(daemonHost.split(":")[1]));
+        } else {
+          logger.warning("StatsDClient is null");
         }
       } catch (Exception e) {
-        logger.log(Level.SEVERE, "Error while configuring client", e);
+        logger.severe(String.format("Error while configuring statsd client. Exception: %s", e.toString()));
       }
       return client;
     }
@@ -559,7 +569,7 @@ public class DatadogBuildListener extends RunListener<Run>
           client = new NonBlockingStatsDClient("jenkins.job", hp, pp);
           logger.finer(String.format("Created new DogStatsD client (%s:%S)!", hp, pp));
         } catch (Exception e) {
-          logger.log(Level.SEVERE, "Unable to create new DogstatsClient", e);
+          logger.severe(String.format("Unable to create new DogstatsClient. Exception: %s", e.toString()));
         }
       }
 
@@ -681,4 +691,5 @@ public class DatadogBuildListener extends RunListener<Run>
     }
   }
 }
+
 

@@ -116,7 +116,7 @@ public class DatadogHttpRequests {
       if (conn.getResponseCode() == DatadogBuildListener.HTTP_FORBIDDEN) {
         logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
       } else {
-        logger.severe(String.format("Client error: %s", e));
+        logger.severe(String.format("Client error: %s", e.toString()));
       }
       return false;
     } finally {
