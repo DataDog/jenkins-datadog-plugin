@@ -361,7 +361,7 @@ public class DatadogBuildListener extends RunListener<Run>
           logger.warning("StatsDClient is null");
         }
       } catch (Exception e) {
-        logger.severe(String.format("Error while configuring statsd client. Exception: %s", e.toString()));
+        logger.severe(String.format("Error while configuring StatsDClient. Exception: %s", e.toString()));
       }
       return client;
     }
@@ -569,7 +569,7 @@ public class DatadogBuildListener extends RunListener<Run>
           client = new NonBlockingStatsDClient("jenkins.job", hp, pp);
           logger.finer(String.format("Created new DogStatsD client (%s:%S)!", hp, pp));
         } catch (Exception e) {
-          logger.severe(String.format("Unable to create new DogstatsClient. Exception: %s", e.toString()));
+          logger.severe(String.format("Unable to create new StatsDClient. Exception: %s", e.toString()));
         }
       }
 
