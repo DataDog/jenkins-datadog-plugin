@@ -100,7 +100,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      builddata.put("job", jobName); // string
+      builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
@@ -212,12 +212,13 @@ public class DatadogBuildListener extends RunListener<Run>
     double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
+    String jobName = run.getParent().getFullDisplayName();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getFullDisplayName()); // string
+    builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
 
     // Grab environment variables
     try {

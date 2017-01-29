@@ -62,7 +62,7 @@ public class DatadogSCMListener extends SCMListener {
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
       builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-      builddata.put("job", jobName); // string
+      builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", build.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
