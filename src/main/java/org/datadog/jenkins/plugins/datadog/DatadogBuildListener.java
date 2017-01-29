@@ -149,6 +149,7 @@ public class DatadogBuildListener extends RunListener<Run>
         logger.severe(ex.getMessage());
       }
 
+      JSONArray tagArr = DatadogUtilities.assembleTags(builddata, extraTags);
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.duration", builddata, "duration", extraTags);
@@ -158,22 +159,19 @@ public class DatadogBuildListener extends RunListener<Run>
         serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
       }
 
-      // At this point. We will always have some tags. So no defensive checks needed.
-      // We add the tags into our array, so we can easily pass the to the stats counter.
-      // Tags after this point will be propertly formatted.
-      JSONArray arr = evt.createPayload().getJSONArray("tags");
-      String[] tagsToCounter = new String[arr.size()];
-      for(int i=0; i<arr.size(); i++) {
-        tagsToCounter[i] = arr.getString(i);
+      // Setup tags for StatsDClient reporting
+      String[] tagsToCounter = new String[tagArr.size()];
+      for(int i = 0; i < tagArr.size(); i++) {
+        tagsToCounter[i] = tagArr.getString(i);
       }
 
-
+      // Report to StatsDClient
       if(DatadogUtilities.isValidDaemon(getDescriptor().getDaemonHost()))  {
         logger.fine(String.format("Sending 'completed' counter to %s ", getDescriptor().getDaemonHost()));
         StatsDClient statsd = null;
         try {
-          //The client is a threadpool so instead of creating a new instance of the pool
-          //we lease the exiting one registerd with Jenkins.
+          // The client is a threadpool so instead of creating a new instance of the pool
+          // we lease the exiting one registerd with Jenkins.
           statsd = getDescriptor().leaseClient();
           statsd.incrementCounter("completed", tagsToCounter);
           logger.fine(String.format("Attempted to send 'completed' counter with tags: %s", Arrays.toString(tagsToCounter)));
@@ -268,7 +266,9 @@ public class DatadogBuildListener extends RunListener<Run>
     metric.put("points", points);
     metric.put("type", "gauge");
     metric.put("host", builddata.get("hostname"));
-    metric.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
+    JSONArray myTags = DatadogUtilities.assembleTags(builddata, extraTags);
+    logger.fine(myTags.toString());
+    metric.put("tags", myTags);
 
     // Place metric as item of series list
     JSONArray series = new JSONArray();
