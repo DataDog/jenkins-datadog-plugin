@@ -1,6 +1,13 @@
 Changes
 =======
 
+# 0.6.0 / TBD
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.6...datadog-0.6.0
+
+### Changes
+* [IMPROVEMENT] Modifies job tag to incorporate subfolder names. See [#68](https://github.com/DataDog/jenkins-datadog-plugin/pull/68) and [#77](https://github.com/DataDog/jenkins-datadog-plugin/pull/77) (Thanks @witokondoria)
+
 # 0.5.6 / 01-28-2017
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.5...datadog-0.5.6
