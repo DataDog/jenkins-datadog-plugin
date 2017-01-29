@@ -91,15 +91,16 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
-    String jobName = run.getParent().getDisplayName();
+    String jobName = run.getParent().getFullDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
+
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
       logger.fine("Started build!");
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      builddata.put("job", jobName); // string
+      builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
@@ -136,7 +137,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -211,12 +212,13 @@ public class DatadogBuildListener extends RunListener<Run>
     double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
+    String jobName = run.getParent().getFullDisplayName();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
 
     // Grab environment variables
     try {

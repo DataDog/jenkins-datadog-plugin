@@ -57,7 +57,7 @@ public class DatadogUtilities {
    *
    * @return - The api key configured in the global configuration. Shortcut method.
    */
-  public static  String getApiKey() {
+  public static String getApiKey() {
     return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
 
@@ -400,6 +400,7 @@ public class DatadogUtilities {
 
     return tags;
   }
+
   /**
    * Converts from a double to a human readable string, representing a time duration.
    *
@@ -421,6 +422,19 @@ public class DatadogUtilities {
     }
 
     return output;
+  }
+
+  /**
+   * Converts the returned String from calling run.getParent().getFullDisplayName(),
+   * to a String, usable as a tag.
+   *
+   * @param fullDisplayName - A String object representing a job's fullDisplayName
+   * @return a human readable String representing the fullDisplayName of the Job, in a
+   *         format usable as a tag.
+   */
+  public static String normalizeFullDisplayName(final String fullDisplayName) {
+    String normalizedName = fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
+    return normalizedName;
   }
 
 }
