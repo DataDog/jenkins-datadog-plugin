@@ -40,11 +40,11 @@ public class DatadogSCMListener extends SCMListener {
   public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
           File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
 
-    String jobName = build.getParent().getDisplayName();
+    String jobName = build.getParent().getFullDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
     DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
     // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(build.getParent().getName())
+    if ( DatadogUtilities.isJobTracked(build.getParent().getFullDisplayName())
             && prop != null && prop.isEmitOnCheckout() ) {
       logger.fine("Checkout! in onCheckout()");
 
@@ -62,7 +62,7 @@ public class DatadogSCMListener extends SCMListener {
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
       builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-      builddata.put("job", jobName); // string
+      builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", build.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
