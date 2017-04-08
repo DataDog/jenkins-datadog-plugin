@@ -1,10 +1,7 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
-import hudson.model.Job;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.junit.Before;
@@ -83,8 +80,13 @@ public class DatadogBuildListenerTest {
     }
 
     private Job job() {
+        ItemGroup parent = mock(ItemGroup.class);
+        when(parent.getFullDisplayName()).thenReturn("parent");
+
         Job job = mock(Job.class);
         when(job.getName()).thenReturn("test-job");
+        when(job.getParent()).thenReturn(parent);
+
         return job;
     }
 
