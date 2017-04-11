@@ -209,7 +209,7 @@ public class DatadogBuildListener extends RunListener<Run>
   private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    double duration = duration(run);
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
     String jobName = run.getParent().getFullDisplayName();
@@ -238,6 +238,22 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     return builddata;
+  }
+
+  /**
+   * Returns the duration of the run. For pipeline jobs, {@link Run#getDuration()} always returns 0,
+   * in this case this method will calculate the duration of the run by using the current time as the
+   * end time.
+   * @param run - A Run object representing a particular execution of Job.
+   * @return the duration of the run
+   */
+  private double duration(final Run run) {
+    if (run.getDuration() != 0) {
+      return run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    } else {
+      long durationMillis = System.currentTimeMillis() - run.getStartTimeInMillis();
+      return durationMillis / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    }
   }
 
 
@@ -339,7 +355,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a new {@link DescriptorImpl} class.
    */
   @Override
-  public final DescriptorImpl getDescriptor() {
+  public DescriptorImpl getDescriptor() {
     return new DescriptorImpl();
   }
 
@@ -351,7 +367,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * for the configuration screen.
    */
   @Extension // Indicates to Jenkins that this is an extension point implementation.
-  public static final class DescriptorImpl extends Descriptor<DatadogBuildListener> {
+  public static class DescriptorImpl extends Descriptor<DatadogBuildListener> {
 
     /**
      * @return - A {@link StatsDClient} lease for this registered {@link RunListener}

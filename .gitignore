@@ -5,3 +5,6 @@ target/*
 .project
 .settings/
 /work/
+nb-configuration.xml
+.idea
+*.iml
