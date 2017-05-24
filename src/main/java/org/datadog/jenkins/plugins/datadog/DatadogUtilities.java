@@ -78,13 +78,6 @@ public class DatadogUtilities {
   public static String getBlacklist() {
     return DatadogUtilities.getDatadogDescriptor().getBlacklist();
   }
-  /**
-   *
-   * @return - The list of included jobs configured in the global configuration. Shortcut method.
-   */
-  public static String getWhitelist() {
-    return DatadogUtilities.getDatadogDescriptor().getWhitelist();
-  }
 
   /**
    *
@@ -95,67 +88,26 @@ public class DatadogUtilities {
   }
 
   /**
-   * Checks if a jobName is blacklisted, whitelisted, or neither.
-   *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
-   */
-  public static boolean isJobTracked(final String jobName) {
-    if ( DatadogUtilities.isJobBlacklisted(jobName) ) {
-      return false;
-    }
-    return DatadogUtilities.isJobWhitelisted(jobName);
-  }
-
-  /**
-   * Checks if a jobName is blacklisted.
+   * Checks if a jobName is blacklisted, or not.
    *
    * @param jobName - A String containing the name of some job.
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
-  public static boolean isJobBlacklisted(final String jobName) {
-    final String[] blacklist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getBlacklist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
-
-    if (blacklist != null) {
-      return Arrays.asList(blacklist).contains(jobNameLowerCase);
-    }
-
-    return false;
+  public static boolean isJobTracked(final String jobName) {
+    final String[] blacklist = DatadogUtilities.blacklistStringtoArray(DatadogUtilities.getBlacklist() );
+    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
   }
 
   /**
-   * Checks if a jobName is whitelisted.
+   * Converts a blacklist string into a String array.
    *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not whitelisted.
-   */
-  public static boolean isJobWhitelisted(final String jobName) {
-    final String[] whitelist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getWhitelist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
-
-    if ( whitelist != null ) {
-      if ( whitelist.length == 0 ) {
-        return true;
-      }
-      return Arrays.asList(whitelist).contains(jobNameLowerCase);
-    }
-    return true;
-  }
-
-  /**
-   * Converts a blacklist/whitelist string into a String array.
-   *
-   * @param joblist - A String containing a set of job names.
+   * @param blacklist - A String containing a set of key/value pairs.
    * @return a String array representing the job names to be blacklisted. Returns
    *         empty string if blacklist is null.
    */
-  private static String[] joblistStringtoArray(final String joblist) {
-    if ( joblist != null ) {
-      String[] jobArr = joblist.split(",");
-      if ( jobArr[0] != "" ) {
-        return joblist.split(",");
-      }
+  private static String[] blacklistStringtoArray(final String blacklist) {
+    if ( blacklist != null ) {
+      return blacklist.split(",");
     }
     return ( new String[0] );
   }
