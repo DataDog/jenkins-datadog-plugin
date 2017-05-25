@@ -393,7 +393,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private Secret apiKey = null;
     private String hostname = null;
     private String blacklist = null;
-    private Boolean tagNode = null;
+    private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
