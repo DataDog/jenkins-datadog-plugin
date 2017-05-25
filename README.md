@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DataDog/jenkins-datadog-plugin.svg?branch=master)](https://travis-ci.org/DataDog/jenkins-datadog-plugin)
+
 # Jenkins Datadog Plugin
 A Jenkins plugin used to forward metrics, events, and service checks to an account at Datadog, automatically.
 
