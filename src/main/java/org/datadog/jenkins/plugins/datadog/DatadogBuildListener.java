@@ -94,8 +94,8 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getFullDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
 
-    // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
+    // Process only if job is NOT in blacklist and is in whitelist
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build!");
 
       // Gather pre-build metadata
@@ -136,8 +136,10 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getFullDisplayName()) ) {
+    String jobName = run.getParent().getFullDisplayName();
+
+    // Process only if job in NOT in blacklist and is in whitelist
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Completed build!");
 
       // Collect Data
@@ -393,6 +395,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private Secret apiKey = null;
     private String hostname = null;
     private String blacklist = null;
+    private String whitelist = null;
     private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
@@ -570,6 +573,9 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab blacklist
       this.setBlacklist(formData.getString("blacklist"));
 
+      // Grab whitelist
+      this.setWhitelist(formData.getString("whitelist"));
+
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         this.setTagNode(true);
@@ -657,6 +663,30 @@ public class DatadogBuildListener extends RunListener<Run>
     public void setBlacklist(final String jobs) {
       // strip whitespace, remove duplicate commas, and make lowercase
       this.blacklist = jobs
+        .replaceAll("\\s", "")
+        .replaceAll(",,", "")
+        .toLowerCase();
+    }
+
+    /**
+     * Getter function for the {@link whitelist} global configuration, containing
+     * a comma-separated list of jobs to whitelist from monitoring.
+     *
+     * @return a String array containing the {@link whitelist} global configuration.
+     */
+    public String getWhitelist() {
+      return whitelist;
+    }
+
+    /**
+     * Setter function for the {@link whitelist} global configuration,
+     * accepting a comma-separated string of jobs that will be sanitized.
+     *
+     * @param jobs - a comma-separated list of jobs to whitelist from monitoring.
+     */
+    public void setWhitelist(final String jobs) {
+      // strip whitespace, remove duplicate commas, and make lowercase
+      this.whitelist = jobs
         .replaceAll("\\s", "")
         .replaceAll(",,", "")
         .toLowerCase();
