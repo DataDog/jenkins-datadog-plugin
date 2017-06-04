@@ -479,7 +479,7 @@ public class DatadogUtilities {
    *         format usable as a tag.
    */
   public static String normalizeFullDisplayName(final String fullDisplayName) {
-    String normalizedName = fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
+    String normalizedName = fullDisplayName.replaceAll("»", "/").replaceAll(" ", "_");
     return normalizedName;
   }
 
