@@ -41,7 +41,7 @@ public class DatadogSCMListener extends SCMListener {
           File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
 
     String jobName = build.getParent().getFullDisplayName();
-    jobName = DatadogUtilities.normalizeFullDisplayName(jobName);
+    String normalizedJobName = DatadogUtilities.normalizeFullDisplayName(jobName);
     HashMap<String,String> tags = new HashMap<String,String>();
     DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
     // Process only if job is NOT in blacklist and is in whitelist
@@ -63,7 +63,7 @@ public class DatadogSCMListener extends SCMListener {
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
       builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-      builddata.put("job", jobName); // string
+      builddata.put("job", normalizedJobName); // string
       builddata.put("number", build.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null

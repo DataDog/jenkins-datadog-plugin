@@ -134,13 +134,11 @@ public class DatadogUtilities {
     final String[] whitelist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getWhitelist() );
     final String jobNameLowerCase = jobName.toLowerCase();
 
-    if ( whitelist != null ) {
-      if ( whitelist.length == 0 ) {
+    if ( whitelist == null || whitelist.length == 0) {
         return true;
-      }
-      return Arrays.asList(whitelist).contains(jobNameLowerCase);
     }
-    return true;
+
+    return Arrays.asList(whitelist).contains(jobNameLowerCase);
   }
 
   /**

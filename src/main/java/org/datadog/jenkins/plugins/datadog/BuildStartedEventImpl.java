@@ -38,7 +38,6 @@ public class BuildStartedEventImpl implements DatadogEvent  {
     StringBuilder title = new StringBuilder();
     title.append(job).append(" build #").append(number);
     title.append(" started");
-    payload.put("alert_type", "info");
     message = "%%% \n [Follow build #" + number + " progress](" + buildurl + ") ";
 
     title.append(" on ").append(hostname);
@@ -51,6 +50,8 @@ public class BuildStartedEventImpl implements DatadogEvent  {
     message = message + " \n %%%";
 
     // Build payload
+    payload.put("alert_type", "info");
+    payload.put("priority", "low");
     payload.put("title", title.toString());
     payload.put("text", message);
     payload.put("date_happened", timestamp);

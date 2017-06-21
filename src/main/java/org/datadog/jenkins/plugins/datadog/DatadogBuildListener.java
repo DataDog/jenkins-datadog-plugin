@@ -94,7 +94,6 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getFullDisplayName();
-    jobName = DatadogUtilities.normalizeFullDisplayName(jobName);
     HashMap<String,String> tags = new HashMap<String,String>();
 
     // Process only if job is NOT in blacklist and is in whitelist
@@ -105,6 +104,7 @@ public class DatadogBuildListener extends RunListener<Run>
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
       HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+
       builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
@@ -144,7 +144,6 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
     String jobName = run.getParent().getFullDisplayName();
-    jobName = DatadogUtilities.normalizeFullDisplayName(jobName);
 
     // Process only if job in NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
@@ -396,7 +395,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
-    private Boolean tagNode = null;
+    private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
@@ -573,11 +572,8 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab blacklist
       this.setBlacklist(formData.getString("blacklist"));
 
-      // Grab whitelist, strip whitespace, remove duplicate commas, and make lowercase
-      whitelist = formData.getString("whitelist")
-                          .replaceAll("\\s", "")
-                          .replaceAll(",,", "")
-                          .toLowerCase();
+      // Grab whitelist
+      this.setWhitelist(formData.getString("whitelist"));
 
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
