@@ -471,7 +471,7 @@ public class DatadogUtilities {
   }
 
   /**
-   * Converts the returned String from calling run.getParent().getFullDisplayName(),
+   * Converts the returned String from calling run.getParent().getFullName(),
    * to a String, usable as a tag.
    *
    * @param fullDisplayName - A String object representing a job's fullDisplayName
