@@ -2,12 +2,14 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
 import hudson.model.*;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -22,14 +24,17 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DatadogHttpRequests.class, DatadogUtilities.class})
+@PrepareForTest({DatadogHttpRequests.class, DatadogUtilities.class, Jenkins.class})
 public class DatadogBuildListenerTest {
+    @Mock
+    private Jenkins jenkins;
 
     private DatadogBuildListener datadogBuildListener;
 
     @Before
     public void setUp() throws Exception {
-        datadogBuildListener = spy(new DatadogBuildListener());
+        PowerMockito.mockStatic(Jenkins.class);
+        PowerMockito.when(Jenkins.getInstance()).thenReturn(jenkins);
 
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.isJobTracked(anyString())).thenReturn(true);
@@ -37,6 +42,7 @@ public class DatadogBuildListenerTest {
 
         PowerMockito.mockStatic(DatadogHttpRequests.class);
 
+        datadogBuildListener = spy(new DatadogBuildListener());
         doReturn(descriptor()).when(datadogBuildListener).getDescriptor();
     }
 
