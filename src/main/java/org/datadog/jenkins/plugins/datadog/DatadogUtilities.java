@@ -3,6 +3,7 @@ package org.datadog.jenkins.plugins.datadog;
 import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.util.Secret;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +58,7 @@ public class DatadogUtilities {
    *
    * @return - The api key configured in the global configuration. Shortcut method.
    */
-  public static String getApiKey() {
+  public static  Secret getApiKey() {
     return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
 
