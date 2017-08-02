@@ -81,7 +81,7 @@ public class DatadogHttpRequests {
    * @throws IOException if HttpURLConnection fails to open connection
    */
   public static Boolean post(final JSONObject payload, final String type) throws IOException {
-    String urlParameters = "?api_key=" + DatadogUtilities.getApiKey();
+    String urlParameters = "?api_key=" + DatadogUtilities.getApiKey().getPlainText();
     HttpURLConnection conn = null;
     try {
       logger.finer("Setting up HttpURLConnection...");
