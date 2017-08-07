@@ -58,7 +58,7 @@ public class DatadogUtilities {
    *
    * @return - The api key configured in the global configuration. Shortcut method.
    */
-  public static  Secret getApiKey() {
+  public static Secret getApiKey() {
     return DatadogUtilities.getDatadogDescriptor().getApiKey();
   }
 
