@@ -406,7 +406,7 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public FormValidation doTestConnection(@QueryParameter("apiKey") final String formApiKey)
         throws IOException, ServletException {
-      String urlParameters = "?api_key=" + formApiKey;
+      String urlParameters = "?api_key=" + Secret.fromString(formApiKey);
       HttpURLConnection conn = null;
 
       try {
@@ -586,10 +586,10 @@ public class DatadogBuildListener extends RunListener<Run>
     /**
      * Getter function for the {@link apiKey} global configuration.
      *
-     * @return a String containing the {@link apiKey} global configuration.
+     * @return a Secret containing the {@link apiKey} global configuration.
      */
-    public String getApiKey() {
-      return Secret.toString(apiKey);
+    public Secret getApiKey() {
+      return apiKey;
     }
 
     /**
