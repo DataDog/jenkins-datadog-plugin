@@ -13,6 +13,13 @@ https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.6...datadog-0.6.
 * [BUGFIX] Set tagNode to False by default. See [#84](https://github.com/DataDog/jenkins-datadog-plugin/pull/84)
 * [IMPROVEMENT] Lower event priority for non-failure events. See [#86](https://github.com/DataDog/jenkins-datadog-plugin/pull/86)
 
+# 0.5.7 / 08-07-2017
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.6...datadog-0.5.7
+
+### Changes
+* [SECURITY] Security patch for issue where plugin showed plain text API key in configuration form field. See [Jenkins Security Advisory 2017-08-07](https://jenkins.io/security/advisory/2017-08-07/)
+
 # 0.5.6 / 01-28-2017
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.5...datadog-0.5.6
