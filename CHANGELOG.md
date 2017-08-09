@@ -3,7 +3,7 @@ Changes
 
 # 0.6.0 / TBD
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.6...datadog-0.6.0
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.0
 
 ### Changes
 * [IMPROVEMENT] Modifies job tag to incorporate subfolder names. This is a potentially breaking change, spaces are now removed from job names. If you are currently monitoring jobs with spaces in the names the tags will no longer have an underscore in place of the space and the job name in events will no longer have a space in the name. See [#68](https://github.com/DataDog/jenkins-datadog-plugin/pull/68) and [#77](https://github.com/DataDog/jenkins-datadog-plugin/pull/77) (Thanks @witokondoria)
