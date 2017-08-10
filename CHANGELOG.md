@@ -1,6 +1,26 @@
 Changes
 =======
 
+# 0.6.0 / 08-10-2017
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.0
+
+### Changes
+* [IMPROVEMENT] Add metric to measure build waiting time. See [#81](https://github.com/DataDog/jenkins-datadog-plugin/pull/81) (Thanks @bbeck)
+* [IMPROVEMENT] Modifies job tag to incorporate subfolder names. This is a potentially breaking change, spaces are now removed from job names. If you are currently monitoring jobs with spaces in the names the tags will no longer have an underscore in place of the space and the job name in events will no longer have a space in the name. See [#68](https://github.com/DataDog/jenkins-datadog-plugin/pull/68) and [#77](https://github.com/DataDog/jenkins-datadog-plugin/pull/77) (Thanks @witokondoria)
+* [BUGFIX] Fix duration of pipeline jobs. See [#70](https://github.com/DataDog/jenkins-datadog-plugin/pull/70) (Thanks @ulich, @kitamurakei)
+* [IMPROVEMENT] Add whitelist configuration option. This is a potentially breaking change. If you are currently using a blacklist, this may start working differently if you are also using subfolders from the Workflow plugin. The top level job name was being used as the job tag before, and now it is the top level job followed by the subfolder names, separated by a forward slash. So jobs that had subfolders before, but were blacklisted, are going to suddenly appear. See [#78](https://github.com/DataDog/jenkins-datadog-plugin/pull/78), [#88](https://github.com/DataDog/jenkins-datadog-plugin/pull/88) and [#56](https://github.com/DataDog/jenkins-datadog-plugin/pull/56) (Thanks @bhavanki)
+* [IMPROVEMENT] Add a metric to measure the size of the build queue. [#82](https://github.com/DataDog/jenkins-datadog-plugin/pull/82) (Thanks @bbeck)
+* [BUGFIX] Set tagNode to False by default. See [#84](https://github.com/DataDog/jenkins-datadog-plugin/pull/84)
+* [IMPROVEMENT] Lower event priority for non-failure events. See [#86](https://github.com/DataDog/jenkins-datadog-plugin/pull/86)
+
+# 0.5.7 / 08-07-2017
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.6...datadog-0.5.7
+
+### Changes
+* [SECURITY] Security patch for issue where plugin showed plain text API key in configuration form field. See [Jenkins Security Advisory 2017-08-07](https://jenkins.io/security/advisory/2017-08-07/)
+
 # 0.5.6 / 01-28-2017
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.5...datadog-0.5.6

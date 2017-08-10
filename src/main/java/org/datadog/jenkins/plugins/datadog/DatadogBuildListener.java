@@ -10,6 +10,7 @@ import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import hudson.model.Queue;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
@@ -77,6 +78,7 @@ public class DatadogBuildListener extends RunListener<Run>
   static final Integer HTTP_FORBIDDEN = 403;
   static final Integer MAX_HOSTNAME_LEN = 255;
   private static final Logger logger =  Logger.getLogger(DatadogBuildListener.class.getName());
+  private static final Queue queue = Queue.getInstance();
 
   /**
    * Runs when the {@link DatadogBuildListener} class is created.
@@ -91,18 +93,23 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
-    String jobName = run.getParent().getDisplayName();
+    String jobName = run.getParent().getFullDisplayName();
     HashMap<String,String> tags = new HashMap<String,String>();
-    // Process only if job is NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+
+    // Process only if job is NOT in blacklist and is in whitelist
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build!");
+      Queue.Item item = queue.getItem(run.getQueueId());
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      builddata.put("job", jobName); // string
+      HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+
+      builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
+      builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
       long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
       builddata.put("timestamp", starttime); // string
 
@@ -121,6 +128,7 @@ public class DatadogBuildListener extends RunListener<Run>
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
 
       DatadogHttpRequests.sendEvent(evt);
+      gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
       logger.fine("Finished onStarted()");
     }
   }
@@ -135,21 +143,15 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    // Process only if job in NOT in blacklist
-    if ( DatadogUtilities.isJobTracked(run.getParent().getName()) ) {
+    String jobName = run.getParent().getFullDisplayName();
+
+    // Process only if job in NOT in blacklist and is in whitelist
+    if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Completed build!");
 
       // Collect Data
       JSONObject builddata = gatherBuildMetadata(run, listener);
-      HashMap<String,String> extraTags = new HashMap<String, String>();
-      try {
-        extraTags = DatadogUtilities.parseTagList(run, listener);
-      } catch (IOException ex) {
-        logger.severe(ex.getMessage());
-      } catch (InterruptedException ex) {
-        logger.severe(ex.getMessage());
-      }
-
+      HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
       JSONArray tagArr = DatadogUtilities.assembleTags(builddata, extraTags);
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
@@ -208,15 +210,16 @@ public class DatadogBuildListener extends RunListener<Run>
   private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
     // Assemble JSON
     long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-    double duration = run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    double duration = duration(run);
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
+    String jobName = run.getParent().getFullDisplayName();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
     builddata.put("timestamp", endtime); // long
     builddata.put("result", run.getResult().toString()); // string
     builddata.put("number", run.number); // int
-    builddata.put("job", run.getParent().getDisplayName()); // string
+    builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
 
     // Grab environment variables
     try {
@@ -236,6 +239,22 @@ public class DatadogBuildListener extends RunListener<Run>
     }
 
     return builddata;
+  }
+
+  /**
+   * Returns the duration of the run. For pipeline jobs, {@link Run#getDuration()} always returns 0,
+   * in this case this method will calculate the duration of the run by using the current time as the
+   * end time.
+   * @param run - A Run object representing a particular execution of Job.
+   * @return the duration of the run
+   */
+  private double duration(final Run run) {
+    if (run.getDuration() != 0) {
+      return run.getDuration() / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    } else {
+      long durationMillis = System.currentTimeMillis() - run.getStartTimeInMillis();
+      return durationMillis / DatadogBuildListener.THOUSAND_DOUBLE; // ms to s
+    }
   }
 
 
@@ -337,7 +356,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @return a new {@link DescriptorImpl} class.
    */
   @Override
-  public final DescriptorImpl getDescriptor() {
+  public DescriptorImpl getDescriptor() {
     return new DescriptorImpl();
   }
 
@@ -349,7 +368,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * for the configuration screen.
    */
   @Extension // Indicates to Jenkins that this is an extension point implementation.
-  public static final class DescriptorImpl extends Descriptor<DatadogBuildListener> {
+  public static class DescriptorImpl extends Descriptor<DatadogBuildListener> {
 
     /**
      * @return - A {@link StatsDClient} lease for this registered {@link RunListener}
@@ -375,7 +394,8 @@ public class DatadogBuildListener extends RunListener<Run>
     private Secret apiKey = null;
     private String hostname = null;
     private String blacklist = null;
-    private Boolean tagNode = null;
+    private String whitelist = null;
+    private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
     //The StatsDClient instance variable. This variable is leased by the RunLIstener
@@ -552,6 +572,9 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab blacklist
       this.setBlacklist(formData.getString("blacklist"));
 
+      // Grab whitelist
+      this.setWhitelist(formData.getString("whitelist"));
+
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         this.setTagNode(true);
@@ -639,6 +662,30 @@ public class DatadogBuildListener extends RunListener<Run>
     public void setBlacklist(final String jobs) {
       // strip whitespace, remove duplicate commas, and make lowercase
       this.blacklist = jobs
+        .replaceAll("\\s", "")
+        .replaceAll(",,", "")
+        .toLowerCase();
+    }
+
+    /**
+     * Getter function for the {@link whitelist} global configuration, containing
+     * a comma-separated list of jobs to whitelist from monitoring.
+     *
+     * @return a String array containing the {@link whitelist} global configuration.
+     */
+    public String getWhitelist() {
+      return whitelist;
+    }
+
+    /**
+     * Setter function for the {@link whitelist} global configuration,
+     * accepting a comma-separated string of jobs that will be sanitized.
+     *
+     * @param jobs - a comma-separated list of jobs to whitelist from monitoring.
+     */
+    public void setWhitelist(final String jobs) {
+      // strip whitespace, remove duplicate commas, and make lowercase
+      this.whitelist = jobs
         .replaceAll("\\s", "")
         .replaceAll(",,", "")
         .toLowerCase();

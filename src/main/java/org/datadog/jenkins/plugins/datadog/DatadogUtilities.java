@@ -79,6 +79,13 @@ public class DatadogUtilities {
   public static String getBlacklist() {
     return DatadogUtilities.getDatadogDescriptor().getBlacklist();
   }
+  /**
+   *
+   * @return - The list of included jobs configured in the global configuration. Shortcut method.
+   */
+  public static String getWhitelist() {
+    return DatadogUtilities.getDatadogDescriptor().getWhitelist();
+  }
 
   /**
    *
@@ -89,26 +96,65 @@ public class DatadogUtilities {
   }
 
   /**
-   * Checks if a jobName is blacklisted, or not.
+   * Checks if a jobName is blacklisted, whitelisted, or neither.
+   *
+   * @param jobName - A String containing the name of some job.
+   * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
+   */
+  public static boolean isJobTracked(final String jobName) {
+    if ( DatadogUtilities.isJobBlacklisted(jobName) ) {
+      return false;
+    }
+    return DatadogUtilities.isJobWhitelisted(jobName);
+  }
+
+  /**
+   * Checks if a jobName is blacklisted.
    *
    * @param jobName - A String containing the name of some job.
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
-  public static boolean isJobTracked(final String jobName) {
-    final String[] blacklist = DatadogUtilities.blacklistStringtoArray(DatadogUtilities.getBlacklist() );
-    return (blacklist == null) || !Arrays.asList(blacklist).contains(jobName.toLowerCase());
+  public static boolean isJobBlacklisted(final String jobName) {
+    final String[] blacklist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getBlacklist() );
+    final String jobNameLowerCase = jobName.toLowerCase();
+
+    if (blacklist != null) {
+      return Arrays.asList(blacklist).contains(jobNameLowerCase);
+    }
+
+    return false;
   }
 
   /**
-   * Converts a blacklist string into a String array.
+   * Checks if a jobName is whitelisted.
    *
-   * @param blacklist - A String containing a set of key/value pairs.
+   * @param jobName - A String containing the name of some job.
+   * @return a boolean to signify if the jobName is or is not whitelisted.
+   */
+  public static boolean isJobWhitelisted(final String jobName) {
+    final String[] whitelist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getWhitelist() );
+    final String jobNameLowerCase = jobName.toLowerCase();
+
+    if ( whitelist == null || whitelist.length == 0) {
+        return true;
+    }
+
+    return Arrays.asList(whitelist).contains(jobNameLowerCase);
+  }
+
+  /**
+   * Converts a blacklist/whitelist string into a String array.
+   *
+   * @param joblist - A String containing a set of job names.
    * @return a String array representing the job names to be blacklisted. Returns
    *         empty string if blacklist is null.
    */
-  private static String[] blacklistStringtoArray(final String blacklist) {
-    if ( blacklist != null ) {
-      return blacklist.split(",");
+  private static String[] joblistStringtoArray(final String joblist) {
+    if ( joblist != null ) {
+      String[] jobArr = joblist.split(",");
+      if ( jobArr[0] != "" ) {
+        return joblist.split(",");
+      }
     }
     return ( new String[0] );
   }
@@ -168,6 +214,25 @@ public class DatadogUtilities {
     }
 
     return map;
+  }
+
+  /**
+   * Builds extraTags if any are configured in the Job.
+   *
+   * @param run - Current build
+   * @param listener - Current listener
+   * @return A {@link HashMap} containing the key,value pairs of tags if any.
+   */
+  public static HashMap<String,String> buildExtraTags(Run run, TaskListener listener) {
+    HashMap<String,String> extraTags = new HashMap<String, String>();
+    try {
+      extraTags = DatadogUtilities.parseTagList(run, listener);
+    } catch (IOException ex) {
+      logger.severe(ex.getMessage());
+    } catch (InterruptedException ex) {
+      logger.severe(ex.getMessage());
+    }
+    return extraTags;
   }
 
   /**
@@ -401,6 +466,7 @@ public class DatadogUtilities {
 
     return tags;
   }
+
   /**
    * Converts from a double to a human readable string, representing a time duration.
    *
@@ -424,4 +490,16 @@ public class DatadogUtilities {
     return output;
   }
 
+  /**
+   * Converts the returned String from calling run.getParent().getFullDisplayName(),
+   * to a String, usable as a tag.
+   *
+   * @param fullDisplayName - A String object representing a job's fullDisplayName
+   * @return a human readable String representing the fullDisplayName of the Job, in a
+   *         format usable as a tag.
+   */
+  public static String normalizeFullDisplayName(final String fullDisplayName) {
+    String normalizedName = fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
+    return normalizedName;
+  }
 }
