@@ -14,7 +14,7 @@ List of events:
 
 List of metrics:
 * Build duration, in seconds (jenkins.job.duration)
-* Jobs completed (jenkins.job.completed) - _Requires the Datadog Agent_
+* Jobs completed (jenkins.job.completed) - Sent via dogstatsd. _Requires the Datadog Agent_ to be installed on the Jenkins host.
 
 List of service checks:
 * Build status (jenkins.job.status)
