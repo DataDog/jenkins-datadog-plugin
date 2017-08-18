@@ -1,6 +1,12 @@
 Changes
 =======
 
+# 0.6.1 / 08-10-2017
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.0
+
+No changes in this release, syncing Datadog and JenkinsCI repos only.
+
 # 0.6.0 / 08-10-2017
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.0
