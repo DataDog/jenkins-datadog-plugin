@@ -3,7 +3,7 @@ Changes
 
 # 0.6.1 / 08-10-2017
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.0
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.5.7...datadog-0.6.1
 
 ### Changes
 * [IMPROVEMENT] Add metric to measure build waiting time. See [#81](https://github.com/DataDog/jenkins-datadog-plugin/pull/81) (Thanks @bbeck)
