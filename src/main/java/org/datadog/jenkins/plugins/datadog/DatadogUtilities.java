@@ -10,8 +10,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -102,10 +105,7 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
    */
   public static boolean isJobTracked(final String jobName) {
-    if ( DatadogUtilities.isJobBlacklisted(jobName) ) {
-      return false;
-    }
-    return DatadogUtilities.isJobWhitelisted(jobName);
+    return !DatadogUtilities.isJobBlacklisted(jobName) && DatadogUtilities.isJobWhitelisted(jobName);
   }
 
   /**
@@ -115,14 +115,9 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
   public static boolean isJobBlacklisted(final String jobName) {
-    final String[] blacklist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getBlacklist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
+    final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
 
-    if (blacklist != null) {
-      return Arrays.asList(blacklist).contains(jobNameLowerCase);
-    }
-
-    return false;
+    return blacklist.contains(jobName.toLowerCase());
   }
 
   /**
@@ -132,14 +127,9 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not whitelisted.
    */
   public static boolean isJobWhitelisted(final String jobName) {
-    final String[] whitelist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getWhitelist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
+    final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
 
-    if ( whitelist == null || whitelist.length == 0) {
-        return true;
-    }
-
-    return Arrays.asList(whitelist).contains(jobNameLowerCase);
+    return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
   }
 
   /**
@@ -149,14 +139,16 @@ public class DatadogUtilities {
    * @return a String array representing the job names to be blacklisted. Returns
    *         empty string if blacklist is null.
    */
-  private static String[] joblistStringtoArray(final String joblist) {
+  private static List<String> joblistStringtoList(final String joblist) {
+    List<String> jobs = new ArrayList<>();
     if ( joblist != null ) {
-      String[] jobArr = joblist.split(",");
-      if ( jobArr[0] != "" ) {
-        return joblist.split(",");
+      for (String job: joblist.trim().split(",")) {
+          if (!job.isEmpty()) {
+              jobs.add(job.trim().toLowerCase());
+          }
       }
     }
-    return ( new String[0] );
+    return jobs;
   }
 
   /**
