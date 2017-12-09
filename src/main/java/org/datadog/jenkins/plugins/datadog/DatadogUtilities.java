@@ -10,8 +10,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -65,7 +67,7 @@ public class DatadogUtilities {
   /**
    *
    * Set ApiKey for global configuration.
-   * 
+   *
    * @param apiKey - A string representing an apiKey
    */
   public static void setApiKey(String apiKey) {
@@ -102,10 +104,7 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
    */
   public static boolean isJobTracked(final String jobName) {
-    if ( DatadogUtilities.isJobBlacklisted(jobName) ) {
-      return false;
-    }
-    return DatadogUtilities.isJobWhitelisted(jobName);
+    return !DatadogUtilities.isJobBlacklisted(jobName) && DatadogUtilities.isJobWhitelisted(jobName);
   }
 
   /**
@@ -115,14 +114,9 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
   public static boolean isJobBlacklisted(final String jobName) {
-    final String[] blacklist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getBlacklist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
+    final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
 
-    if (blacklist != null) {
-      return Arrays.asList(blacklist).contains(jobNameLowerCase);
-    }
-
-    return false;
+    return blacklist.contains(jobName.toLowerCase());
   }
 
   /**
@@ -132,14 +126,9 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not whitelisted.
    */
   public static boolean isJobWhitelisted(final String jobName) {
-    final String[] whitelist = DatadogUtilities.joblistStringtoArray( DatadogUtilities.getWhitelist() );
-    final String jobNameLowerCase = jobName.toLowerCase();
+    final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
 
-    if ( whitelist == null || whitelist.length == 0) {
-        return true;
-    }
-
-    return Arrays.asList(whitelist).contains(jobNameLowerCase);
+    return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
   }
 
   /**
@@ -149,14 +138,16 @@ public class DatadogUtilities {
    * @return a String array representing the job names to be blacklisted. Returns
    *         empty string if blacklist is null.
    */
-  private static String[] joblistStringtoArray(final String joblist) {
+  private static List<String> joblistStringtoList(final String joblist) {
+    List<String> jobs = new ArrayList<>();
     if ( joblist != null ) {
-      String[] jobArr = joblist.split(",");
-      if ( jobArr[0] != "" ) {
-        return joblist.split(",");
+      for (String job: joblist.trim().split(",")) {
+        if (!job.isEmpty()) {
+          jobs.add(job.trim().toLowerCase());
+        }
       }
     }
-    return ( new String[0] );
+    return jobs;
   }
 
   /**
@@ -276,7 +267,7 @@ public class DatadogUtilities {
     }
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname found in $HOSTNAME host environment variable. "
-                                + "Hostname: %s", hostname));
+              + "Hostname: %s", hostname));
       return hostname;
     }
 
@@ -304,7 +295,7 @@ public class DatadogUtilities {
       // Check hostname
       if ( (hostname != null) && isValidHostname(hostname) ) {
         logger.fine(String.format("Using unix hostname found via `/bin/hostname -f`. Hostname: %s",
-                                  hostname));
+                hostname));
         return hostname;
       }
     }
@@ -317,15 +308,15 @@ public class DatadogUtilities {
     }
     if ( (hostname != null) && isValidHostname(hostname) ) {
       logger.fine(String.format("Using hostname found via "
-                                + "Inet4Address.getLocalHost().getHostName()."
-                                + " Hostname: %s", hostname));
+              + "Inet4Address.getLocalHost().getHostName()."
+              + " Hostname: %s", hostname));
       return hostname;
     }
 
     // Never found the hostname
     if ( (hostname == null) || "".equals(hostname) ) {
       logger.warning("Unable to reliably determine host name. You can define one in "
-                     + "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
+              + "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
     }
     return null;
   }
@@ -339,11 +330,11 @@ public class DatadogUtilities {
    */
   public static final Boolean isValidHostname(final String hostname) {
     String[] localHosts = {"localhost", "localhost.localdomain",
-                           "localhost6.localdomain6", "ip6-localhost"};
+            "localhost6.localdomain6", "ip6-localhost"};
     String VALID_HOSTNAME_RFC_1123_PATTERN = "^(([a-zA-Z0-9]|"
-                                             + "[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*"
-                                             + "([A-Za-z0-9]|"
-                                             + "[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+            + "[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*"
+            + "([A-Za-z0-9]|"
+            + "[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
     String host = hostname.toLowerCase();
 
     // Check if hostname is local
@@ -355,7 +346,7 @@ public class DatadogUtilities {
     // Ensure proper length
     if ( hostname.length() > DatadogBuildListener.MAX_HOSTNAME_LEN ) {
       logger.fine(String.format("Hostname: %s is too long (max length is %s characters)",
-                                hostname, DatadogBuildListener.MAX_HOSTNAME_LEN));
+              hostname, DatadogBuildListener.MAX_HOSTNAME_LEN));
       return false;
     }
 
@@ -479,12 +470,12 @@ public class DatadogUtilities {
     if ( duration < DatadogBuildListener.MINUTE ) {
       output = output + String.format(format, duration) + " secs)";
     } else if ( (DatadogBuildListener.MINUTE <= duration)
-                && (duration < DatadogBuildListener.HOUR) ) {
+            && (duration < DatadogBuildListener.HOUR) ) {
       output = output + String.format(format, duration / DatadogBuildListener.MINUTE)
-               + " mins)";
+              + " mins)";
     } else if ( DatadogBuildListener.HOUR <= duration ) {
       output = output + String.format(format, duration / DatadogBuildListener.HOUR)
-               + " hrs)";
+              + " hrs)";
     }
 
     return output;

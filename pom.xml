@@ -44,6 +44,7 @@
   <properties>
     <findbugs.skip>true</findbugs.skip>
     <powermock.version>1.6.6</powermock.version>
+    <jenkins.version>2.60.3</jenkins.version>
   </properties>
 
   <repositories>
