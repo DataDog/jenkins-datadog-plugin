@@ -40,7 +40,7 @@ public class DatadogSCMListener extends SCMListener {
   public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
           File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
 
-    String jobName = build.getParent().getFullDisplayName();
+    String jobName = build.getParent().getFullName();
     String normalizedJobName = DatadogUtilities.normalizeFullDisplayName(jobName);
     HashMap<String,String> tags = new HashMap<String,String>();
     DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);

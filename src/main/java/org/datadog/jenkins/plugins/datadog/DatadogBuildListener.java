@@ -93,7 +93,7 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
-    String jobName = run.getParent().getFullDisplayName();
+    String jobName = run.getParent().getFullName();
     HashMap<String,String> tags = new HashMap<String,String>();
 
     // Process only if job is NOT in blacklist and is in whitelist
@@ -143,7 +143,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-    String jobName = run.getParent().getFullDisplayName();
+    String jobName = run.getParent().getFullName();
 
     // Process only if job in NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
@@ -213,7 +213,7 @@ public class DatadogBuildListener extends RunListener<Run>
     double duration = duration(run);
     long endtime = starttime + (long) duration; // ms to s
     JSONObject builddata = new JSONObject();
-    String jobName = run.getParent().getFullDisplayName();
+    String jobName = run.getParent().getFullName();
     builddata.put("starttime", starttime); // long
     builddata.put("duration", duration); // double
     builddata.put("timestamp", endtime); // long
