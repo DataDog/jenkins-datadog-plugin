@@ -660,11 +660,8 @@ public class DatadogBuildListener extends RunListener<Run>
      * @param jobs - a comma-separated list of jobs to blacklist from monitoring.
      */
     public void setBlacklist(final String jobs) {
-      // strip whitespace, remove duplicate commas, and make lowercase
-      this.blacklist = jobs
-        .replaceAll("\\s", "")
-        .replaceAll(",,", "")
-        .toLowerCase();
+      // sanitize Blacklist
+      this.blacklist = DatadogUtilities.sanitizeString(jobs);
     }
 
     /**
@@ -684,11 +681,8 @@ public class DatadogBuildListener extends RunListener<Run>
      * @param jobs - a comma-separated list of jobs to whitelist from monitoring.
      */
     public void setWhitelist(final String jobs) {
-      // strip whitespace, remove duplicate commas, and make lowercase
-      this.whitelist = jobs
-        .replaceAll("\\s", "")
-        .replaceAll(",,", "")
-        .toLowerCase();
+      // sanitize Whitelist
+      this.whitelist = DatadogUtilities.sanitizeString(jobs);
     }
 
     /**

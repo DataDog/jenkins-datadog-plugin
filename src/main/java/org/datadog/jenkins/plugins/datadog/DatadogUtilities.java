@@ -105,7 +105,8 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
    */
   public static boolean isJobTracked(final String jobName) {
-    return !DatadogUtilities.isJobBlacklisted(jobName) && DatadogUtilities.isJobWhitelisted(jobName);
+    String sanitizedJobName = DatadogUtilities.sanitizeJobName(jobName);
+    return !DatadogUtilities.isJobBlacklisted(sanitizedJobName) && DatadogUtilities.isJobWhitelisted(sanitizedJobName);
   }
 
   /**
@@ -117,7 +118,7 @@ public class DatadogUtilities {
   public static boolean isJobBlacklisted(final String jobName) {
     final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
 
-    return blacklist.contains(jobName.toLowerCase());
+    return blacklist.contains(jobName);
   }
 
   /**
@@ -129,7 +130,7 @@ public class DatadogUtilities {
   public static boolean isJobWhitelisted(final String jobName) {
     final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
 
-    return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
+    return whitelist.isEmpty() || whitelist.contains(jobName);
   }
 
   /**
@@ -144,7 +145,7 @@ public class DatadogUtilities {
     if ( joblist != null ) {
       for (String job: joblist.trim().split(",")) {
           if (!job.isEmpty()) {
-              jobs.add(job.trim().toLowerCase());
+              jobs.add(job.trim());
           }
       }
     }
@@ -493,5 +494,30 @@ public class DatadogUtilities {
   public static String normalizeFullDisplayName(final String fullDisplayName) {
     String normalizedName = fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
     return normalizedName;
+  }
+
+  /**
+   * Sanitizes the returned String from calling run.getParent().getFullName()
+   * by removing whitespace and lowering.
+   *
+   * @param jobName - A String object representing a job's fullDisplayName
+   * @return a human readable String representing the fullDisplayName of the Job,
+   *         lowered and without whitespace.
+   */
+  public static String sanitizeJobName(final String jobName) {
+    String sanitizedJobName = jobName.replaceAll("\\s", "").toLowerCase();
+    return sanitizedJobName;
+  }
+
+  /**
+   * Sanitizes the blacklist and whitelist by removing duplicate commas, whitespace and lowering.
+   *
+   * @param stringToSanitize - A String object representing blacklist or whitelist from form data
+   * @return a human readable String representing the fullDisplayName of the Job,
+   *         lowered and without whitespace.
+   */
+  public static String sanitizeString(final String stringToSanitize) {
+    String sanitizedString = stringToSanitize.replaceAll("\\s", "").replaceAll(",,", "").toLowerCase();
+    return sanitizedString;
   }
 }
