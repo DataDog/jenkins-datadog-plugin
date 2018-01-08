@@ -94,6 +94,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getFullName();
+    logger.fine(String.format("onStarted() called with jobName: %s", jobName));
     HashMap<String,String> tags = new HashMap<String,String>();
 
     // Process only if job is NOT in blacklist and is in whitelist
@@ -655,16 +656,12 @@ public class DatadogBuildListener extends RunListener<Run>
 
     /**
      * Setter function for the {@link blacklist} global configuration,
-     * accepting a comma-separated string of jobs that will be sanitized.
+     * accepting a comma-separated string of jobs.
      *
      * @param jobs - a comma-separated list of jobs to blacklist from monitoring.
      */
     public void setBlacklist(final String jobs) {
-      // strip whitespace, remove duplicate commas, and make lowercase
-      this.blacklist = jobs
-        .replaceAll("\\s", "")
-        .replaceAll(",,", "")
-        .toLowerCase();
+      this.blacklist = jobs;
     }
 
     /**
@@ -679,16 +676,12 @@ public class DatadogBuildListener extends RunListener<Run>
 
     /**
      * Setter function for the {@link whitelist} global configuration,
-     * accepting a comma-separated string of jobs that will be sanitized.
+     * accepting a comma-separated string of jobs.
      *
      * @param jobs - a comma-separated list of jobs to whitelist from monitoring.
      */
     public void setWhitelist(final String jobs) {
-      // strip whitespace, remove duplicate commas, and make lowercase
-      this.whitelist = jobs
-        .replaceAll("\\s", "")
-        .replaceAll(",,", "")
-        .toLowerCase();
+      this.whitelist = jobs;
     }
 
     /**
