@@ -24,11 +24,11 @@
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
                       method="testHostname" with="hostname" />
     <f:entry title="Blacklisted Jobs"
-             description="A comma-separated list of job names that should not monitored. This takes precedence over whitelist. (e.g.: susans-job,johns-job,prod-release)." >
+             description="A comma-separated list of job names that should not monitored. (e.g.: susans-job,johns-job,prod_folder/prod_release)." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />
     </f:entry>
     <f:entry title="Whitelisted Jobs"
-             description="A comma-separated list of job names that should be monitored. (e.g.: susans-job,johns-job,prof-release). An empty whitelist permits all jobs." >
+             description="A comma-separated list of job names that should be monitored. (e.g.: susans-job,johns-job,prod_folder/prod_release). An empty whitelist permits all jobs not blacklisted." >
       <f:textarea field="whitelist" optional="true" default="${whitelist}" />
     </f:entry>
     <f:entry title="Optional Tags"
