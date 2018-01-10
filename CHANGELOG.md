@@ -1,5 +1,12 @@
 Changes
 =======
+# 0.6.2 / 01-11-2018
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.1...datadog-0.6.2
+
+### Changes
+* [BUGFIX] Don't sanitize whitelist and blacklist. See [#109](https://github.com/DataDog/jenkins-datadog-plugin/pull/109)
+* [BUGFIX] Empty whitelist should permit all jobs. See [#106](https://github.com/DataDog/jenkins-datadog-plugin/pull/106) (Thanks @nikola-da)
 
 # 0.6.1 / 08-10-2017
 ### Details
