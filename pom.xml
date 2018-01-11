@@ -13,7 +13,7 @@
 
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>0.6.2-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>Datadog Plugin</name>
