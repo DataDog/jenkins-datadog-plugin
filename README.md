@@ -14,7 +14,7 @@ List of events:
 
 List of metrics:
 * Build duration, in seconds (jenkins.job.duration)
-* Jobs completed (jenkins.job.completed) - _Requires the Datadog Agent_
+* Jobs completed (jenkins.job.completed) - _Sent via dogstatsd. Requires the Datadog Agent to be installed on the Jenkins host._
 
 List of service checks:
 * Build status (jenkins.job.status)
@@ -30,7 +30,7 @@ Optional tags, included in events, metrics, and service checks. (Toggle from `Ma
 ## Customization
 From the global configuration page, at `Manage Jenkins -> Configure System`.
 * Blacklisted Jobs
-	* A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod-release).
+	* A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod_folder/prod_release).
 
 From a job specific configuration page
 * Custom tags

@@ -87,7 +87,7 @@ public class DatadogBuildListenerTest {
 
     private Job job() {
         ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullDisplayName()).thenReturn("parent");
+        when(parent.getFullName()).thenReturn("parent");
 
         Job job = mock(Job.class);
         when(job.getName()).thenReturn("test-job");
