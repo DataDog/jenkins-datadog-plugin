@@ -123,7 +123,11 @@ public class DatadogUtilities {
         for(int i = 1; i < jobInfo.size(); i++) {
           String[] tagItem = jobInfo.get(i).split(":");
           if(Character.toString(tagItem[1].charAt(0)).equals("$")) {
-            tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
+            try {
+              tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
+            } catch(IndexOutOfBoundsException e) {
+              logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: " + Arrays.toString(tagItem) + " " + e));
+            }
           } else {
             tags.put(tagItem[0], tagItem[1]);
           }
