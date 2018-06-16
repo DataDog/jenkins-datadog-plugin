@@ -31,6 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -94,8 +95,12 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getFullName();
-    logger.fine(String.format("onStarted() called with jobName: %s", jobName));
-    HashMap<String,String> tags = new HashMap<String,String>();
+    Map<String,String> tags = new HashMap<String,String>();
+
+    Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
+    if (useJobRegex) {
+      tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
+    }
 
     // Process only if job is NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
@@ -104,8 +109,8 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
-
+      Map<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+      extraTags.putAll(tags);
       builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
@@ -117,7 +122,7 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab environment variables
       try {
         EnvVars envVars = run.getEnvironment(listener);
-        tags = DatadogUtilities.parseTagList(run, listener);
+        tags.putAll(DatadogUtilities.parseTagList(run, listener));
         builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
         builddata.put("buildurl", envVars.get("BUILD_URL")); // string
       } catch (IOException e) {
@@ -127,10 +132,8 @@ public class DatadogBuildListener extends RunListener<Run>
       }
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
-
       DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
-      logger.fine("Finished onStarted()");
     }
   }
 
@@ -269,7 +272,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param extraTags - A list of tags, that are contributed via {@link DatadogJobProperty}.
    */
   public final void gauge(final String metricName, final JSONObject builddata,
-                          final String key, final HashMap<String,String> extraTags) {
+                          final String key, final Map<String,String> extraTags) {
     String builddataKey = DatadogUtilities.nullSafeGetString(builddata, key);
     logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
 
@@ -396,6 +399,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
+    private Boolean jobRegex = false;
     private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
@@ -583,6 +587,13 @@ public class DatadogBuildListener extends RunListener<Run>
         this.setTagNode(false);
       }
 
+      // Grab jobRegex and coerse to a boolean
+      if ( formData.getString("jobRegex").equals("true") ) {
+        this.setJobRegex(true);
+      } else {
+        this.setJobRegex(false);
+      }
+
       daemonHost = formData.getString("daemonHost");
       //When form is saved...reinitialize the StatsDClient.
       //We need to stop the old one first. And create a new one with the new data from
@@ -682,6 +693,26 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public void setWhitelist(final String jobs) {
       this.whitelist = jobs;
+    }
+
+    /**
+     * Setter function for the {@link jobRegex} global configuration,
+     * accepting a boolean value (checkbox)
+     *
+     * @param jobRegex - a boolean flag on whether to use regexes instead of literals for whitelist/blacklisting jobs.
+     */
+    public void setJobRegex(final Boolean jobRegex) {
+      this.jobRegex = jobRegex;
+    }
+
+    /**
+     * Getter function for the {@link jobRegex} global configuration, containing
+     * a boolean value representing if we shoudl use regexes to whitelist/blacklist jobs
+     *
+     * @return a String array containing the {@link whitelist} global configuration.
+     */
+    public Boolean getJobRegex() {
+      return this.jobRegex;
     }
 
     /**

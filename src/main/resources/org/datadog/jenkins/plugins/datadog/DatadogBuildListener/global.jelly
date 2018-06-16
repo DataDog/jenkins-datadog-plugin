@@ -24,12 +24,16 @@
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
                       method="testHostname" with="hostname" />
     <f:entry title="Blacklisted Jobs"
-             description="A comma-separated list of job names that should not monitored. (e.g.: susans-job,johns-job,prod_folder/prod_release)." >
+             description="A comma-separated list of job names that should not monitored." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />
     </f:entry>
     <f:entry title="Whitelisted Jobs"
-             description="A comma-separated list of job names that should be monitored. (e.g.: susans-job,johns-job,prod_folder/prod_release). An empty whitelist permits all jobs not blacklisted." >
+             description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
       <f:textarea field="whitelist" optional="true" default="${whitelist}" />
+    </f:entry>
+    <f:entry title="Use Job Regexes?" field="jobRegex"
+             description="Check this if you are using Regexes to specify your whitelist and blacklist for jobs. " >
+      <f:checkbox title="Use Regexes" field="jobRegex" optional="true" />
     </f:entry>
     <f:entry title="Optional Tags"
              description="Name of node the current build is running on (i.e. 'master' for master node)." >
