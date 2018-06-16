@@ -97,14 +97,14 @@ public class DatadogBuildListener extends RunListener<Run>
     String jobName = run.getParent().getFullName();
     Map<String,String> tags = new HashMap<String,String>();
 
-    Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
-    if (useJobRegex) {
-      tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
-    }
-
     // Process only if job is NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build!");
+
+      Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
+      if (useJobRegex) {
+        tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
+      }
       Queue.Item item = queue.getItem(run.getQueueId());
 
       // Gather pre-build metadata
@@ -154,8 +154,12 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine("Completed build!");
 
       // Collect Data
+      Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
       JSONObject builddata = gatherBuildMetadata(run, listener);
       HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+      if (useJobRegex) {
+        extraTags.putAll(DatadogUtilities.getRegexJobTags(jobName));
+      }
       JSONArray tagArr = DatadogUtilities.assembleTags(builddata, extraTags);
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
