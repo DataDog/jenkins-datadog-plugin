@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog;
 
+
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.StatsDClientException;
@@ -154,7 +155,8 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine("Completed build!");
 
       // Collect Data
-      Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
+      DatadogBuildListener.DescriptorImpl descriptor =  DatadogUtilities.getDatadogDescriptor();
+      Boolean useJobRegex = descriptor.getJobRegex();
       JSONObject builddata = gatherBuildMetadata(run, listener);
       HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
       if (useJobRegex) {
@@ -205,6 +207,7 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine("Finished onCompleted()");
     }
   }
+  
 
   /**
    * Gathers build metadata, assembling it into a {@link JSONObject} before

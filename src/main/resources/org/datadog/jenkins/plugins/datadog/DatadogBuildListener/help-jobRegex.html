@@ -6,9 +6,9 @@
 
     If Use Regex is checked, the list of jobs is separated by newlines and can include tags. E.g.:
     <pre>
-            susans-job, optional:tag1
-            (*?)-job, owner:$1
-            (*?)_folder/(*?)_release, folder_env:$1, release_env:$2, optional:tag3
+        susans-job, optional:tag1
+        (.*?)-job, owner:$1
+        (.*?)_folder/(*?)_release, folder_env:$1, release_env:$2
     </pre>
 
 </div>
