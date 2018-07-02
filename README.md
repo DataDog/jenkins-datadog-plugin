@@ -34,7 +34,7 @@ From the global configuration page, at `Manage Jenkins -> Configure System`.
 
 From a job specific configuration page
 * Custom tags
-	* Added from a file in the job workspace, or
+	* Added from a file in the job workspace (not compatible with Pipeline jobs), or
 	* Added as text directly from the configuration page
 
 ## Installation
