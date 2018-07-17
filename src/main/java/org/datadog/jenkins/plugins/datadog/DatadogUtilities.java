@@ -120,7 +120,7 @@ public class DatadogUtilities {
    *  @param jobName - A string containing the name of some job
    *  @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
    */
-  public static Map<String,String> getRegexJobTags(final String jobName) {
+  public static Map<String,String> getRegexJobTags(String jobName) {
     Map<String,String> tags = new HashMap<String,String>();
     final List<List<String>> whitelistRegex = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getGlobalJobTags() );
     // Each jobInfo is a list containing one regex, and a variable number of tags
