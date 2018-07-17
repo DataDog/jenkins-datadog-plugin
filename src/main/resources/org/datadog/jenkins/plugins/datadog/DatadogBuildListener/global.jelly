@@ -31,9 +31,9 @@
              description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
       <f:textarea field="whitelist" optional="true" default="${whitelist}" />
     </f:entry>
-    <f:entry title="Use Job Regexes?" field="jobRegex"
-             description="Check this if you are using Regexes to specify your whitelist and blacklist for jobs. " >
-      <f:checkbox title="Use Regexes" field="jobRegex" optional="true" />
+    <f:entry title="Global Job Tags" field="globalJobTags"
+              description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
+      <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
     </f:entry>
     <f:entry title="Optional Tags"
              description="Name of node the current build is running on (i.e. 'master' for master node)." >

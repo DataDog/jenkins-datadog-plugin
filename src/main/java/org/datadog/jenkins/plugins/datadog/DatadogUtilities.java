@@ -91,6 +91,14 @@ public class DatadogUtilities {
 
   /**
    *
+   * @return - The list of included jobs configured in the global configuration. Shortcut method.
+   */
+  public static String getGlobalJobTags() {
+    return DatadogUtilities.getDatadogDescriptor().getGlobalJobTags();
+  }
+
+  /**
+   *
    * @return - The target API URL
    */
   public static String getTargetMetricURL()  {
@@ -114,7 +122,7 @@ public class DatadogUtilities {
    */
   public static Map<String,String> getRegexJobTags(final String jobName) {
     Map<String,String> tags = new HashMap<String,String>();
-    final List<List<String>> whitelistRegex = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getWhitelist() );
+    final List<List<String>> whitelistRegex = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getGlobalJobTags() );
     // Each jobInfo is a list containing one regex, and a variable number of tags
     for (List<String> jobInfo: whitelistRegex) {
       Pattern p = Pattern.compile(jobInfo.get(0));
@@ -145,26 +153,8 @@ public class DatadogUtilities {
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
   public static boolean  isJobBlacklisted(final String jobName) {
-    Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
-    logger.fine(String.format("JobRegex is " + useJobRegex));
-    if(useJobRegex) {
-      final List<List<String>> blacklistRegexes = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getBlacklist() );
-      for(List<String> regexPatternAndTags: blacklistRegexes) {
-        if(regexPatternAndTags.isEmpty()) {
-          return false;
-        }
-        Pattern p = Pattern.compile(regexPatternAndTags.get(0));
-        Matcher m = p.matcher(jobName);
-        if(m.matches()) {
-          logger.fine(String.format("We are blacklisted"));
-          return true;
-        }
-      }
-      return false;
-    } else {
-      final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
-      return blacklist.contains(jobName.toLowerCase());
-    }
+    final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
+    return blacklist.contains(jobName.toLowerCase());
   }
 
   /**
@@ -175,22 +165,9 @@ public class DatadogUtilities {
    */
   public static boolean isJobWhitelisted(final String jobName) {
     final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
-    Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
-
+    
     // Check if the user config is using regexes
-    if(useJobRegex) {
-      final List<List<String>> whitelistedRegexes = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getWhitelist() );
-      for(List<String> regexPatternAndTags: whitelistedRegexes) {
-        Pattern p = Pattern.compile(regexPatternAndTags.get(0));
-        Matcher m = p.matcher(jobName);
-        if(m.matches()) {
-          return true;
-        }
-      }
-      return false;
-    } else {
-      return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
-    }
+    return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
   }
 
   /**

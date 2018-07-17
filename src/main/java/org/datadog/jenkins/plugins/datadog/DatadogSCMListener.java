@@ -49,10 +49,8 @@ public class DatadogSCMListener extends SCMListener {
             && prop != null && prop.isEmitOnCheckout() ) {
       logger.fine("Checkout! in onCheckout()");
 
-      Boolean useJobRegex = DatadogUtilities.getDatadogDescriptor().getJobRegex();
-      if (useJobRegex) {
-        tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
-      }
+      // Get the list of global tags to apply
+      tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
       
       // Grab environment variables
       EnvVars envVars = new EnvVars();
