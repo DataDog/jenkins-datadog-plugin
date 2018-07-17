@@ -134,6 +134,8 @@ public class DatadogBuildListener extends RunListener<Run>
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
       DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+
+      logger.fine("Finished onStarted()");
     }
   }
 
@@ -711,7 +713,7 @@ public class DatadogBuildListener extends RunListener<Run>
      *
      * @param globalJobTags - a comma-separated list of jobs to whitelist from monitoring.
      */
-    public void setGlobalJobTags(final String globalJobTags) {
+    public void setGlobalJobTags(String globalJobTags) {
       this.globalJobTags = globalJobTags;
     }
 

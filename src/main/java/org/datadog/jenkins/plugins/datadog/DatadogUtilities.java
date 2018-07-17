@@ -134,7 +134,7 @@ public class DatadogUtilities {
             try {
               tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
             } catch(IndexOutOfBoundsException e) {
-              logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: " + Arrays.toString(tagItem) + " " + e));
+              logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: %s Exception: %s", Arrays.toString(tagItem), e));
             }
           } else {
             tags.put(tagItem[0], tagItem[1]);
@@ -152,7 +152,7 @@ public class DatadogUtilities {
    * @param jobName - A String containing the name of some job.
    * @return a boolean to signify if the jobName is or is not blacklisted.
    */
-  public static boolean  isJobBlacklisted(final String jobName) {
+  public static boolean isJobBlacklisted(final String jobName) {
     final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
     return blacklist.contains(jobName.toLowerCase());
   }
