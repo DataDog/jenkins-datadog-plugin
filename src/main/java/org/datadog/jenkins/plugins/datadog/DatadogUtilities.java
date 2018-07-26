@@ -124,6 +124,8 @@ public class DatadogUtilities {
     Map<String,String> tags = new HashMap<String,String>();
     final List<List<String>> whitelistRegex = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getGlobalJobTags() );
 
+    logger.fine(String.format("The list of Global Job Tags are: %s", whitelistRege));
+
     // Each jobInfo is a list containing one regex, and a variable number of tags
     for (List<String> jobInfo: whitelistRegex) {
 
@@ -205,7 +207,7 @@ public class DatadogUtilities {
    */
   private static List<List<String>> regexJoblistStringtoList(final String joblist) {
     List<List<String>> jobs = new ArrayList<>();
-    if ( joblist != null  && joblist.length() == 0) {
+    if ( joblist != null  && joblist.length() != 0) {
       for (String job: joblist.split("\\r?\\n")) {
         List<String> jobAndTags = new ArrayList<>();
         for (String item: job.split(",")) {
