@@ -1,8 +1,6 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import java.util.HashMap;
 import java.util.Map;
-
 import net.sf.json.JSONObject;
 
 /**

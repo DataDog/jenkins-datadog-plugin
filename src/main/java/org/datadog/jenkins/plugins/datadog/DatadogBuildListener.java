@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog;
 
-
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.StatsDClientException;
@@ -96,6 +95,7 @@ public class DatadogBuildListener extends RunListener<Run>
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getFullName();
+    logger.fine(String.format("onStarted() called with jobName: %s", jobName));
     Map<String,String> tags = new HashMap<String,String>();
 
     // Process only if job is NOT in blacklist and is in whitelist
