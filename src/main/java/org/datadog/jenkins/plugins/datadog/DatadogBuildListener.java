@@ -120,6 +120,7 @@ public class DatadogBuildListener extends RunListener<Run>
         tags = DatadogUtilities.parseTagList(run, listener);
         builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
         builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+        builddata.put("node", envVars.get("NODE_NAME")); // string
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
