@@ -12,7 +12,6 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,14 @@ public class DatadogUtilities {
 
   /**
    *
+   * @return - The list of included jobs configured in the global configuration. Shortcut method.
+   */
+  public static String getGlobalJobTags() {
+    return DatadogUtilities.getDatadogDescriptor().getGlobalJobTags();
+  }
+
+  /**
+   *
    * @return - The target API URL
    */
   public static String getTargetMetricURL()  {
@@ -109,6 +116,45 @@ public class DatadogUtilities {
   }
 
   /**
+   * Retrieve the list of tags from the Config file if regex Jobs was checked
+   *  @param jobName - A string containing the name of some job
+   *  @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
+   */
+  public static Map<String,String> getRegexJobTags(String jobName) {
+    Map<String,String> tags = new HashMap<String,String>();
+    final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getGlobalJobTags() );
+
+    logger.fine(String.format("The list of Global Job Tags are: %s", globalTags));
+
+    // Each jobInfo is a list containing one regex, and a variable number of tags
+    for (List<String> jobInfo: globalTags) {
+
+      if(jobInfo.isEmpty()) {
+        continue;
+      }
+
+      Pattern p = Pattern.compile(jobInfo.get(0));
+      Matcher m = p.matcher(jobName);
+      if(m.matches()) {
+        for(int i = 1; i < jobInfo.size(); i++) {
+          String[] tagItem = jobInfo.get(i).split(":");
+          if(Character.toString(tagItem[1].charAt(0)).equals("$")) {
+            try {
+              tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
+            } catch(IndexOutOfBoundsException e) {
+              logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: %s Exception: %s", Arrays.toString(tagItem), e));
+            }
+          } else {
+            tags.put(tagItem[0], tagItem[1]);
+          }
+        }
+      }
+    }
+
+    return tags;
+  }
+
+  /**
    * Checks if a jobName is blacklisted.
    *
    * @param jobName - A String containing the name of some job.
@@ -116,7 +162,6 @@ public class DatadogUtilities {
    */
   public static boolean isJobBlacklisted(final String jobName) {
     final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
-
     return blacklist.contains(jobName.toLowerCase());
   }
 
@@ -128,7 +173,8 @@ public class DatadogUtilities {
    */
   public static boolean isJobWhitelisted(final String jobName) {
     final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
-
+    
+    // Check if the user config is using regexes
     return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
   }
 
@@ -136,7 +182,7 @@ public class DatadogUtilities {
    * Converts a blacklist/whitelist string into a String array.
    *
    * @param joblist - A String containing a set of job names.
-   * @return a String array representing the job names to be blacklisted. Returns
+   * @return a String array representing the job names to be whitelisted/blacklisted. Returns
    *         empty string if blacklist is null.
    */
   private static List<String> joblistStringtoList(final String joblist) {
@@ -146,6 +192,30 @@ public class DatadogUtilities {
           if (!job.isEmpty()) {
               jobs.add(job.trim().toLowerCase());
           }
+      }
+    }
+    return jobs;
+  }
+
+    /**
+   * Converts a blacklist/whitelist string into a String array.
+   * This is the implementation for when the Use Regex checkbox is enabled
+   *
+   * @param joblist - A String containing a set of job name regexes and tags.
+   * @return a String List representing the job names to be whitelisted/blacklisted and its associated tags. 
+   *         Returns empty string if blacklist is null.
+   */
+  private static List<List<String>> regexJoblistStringtoList(final String joblist) {
+    List<List<String>> jobs = new ArrayList<>();
+    if ( joblist != null  && joblist.length() != 0) {
+      for (String job: joblist.split("\\r?\\n")) {
+        List<String> jobAndTags = new ArrayList<>();
+        for (String item: job.split(",")) {
+          if (!item.isEmpty()) {
+            jobAndTags.add(item);
+          }
+        }
+        jobs.add(jobAndTags);
       }
     }
     return jobs;
@@ -434,7 +504,7 @@ public class DatadogUtilities {
    * @param extra - A list of tags, that are contributed via {@link DatadogJobProperty}.
    * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
    */
-  public static JSONArray assembleTags(final JSONObject builddata, final HashMap<String,String> extra) {
+  public static JSONArray assembleTags(final JSONObject builddata, final Map<String,String> extra) {
     JSONArray tags = new JSONArray();
 
     tags.add("job:" + builddata.get("job"));
