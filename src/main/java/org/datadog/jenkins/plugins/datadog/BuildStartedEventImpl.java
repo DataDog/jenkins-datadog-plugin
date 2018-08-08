@@ -1,6 +1,6 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import java.util.HashMap;
+import java.util.Map;
 import net.sf.json.JSONObject;
 
 /**
@@ -11,9 +11,9 @@ import net.sf.json.JSONObject;
 public class BuildStartedEventImpl implements DatadogEvent  {
 
   private JSONObject builddata;
-  private HashMap<String,String> tags;
+  private Map<String,String> tags;
 
-  public BuildStartedEventImpl(JSONObject buildData, HashMap<String,String> tags)  {
+  public BuildStartedEventImpl(JSONObject buildData, Map<String,String> tags)  {
     this.builddata = buildData;
     this.tags = tags;
   }

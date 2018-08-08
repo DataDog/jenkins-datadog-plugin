@@ -1,5 +1,13 @@
 Changes
 =======
+# 0.6.3 / 08-07-2018
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.2...datadog-0.6.3
+
+### Changes
+* [IMPROVEMENT] Add support for global tags (including regexes). See [117](https://github.com/DataDog/jenkins-datadog-plugin/pull/117) (Thanks @nmuesch)
+* [IMPROVEMENT] Add node tagging to build start events and job.waiting metric. See [119](https://github.com/DataDog/jenkins-datadog-plugin/pull/119) (Thanks @keirbadger)
+
 # 0.6.2 / 01-11-2018
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.1...datadog-0.6.2

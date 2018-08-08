@@ -39,20 +39,20 @@ public class DatadogBuildListenerTest {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.isJobTracked(anyString())).thenReturn(true);
         when(DatadogUtilities.assembleTags(any(JSONObject.class), any(HashMap.class))).thenReturn(new JSONArray());
-
         PowerMockito.mockStatic(DatadogHttpRequests.class);
 
         datadogBuildListener = spy(new DatadogBuildListener());
-        doReturn(descriptor()).when(datadogBuildListener).getDescriptor();
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor();
+        when(DatadogUtilities.getDatadogDescriptor()).thenReturn(descriptorMock);
     }
 
-
-
+  
     @Test
     public void onCompleted_duration_fromRun() throws Exception {
         Run run = run();
         when(run.getDuration()).thenReturn(123000L);
 
+        
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
 
         JSONObject series = capturePostMetricRequestPayload();
@@ -66,7 +66,6 @@ public class DatadogBuildListenerTest {
         when(run.getDuration()).thenReturn(0L); // pipeline jobs always return 0
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-
         JSONObject series = capturePostMetricRequestPayload();
         assertEquals("jenkins.job.duration", series.getString("metric"));
         assertNotEquals(0, valueOfFirstPoint(series), 0);

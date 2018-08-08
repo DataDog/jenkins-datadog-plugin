@@ -31,6 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -95,17 +96,21 @@ public class DatadogBuildListener extends RunListener<Run>
   public final void onStarted(final Run run, final TaskListener listener) {
     String jobName = run.getParent().getFullName();
     logger.fine(String.format("onStarted() called with jobName: %s", jobName));
-    HashMap<String,String> tags = new HashMap<String,String>();
+    Map<String,String> tags = new HashMap<String,String>();
 
     // Process only if job is NOT in blacklist and is in whitelist
     if ( DatadogUtilities.isJobTracked(jobName) ) {
       logger.fine("Started build!");
+
+      // Get the list of global tags to apply
+      tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
+  
       Queue.Item item = queue.getItem(run.getQueueId());
 
       // Gather pre-build metadata
       JSONObject builddata = new JSONObject();
-      HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
-
+      Map<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+      extraTags.putAll(tags);
       builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
@@ -117,9 +122,10 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab environment variables
       try {
         EnvVars envVars = run.getEnvironment(listener);
-        tags = DatadogUtilities.parseTagList(run, listener);
+        tags.putAll(DatadogUtilities.parseTagList(run, listener));
         builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
         builddata.put("buildurl", envVars.get("BUILD_URL")); // string
+        builddata.put("node", envVars.get("NODE_NAME")); // string
       } catch (IOException e) {
         logger.severe(e.getMessage());
       } catch (InterruptedException e) {
@@ -127,9 +133,9 @@ public class DatadogBuildListener extends RunListener<Run>
       }
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
-
       DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+
       logger.fine("Finished onStarted()");
     }
   }
@@ -153,6 +159,9 @@ public class DatadogBuildListener extends RunListener<Run>
       // Collect Data
       JSONObject builddata = gatherBuildMetadata(run, listener);
       HashMap<String,String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+
+      // Get the list of global tags to apply
+      extraTags.putAll(DatadogUtilities.getRegexJobTags(jobName));
       JSONArray tagArr = DatadogUtilities.assembleTags(builddata, extraTags);
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
@@ -198,6 +207,7 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine("Finished onCompleted()");
     }
   }
+  
 
   /**
    * Gathers build metadata, assembling it into a {@link JSONObject} before
@@ -269,7 +279,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * @param extraTags - A list of tags, that are contributed via {@link DatadogJobProperty}.
    */
   public final void gauge(final String metricName, final JSONObject builddata,
-                          final String key, final HashMap<String,String> extraTags) {
+                          final String key, final Map<String,String> extraTags) {
     String builddataKey = DatadogUtilities.nullSafeGetString(builddata, key);
     logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
 
@@ -396,6 +406,7 @@ public class DatadogBuildListener extends RunListener<Run>
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
+    private String globalJobTags = null;
     private Boolean tagNode = false;
     private String daemonHost = "localhost:8125";
     private String targetMetricURL = "https://app.datadoghq.com/api/";
@@ -576,6 +587,9 @@ public class DatadogBuildListener extends RunListener<Run>
       // Grab whitelist
       this.setWhitelist(formData.getString("whitelist"));
 
+      // Grab the Global Job Tags
+      this.setGlobalJobTags(formData.getString("globalJobTags"));
+
       // Grab tagNode and coerse to a boolean
       if ( formData.getString("tagNode").equals("true") ) {
         this.setTagNode(true);
@@ -682,6 +696,26 @@ public class DatadogBuildListener extends RunListener<Run>
      */
     public void setWhitelist(final String jobs) {
       this.whitelist = jobs;
+    }
+
+    /**
+     * Getter function for the {@link globalJobTags} global configuration, containing
+     * a comma-separated list of jobs and tags that should be applied to them
+     *
+     * @return a String array containing the {@link globalJobTags} global configuration.
+     */
+    public String getGlobalJobTags() {
+      return globalJobTags;
+    }
+
+    /**
+     * Setter function for the {@link globalJobTags} global configuration,
+     * accepting a comma-separated string of jobs and tags.
+     *
+     * @param globalJobTags - a comma-separated list of jobs to whitelist from monitoring.
+     */
+    public void setGlobalJobTags(String globalJobTags) {
+      this.globalJobTags = globalJobTags;
     }
 
     /**
