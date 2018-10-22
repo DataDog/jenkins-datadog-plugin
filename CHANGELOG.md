@@ -1,5 +1,13 @@
 Changes
 =======
+# 0.6.4 / 10-22-2018
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.3...datadog-0.6.4
+
+### Changes
+* [BUGFIX] Set failed event to alert_type error See [124](https://github.com/DataDog/jenkins-datadog-plugin/pull/124)
+* [SECURITY] Upgrade httpclient to 4.5.6. See [125](https://github.com/DataDog/jenkins-datadog-plugin/pull/125) and [CVE-2015-5262](https://nvd.nist.gov/vuln/detail/CVE-2015-5262)
+
 # 0.6.3 / 08-07-2018
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.2...datadog-0.6.3
