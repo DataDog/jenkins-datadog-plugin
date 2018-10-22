@@ -40,7 +40,7 @@ public class BuildFinishedEventImpl implements DatadogEvent {
       message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     } else if (builddata.get("result") != null) {
       title.append(" failed");
-      payload.put("alert_type", "failure");
+      payload.put("alert_type", "error");
       message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     }
     title.append(" on ").append(hostname);
