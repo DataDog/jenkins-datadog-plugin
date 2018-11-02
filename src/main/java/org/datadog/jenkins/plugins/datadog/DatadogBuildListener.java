@@ -115,7 +115,6 @@ public class DatadogBuildListener extends RunListener<Run>
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
-      builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
       long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
       builddata.put("timestamp", starttime); // string
 
@@ -134,7 +133,14 @@ public class DatadogBuildListener extends RunListener<Run>
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
       DatadogHttpRequests.sendEvent(evt);
-      gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+
+      // Send waiting metric if item.getInQueueSince() is available
+      try {
+        builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
+        gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+      } catch (NullPointerException e) {
+        logger.severe(e.getMessage());
+      }
 
       logger.fine("Finished onStarted()");
     }
