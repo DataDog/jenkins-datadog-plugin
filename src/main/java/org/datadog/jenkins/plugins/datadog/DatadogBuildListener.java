@@ -115,7 +115,6 @@ public class DatadogBuildListener extends RunListener<Run>
       builddata.put("number", run.number); // int
       builddata.put("result", null); // null
       builddata.put("duration", null); // null
-      builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
       long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
       builddata.put("timestamp", starttime); // string
 
@@ -134,7 +133,16 @@ public class DatadogBuildListener extends RunListener<Run>
 
       BuildStartedEventImpl evt = new BuildStartedEventImpl(builddata, tags);
       DatadogHttpRequests.sendEvent(evt);
-      gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+
+      // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
+      // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
+      // queue times if the plugin is spinning up an instance/container for one/first job.
+      try {
+        builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
+        gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+      } catch (NullPointerException e) {
+        logger.warning("Unable to compute 'waiting' metric. item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
+      }
 
       logger.fine("Finished onStarted()");
     }
