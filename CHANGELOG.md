@@ -1,5 +1,13 @@
 Changes
 =======
+# 0.6.5 / 11-06-2018
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.4...datadog-0.6.5
+
+### Changes
+* [BUGFIX] Catch NPE when item.getInQueueSince() is unavailable. See [127](https://github.com/DataDog/jenkins-datadog-plugin/pull/127)
+* [OTHER] Update Datadog API endpoint. See [128](https://github.com/DataDog/jenkins-datadog-plugin/pull/128)
+
 # 0.6.4 / 10-22-2018
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.3...datadog-0.6.4
