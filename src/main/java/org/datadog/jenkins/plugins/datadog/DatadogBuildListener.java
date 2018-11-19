@@ -11,6 +11,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Queue;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
@@ -181,9 +182,9 @@ public class DatadogBuildListener extends RunListener<Run>
       }
 
       // Setup tags for StatsDClient reporting
-      String[] tagsToCounter = new String[tagArr.size()];
+      String[] statsdTags = new String[tagArr.size()];
       for(int i = 0; i < tagArr.size(); i++) {
-        tagsToCounter[i] = tagArr.getString(i);
+        statsdTags[i] = tagArr.getString(i);
       }
 
       // Report to StatsDClient
@@ -194,8 +195,35 @@ public class DatadogBuildListener extends RunListener<Run>
           // The client is a threadpool so instead of creating a new instance of the pool
           // we lease the exiting one registerd with Jenkins.
           statsd = getDescriptor().leaseClient();
-          statsd.incrementCounter("completed", tagsToCounter);
-          logger.fine(String.format("Attempted to send 'completed' counter with tags: %s", Arrays.toString(tagsToCounter)));
+          statsd.incrementCounter("completed", statsdTags);
+          logger.fine(String.format("Attempted to send 'completed' counter with tags: %s", Arrays.toString(statsdTags)));
+
+          // Send KPIs 
+          if (!isMasterBranch(run)) {
+            if (run.getResult() == Result.SUCCESS) {
+              long mttr = getMeanTimeToRecovery(run);
+              long cycleTime = getCycleTime(run);;
+              long leadTime = run.getDuration() + mttr;
+
+              statsd.gauge("leadtime", leadTime / 1000, statsdTags);
+              if (cycleTime > 0) {
+                statsd.gauge("cycletime", cycleTime / 1000, statsdTags);
+              }
+              if (mttr > 0) {
+                statsd.gauge("mttr", mttr / 1000, statsdTags);
+              }
+            } else {
+              long feedbackTime = run.getDuration();
+              long mtbf = getMeanTimeBetweenFailure(run);
+
+              statsd.gauge("feedbacktime", feedbackTime / 1000, statsdTags);
+
+              if (mtbf > 0) {
+                statsd.gauge("mtbf", mtbf / 1000, statsdTags);
+              }
+            }
+          }
+
         } catch (StatsDClientException e) {
           logger.severe(String.format("Runtime exception thrown using the StatsDClient. Exception: %s", e.getMessage()));
         } finally {
@@ -215,7 +243,44 @@ public class DatadogBuildListener extends RunListener<Run>
       logger.fine("Finished onCompleted()");
     }
   }
-  
+
+  private long getMeanTimeBetweenFailure(final Run run) {
+    Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
+    if (lastGreenRun != null) {
+      return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
+    }
+    return 0;
+  }
+
+  private long getCycleTime(final Run run) {
+    Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
+    if (previousSuccessfulBuild != null) {
+      return (run.getStartTimeInMillis() + run.getDuration()) - 
+              (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
+    }
+    return 0;
+  }
+
+  private long getMeanTimeToRecovery(final Run run) {
+    if (buildFailed(run.getPreviousBuiltBuild())) {
+      Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
+
+      while (buildFailed(firstFailedRun.getPreviousBuiltBuild())) {
+        firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
+      }
+
+      return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+    }
+    return 0;
+  }
+
+  private boolean isMasterBranch(Run<?, ?> run) {
+    return run != null && run.getParent() != null && run.getParent().getFullDisplayName().endsWith("master");
+  }  
+
+  private boolean buildFailed(Run<?, ?> run) {
+    return run != null && run.getResult() != Result.SUCCESS;
+  }
 
   /**
    * Gathers build metadata, assembling it into a {@link JSONObject} before
