@@ -383,7 +383,7 @@ public class DatadogBuildListener extends RunListener<Run>
    * Descriptor for {@link DatadogBuildListener}. Used as a singleton.
    * The class is marked as public so that it can be accessed from views.
    *
-   * <p>See <tt>DatadogBuildListener/*.jelly</tt> for the actual HTML fragment
+   * <p>See <code>DatadogBuildListener/*.jelly</code> for the actual HTML fragment
    * for the configuration screen.
    */
   @Extension // Indicates to Jenkins that this is an extension point implementation.
