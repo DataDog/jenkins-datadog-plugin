@@ -316,7 +316,7 @@ public class DatadogUtilities {
    * Tries, in order:
    *    Jenkins configuration
    *    Jenkins hostname environment variable
-   *    Unix hostname via `/bin/hostname -f`
+   *    Unix hostname via `/usr/bin/env hostname -f`
    *    Localhost hostname
    *
    * @param envVars - An EnvVars object containing a set of environment variables.
@@ -347,7 +347,7 @@ public class DatadogUtilities {
     if ( Arrays.asList(UNIX_OS).contains(os) ) {
       // Attempt to grab unix hostname
       try {
-        String[] cmd = {"/bin/hostname", "-f"};
+        String[] cmd = {"/usr/bin/env", "hostname", "-f"};
         Process proc = Runtime.getRuntime().exec(cmd);
         InputStream in = proc.getInputStream();
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -365,7 +365,7 @@ public class DatadogUtilities {
 
       // Check hostname
       if ( (hostname != null) && isValidHostname(hostname) ) {
-        logger.fine(String.format("Using unix hostname found via `/bin/hostname -f`. Hostname: %s",
+        logger.fine(String.format("Using unix hostname found via `/usr/bin/env hostname -f`. Hostname: %s",
                                   hostname));
         return hostname;
       }
