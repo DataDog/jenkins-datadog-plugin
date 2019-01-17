@@ -38,6 +38,10 @@ public class BuildFinishedEventImpl implements DatadogEvent {
       payload.put("alert_type", "success");
       payload.put("priority", "low");
       message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
+    } else if (builddata.get("result") == 'UNSTABLE' || builddata.get("result") == 'ABORTED' || builddata.get("result") == 'NOT_BUILT') {
+      title.append(" " + builddata.get("result").toLowerCase());
+      payload.put("alert_type", "warning");
+      message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     } else if (builddata.get("result") != null) {
       title.append(" failed");
       payload.put("alert_type", "error");
