@@ -36,12 +36,12 @@ public class BuildFinishedEventImpl implements DatadogEvent {
     // Build title
     StringBuilder title = new StringBuilder();
     title.append(job).append(" build #").append(number);
-    
-
-    message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
-    title.append(" " + builddata.get("result").toString().toLowerCase());
 
     String buildResult = builddata.get("result") != null ? builddata.get("result").toString() : Result.NOT_BUILT.toString() ;
+
+    message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
+    title.append(" " + buildResult.toLowerCase());
+
 
 
     if (Result.SUCCESS.toString().equals(buildResult)) {
