@@ -1,6 +1,9 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import java.util.HashMap;
+
+import hudson.model.Hudson;
+import hudson.model.Result;
 import net.sf.json.JSONObject;
 
 /**
@@ -33,16 +36,23 @@ public class BuildFinishedEventImpl implements DatadogEvent {
     // Build title
     StringBuilder title = new StringBuilder();
     title.append(job).append(" build #").append(number);
-    if ("SUCCESS".equals(builddata.get("result"))) {
-      title.append(" succeeded");
+
+    String buildResult = builddata.get("result") != null ? builddata.get("result").toString() : Result.NOT_BUILT.toString() ;
+
+    message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
+    title.append(" " + buildResult.toLowerCase());
+
+
+
+    if (Result.SUCCESS.toString().equals(buildResult)) {
       payload.put("alert_type", "success");
       payload.put("priority", "low");
-      message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
-    } else if (builddata.get("result") != null) {
-      title.append(" failed");
+    } else if (Result.UNSTABLE.toString().equals(buildResult)  || Result.ABORTED.toString().equals(buildResult) || Result.NOT_BUILT.toString().equals(buildResult) ) {
+      payload.put("alert_type", "warning");
+    } else if (Result.FAILURE.toString().equals(buildResult)) {
       payload.put("alert_type", "error");
-      message = "%%% \n [See results for build #" + number + "](" + buildurl + ") ";
     }
+    
     title.append(" on ").append(hostname);
     // Add duration
     if (builddata.get("duration") != null) {

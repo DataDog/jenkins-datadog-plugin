@@ -1,5 +1,12 @@
 Changes
 =======
+# 0.7.0 / 02-25-2019
+### Details
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.5...datadog-0.7.0
+
+### Changes
+* [IMPROVEMENT][BREAKING CHANGE] Create events with `alert_type: error` only for jobs with `Result.FAILURE`. For other non-success results create events with `alert_type: warning`. This could potentially break Datadog monitors over Jenkins events. The event `status` maps to the updated `alert_type` modified in this PR. See [140](https://github.com/DataDog/jenkins-datadog-plugin/pull/140) (Thanks @alanranciato)
+
 # 0.6.5 / 11-06-2018
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.6.4...datadog-0.6.5
