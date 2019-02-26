@@ -404,4 +404,15 @@ public class DatadogUtilities {
         return DatadogUtilities.getDatadogDescriptor().getTagNode();
     }
 
+    /**
+     * Converts the returned String from calling run.getParent().getFullName(),
+     * to a String, usable as a tag.
+     *
+     * @param fullDisplayName - A String object representing a job's fullDisplayName
+     * @return a human readable String representing the fullDisplayName of the Job, in a
+     * format usable as a tag.
+     */
+    public static String normalizeFullDisplayName(final String fullDisplayName) {
+        return fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
+    }
 }
