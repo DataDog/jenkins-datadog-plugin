@@ -76,6 +76,16 @@ public class DatadogUtilities {
 
   /**
    *
+   * Check if apiKey is null
+   *
+   * @return boolean - apiKey is null
+   */
+  public static boolean isApiKeyNull() {
+    return Secret.toString(DatadogUtilities.getApiKey()).isEmpty();
+  }
+
+  /**
+   *
    * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
    */
   public static String getBlacklist() {

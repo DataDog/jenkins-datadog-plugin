@@ -94,6 +94,9 @@ public class DatadogBuildListener extends RunListener<Run>
    */
   @Override
   public final void onStarted(final Run run, final TaskListener listener) {
+    if ( DatadogUtilities.isApiKeyNull() ) {
+      return;
+    }
     String jobName = run.getParent().getFullName();
     logger.fine(String.format("onStarted() called with jobName: %s", jobName));
     Map<String,String> tags = new HashMap<String,String>();
@@ -158,6 +161,9 @@ public class DatadogBuildListener extends RunListener<Run>
 
   @Override
   public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
+    if ( DatadogUtilities.isApiKeyNull() ) {
+      return;
+    }
     String jobName = run.getParent().getFullName();
 
     // Process only if job in NOT in blacklist and is in whitelist
