@@ -1,6 +1,7 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import hudson.ProxyConfiguration;
+import hudson.util.Secret;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class DatadogHttpRequests {
    * @throws IOException if HttpURLConnection fails to open connection
    */
   public static Boolean post(final JSONObject payload, final String type) throws IOException {
-    String urlParameters = "?api_key=" + DatadogUtilities.getApiKey().getPlainText();
+    String urlParameters = "?api_key=" + Secret.toString(DatadogUtilities.getApiKey());
     HttpURLConnection conn = null;
     try {
       logger.finer("Setting up HttpURLConnection...");

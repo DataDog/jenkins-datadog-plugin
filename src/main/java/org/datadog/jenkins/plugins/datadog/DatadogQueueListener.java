@@ -29,6 +29,9 @@ public class DatadogQueueListener extends PeriodicWork {
 
   @Override
   protected void doRun() throws Exception {
+    if ( DatadogUtilities.isApiKeyNull() ) {
+      return;
+    }
     logger.fine("doRun called: Computing queue metrics");
     gauge("jenkins.queue.size", queue.getApproximateItemsQuickly().size());
   }
