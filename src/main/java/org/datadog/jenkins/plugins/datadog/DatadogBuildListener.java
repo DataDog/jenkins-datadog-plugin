@@ -181,6 +181,7 @@ public class DatadogBuildListener extends RunListener<Run>
       DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
       DatadogHttpRequests.sendEvent(evt);
       gauge("jenkins.job.duration", builddata, "duration", extraTags);
+      String buildResult = builddata.get("result") != null ? builddata.get("result").toString() : Result.NOT_BUILT.toString() ;
       if (Result.SUCCESS.toString().equals(buildResult)) {
         serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
       } else if (Result.UNSTABLE.toString().equals(buildResult)  || Result.ABORTED.toString().equals(buildResult) || Result.NOT_BUILT.toString().equals(buildResult) ) {
