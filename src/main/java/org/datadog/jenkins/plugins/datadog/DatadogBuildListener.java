@@ -11,6 +11,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Queue;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
