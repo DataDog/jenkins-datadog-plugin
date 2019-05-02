@@ -3,7 +3,7 @@
 This page will outline some example steps that can be taken to spin up a development enviornment for this repository. The requirements are:
 
 * Java 1.8
-* docker-compose
+* Docker & docker-compose
 * A clone/fork of this repository
 
 
