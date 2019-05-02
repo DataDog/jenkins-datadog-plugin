@@ -22,7 +22,7 @@ services:
 
 Set the JENKINS_PLUGIN environment variable to point to the folder of the clone or fork of this repository.
 
-From here you can run `docker-compose up -f `<path_to_docker_compose_file>`.
+From here you can run `docker-compose -f `<path_to_docker_compose_file> up -d`.
 
 This will spin up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
 
