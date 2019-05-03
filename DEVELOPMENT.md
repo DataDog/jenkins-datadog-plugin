@@ -1,13 +1,13 @@
 ## Developing on this Jenkins Plugin
 
-This page will outline some example steps that can be taken to spin up a development environment for this repository. The requirements are:
+This page outlines some example steps to spin up a development environment for the *jenkins-datadog-plugin* repository. The requirements are:
 
-* Java 1.8
-* Docker & docker-compose
-* A clone/fork of this repository
+* [Java 1.8](https://www.java.com/en/download/)
+* [Docker](https://docs.docker.com/get-started/) & [docker-compose](https://docs.docker.com/compose/install/)
+* [A clone/fork of this repository](https://help.github.com/en/articles/fork-a-repo)
 
 
-To get started, save the following docker-compose file somewhere locally:
+To get started, save the following `docker-compose.yaml` file in your working directory locally:
 
 ```
 version: "3.7"
@@ -20,10 +20,11 @@ services:
       - $JENKINS_PLUGIN/target/:/var/jenkins_home/plugins
 ```
 
-Set the JENKINS_PLUGIN environment variable to point to the folder of the clone or fork of this repository.
+Set the `JENKINS_PLUGIN` environment variable to point to the folder of the clone/fork of this repository.
 
-From here you can run `docker-compose -f `<path_to_docker_compose_file> up -d`.
+Then run `docker-compose -f <DOCKER_COMPOSE_FILE_PATH> up -d`.
 
-This will spin up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
 
-To see updates, after re building the provider with `mvn clean package` on your local machine, simply run `docker-compose down` and spin this up again.
+This spins up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
+
+To see updates, after re building the provider with `mvn clean package` on your local machine, run `docker-compose down` and spin this up again.
