@@ -1,6 +1,6 @@
 ## Developing on this Jenkins Plugin
 
-This page will outline some example steps that can be taken to spin up a development enviornment for this repository. The requirements are:
+This page will outline some example steps that can be taken to spin up a development environment for this repository. The requirements are:
 
 * Java 1.8
 * Docker & docker-compose
