@@ -13,28 +13,35 @@ List of events:
 * Finished build
 
 List of metrics sent via the Datadog API:
-* Build duration, in seconds (jenkins.job.duration)
-* Time spent waiting for job to run, in miliseconds(jenkins.job.waiting)
 
-List of metrics sent via Dogstatsd. Requires the Datadog Agent to be installed on the Jenkins host.
-* Jobs completed (jenkins.job.completed)
-* Lead Time (jenkins.job.leadtime)
-* Cycle Time (jenkins.job.cycletime)
-* MTTR, time between last failed job and current successful job(jenkins.job.mttr)
-* Feedback time from commit to job failure(jenkins.job.feedbacktime)
-* MTBF, time between last successful job and current failed job(jenkins.job.mtbf)
+| Metric Name          | Description                                         |
+|----------------------|-----------------------------------------------------|
+| jenkins.job.duration | Build duration (in seconds)                         |
+| jenkins.job.waiting  | Time spent waiting for job to run (in milliseconds) |
 
+
+List of metrics sent via Dogstatsd:
+Requires the Datadog Agent to be installed on the Jenkins host.
+
+| Metric Name              | Description                                                   |
+|--------------------------|---------------------------------------------------------------|
+| jenkins.job.completed    | Jobs Completed                                                |
+| jenkins.job.leadtime     | Lead Time                                                     |
+| jenkins.job.cycletime    | Cycle Time                                                    |
+| jenkins.job.mttr         | MTTR: time between last failed job and current successful job |
+| jenkins.job.feedbacktime | Feedback time from code commit to job failure                 |
+| jenkins.job.mtbf         | MTBF, time between last successful job and current failed job |
 
 List of service checks:
 * Build status (jenkins.job.status)
 
 All events, metrics, and service checks include the following tags, if they are available:
-* job
-* result
-* git branch (Available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin))
+* `job`
+* `result`
+* (git) `branch` (Available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin))
 
 Optional tags, included in events, metrics, and service checks. (Toggle from `Manage Jenkins -> Configure System`)
-* node (disabled by default)
+* `node` (disabled by default)
 
 ## Customization
 From the global configuration page, at `Manage Jenkins -> Configure System`.
