@@ -108,7 +108,7 @@ public class DatadogBuildListener extends RunListener<Run>
 
       // Get the list of global tags to apply
       tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
-  
+
       Queue.Item item = queue.getItem(run.getQueueId());
 
       // Gather pre-build metadata
@@ -204,29 +204,28 @@ public class DatadogBuildListener extends RunListener<Run>
           statsd.incrementCounter("completed", statsdTags);
           logger.fine(String.format("Attempted to send 'completed' counter with tags: %s", Arrays.toString(statsdTags)));
 
-          // Send KPIs 
-          if (!isMasterBranch(run)) {
-            if (run.getResult() == Result.SUCCESS) {
-              long mttr = getMeanTimeToRecovery(run);
-              long cycleTime = getCycleTime(run);;
-              long leadTime = run.getDuration() + mttr;
+          logger.fine("Computing KPI metrics");
+          // Send KPIs
+          if (run.getResult() == Result.SUCCESS) {
+            long mttr = getMeanTimeToRecovery(run);
+            long cycleTime = getCycleTime(run);;
+            long leadTime = run.getDuration() + mttr;
 
-              statsd.gauge("leadtime", leadTime / 1000, statsdTags);
-              if (cycleTime > 0) {
-                statsd.gauge("cycletime", cycleTime / 1000, statsdTags);
-              }
-              if (mttr > 0) {
-                statsd.gauge("mttr", mttr / 1000, statsdTags);
-              }
-            } else {
-              long feedbackTime = run.getDuration();
-              long mtbf = getMeanTimeBetweenFailure(run);
+            statsd.gauge("leadtime", leadTime / 1000, statsdTags);
+            if (cycleTime > 0) {
+              statsd.gauge("cycletime", cycleTime / 1000, statsdTags);
+            }
+            if (mttr > 0) {
+              statsd.gauge("mttr", mttr / 1000, statsdTags);
+            }
+          } else {
+            long feedbackTime = run.getDuration();
+            long mtbf = getMeanTimeBetweenFailure(run);
 
-              statsd.gauge("feedbacktime", feedbackTime / 1000, statsdTags);
+            statsd.gauge("feedbacktime", feedbackTime / 1000, statsdTags);
 
-              if (mtbf > 0) {
-                statsd.gauge("mtbf", mtbf / 1000, statsdTags);
-              }
+            if (mtbf > 0) {
+              statsd.gauge("mtbf", mtbf / 1000, statsdTags);
             }
           }
 
@@ -261,7 +260,7 @@ public class DatadogBuildListener extends RunListener<Run>
   private long getCycleTime(final Run run) {
     Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
     if (previousSuccessfulBuild != null) {
-      return (run.getStartTimeInMillis() + run.getDuration()) - 
+      return (run.getStartTimeInMillis() + run.getDuration()) -
               (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
     }
     return 0;
@@ -279,10 +278,6 @@ public class DatadogBuildListener extends RunListener<Run>
     }
     return 0;
   }
-
-  private boolean isMasterBranch(Run<?, ?> run) {
-    return run != null && run.getParent() != null && run.getParent().getFullDisplayName().endsWith("master");
-  }  
 
   private boolean buildFailed(Run<?, ?> run) {
     return run != null && run.getResult() != Result.SUCCESS;
@@ -846,5 +841,3 @@ public class DatadogBuildListener extends RunListener<Run>
     }
   }
 }
-
-

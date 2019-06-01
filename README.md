@@ -12,9 +12,18 @@ List of events:
 * Started build
 * Finished build
 
-List of metrics:
+List of metrics sent via the Datadog API:
 * Build duration, in seconds (jenkins.job.duration)
-* Jobs completed (jenkins.job.completed) - _Sent via dogstatsd. Requires the Datadog Agent to be installed on the Jenkins host._
+* Time spent waiting for job to run, in miliseconds(jenkins.job.waiting)
+
+List of metrics sent via Dogstatsd. Requires the Datadog Agent to be installed on the Jenkins host.
+* Jobs completed (jenkins.job.completed)
+* Lead Time (jenkins.job.leadtime)
+* Cycle Time (jenkins.job.cycletime)
+* MTTR, time between last failed job and current successful job(jenkins.job.mttr)
+* Feedback time from commit to job failure(jenkins.job.feedbacktime)
+* MTBF, time between last successful job and current failed job(jenkins.job.mtbf)
+
 
 List of service checks:
 * Build status (jenkins.job.status)
@@ -22,7 +31,7 @@ List of service checks:
 All events, metrics, and service checks include the following tags, if they are available:
 * job
 * result
-* branch
+* git branch (Available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin))
 
 Optional tags, included in events, metrics, and service checks. (Toggle from `Manage Jenkins -> Configure System`)
 * node (disabled by default)
