@@ -208,24 +208,24 @@ public class DatadogBuildListener extends RunListener<Run>
           // Send KPIs
           if (run.getResult() == Result.SUCCESS) {
             long mttr = getMeanTimeToRecovery(run);
-            long cycleTime = getCycleTime(run);;
+            long cycleTime = getCycleTime(run);
             long leadTime = run.getDuration() + mttr;
 
-            statsd.gauge("leadtime", leadTime / 1000, statsdTags);
+            statsd.gauge("leadtime", leadTime / THOUSAND_DOUBLE, statsdTags);
             if (cycleTime > 0) {
-              statsd.gauge("cycletime", cycleTime / 1000, statsdTags);
+              statsd.gauge("cycletime", cycleTime / THOUSAND_DOUBLE, statsdTags);
             }
             if (mttr > 0) {
-              statsd.gauge("mttr", mttr / 1000, statsdTags);
+              statsd.gauge("mttr", mttr / THOUSAND_DOUBLE, statsdTags);
             }
           } else {
             long feedbackTime = run.getDuration();
             long mtbf = getMeanTimeBetweenFailure(run);
 
-            statsd.gauge("feedbacktime", feedbackTime / 1000, statsdTags);
+            statsd.gauge("feedbacktime", feedbackTime / THOUSAND_DOUBLE, statsdTags);
 
             if (mtbf > 0) {
-              statsd.gauge("mtbf", mtbf / 1000, statsdTags);
+              statsd.gauge("mtbf", mtbf / THOUSAND_DOUBLE, statsdTags);
             }
           }
 
@@ -249,7 +249,7 @@ public class DatadogBuildListener extends RunListener<Run>
     }
   }
 
-  private long getMeanTimeBetweenFailure(final Run run) {
+  private long getMeanTimeBetweenFailure(Run<?, ?> run) {
     Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
     if (lastGreenRun != null) {
       return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
@@ -257,7 +257,7 @@ public class DatadogBuildListener extends RunListener<Run>
     return 0;
   }
 
-  private long getCycleTime(final Run run) {
+  private long getCycleTime(Run<?, ?> run) {
     Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
     if (previousSuccessfulBuild != null) {
       return (run.getStartTimeInMillis() + run.getDuration()) -
@@ -266,7 +266,7 @@ public class DatadogBuildListener extends RunListener<Run>
     return 0;
   }
 
-  private long getMeanTimeToRecovery(final Run run) {
+  private long getMeanTimeToRecovery(Run<?, ?> run) {
     if (buildFailed(run.getPreviousBuiltBuild())) {
       Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
 
