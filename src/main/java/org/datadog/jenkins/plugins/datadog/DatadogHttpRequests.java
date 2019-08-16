@@ -120,7 +120,7 @@ public class DatadogHttpRequests {
     public static Boolean post(final JSONObject payload, final String type) throws IOException {
         String urlParameters = "?api_key=" + Secret.toString(DatadogUtilities.getApiKey());
         HttpURLConnection conn = null;
-        boolean status = false;
+        boolean status = true;
 
         try {
             logger.finer("Setting up HttpURLConnection...");
@@ -145,11 +145,10 @@ public class DatadogHttpRequests {
             if ("ok".equals(json.getString("status"))) {
                 logger.finer(String.format("API call of type '%s' was sent successfully!", type));
                 logger.finer(String.format("Payload: %s", payload));
-                return true;
             } else {
                 logger.fine(String.format("API call of type '%s' failed!", type));
                 logger.fine(String.format("Payload: %s", payload));
-                return false;
+                status = false;
             }
         } catch (Exception e) {
             if (conn.getResponseCode() == DatadogBuildListener.HTTP_FORBIDDEN) {
@@ -157,6 +156,7 @@ public class DatadogHttpRequests {
             } else {
                 logger.severe(String.format("Client error: %s", e.toString()));
             }
+            status = false;
         } finally {
             if (conn != null) {
                 conn.disconnect();

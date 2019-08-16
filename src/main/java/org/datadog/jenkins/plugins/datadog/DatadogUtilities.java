@@ -132,7 +132,7 @@ public class DatadogUtilities {
      * @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
      */
     public static Map<String, String> getRegexJobTags(String jobName) {
-        Map<String, String> tags = new HashMap<String, String>();
+        Map<String, String> tags = new HashMap<>();
         final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList(DatadogUtilities.getGlobalJobTags());
 
         logger.fine(String.format("The list of Global Job Tags are: %s", globalTags));
