@@ -16,13 +16,11 @@
     <f:entry title="API Key" field="apiKeyTitle">
       <f:password field="apiKey" default="${apiKey}" />
     </f:entry>
-    <f:validateButton title="${%Test Key}" progress="${%Testing...}"
-                      method="testConnection" with="apiKey" />
+    <f:validateButton title="${%Test Key}" progress="${%Testing...}" method="testConnection" with="apiKey" />
     <f:entry title="Hostname" field="hostname">
       <f:textbox field="hostname" default="${hostname}" />
     </f:entry>
-    <f:validateButton title="${%Test Hostname}" progress="${%Testing...}"
-                      method="testHostname" with="hostname" />
+    <f:validateButton title="${%Test Hostname}" progress="${%Testing...}" method="testHostname" with="hostname" />
     <f:entry title="Blacklisted Jobs"
              description="A comma-separated list of job names that should not monitored." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />
