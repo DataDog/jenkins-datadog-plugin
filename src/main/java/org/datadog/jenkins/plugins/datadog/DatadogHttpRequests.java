@@ -28,7 +28,7 @@ public class DatadogHttpRequests {
     private static final Logger logger = Logger.getLogger(DatadogHttpRequests.class.getName());
     private static final EnvVars envVars = new EnvVars();
     private static final String EVENT = "v1/events";
-    private static final String METRIC = "v1/series";
+    public static final String METRIC = "v1/series";
     private static final String SERVICECHECK = "v1/check_run";
     private static final String VALIDATE = "v1/validate";
     private static final Integer HTTP_FORBIDDEN = 403;

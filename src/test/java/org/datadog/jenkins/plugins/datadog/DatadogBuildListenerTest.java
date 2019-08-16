@@ -106,7 +106,7 @@ public class DatadogBuildListenerTest {
     private JSONObject capturePostMetricRequestPayload() throws IOException {
         PowerMockito.verifyStatic();
         ArgumentCaptor<JSONObject> captor = ArgumentCaptor.forClass(JSONObject.class);
-        DatadogHttpRequests.post(captor.capture(), eq(DatadogBuildListener.METRIC));
+        DatadogHttpRequests.post(captor.capture(), eq(DatadogHttpRequests.METRIC));
 
         return captor.getValue().getJSONArray("series").getJSONObject(0);
     }
