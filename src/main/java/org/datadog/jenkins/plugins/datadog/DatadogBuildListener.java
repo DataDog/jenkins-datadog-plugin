@@ -29,13 +29,11 @@ import static hudson.Util.fixEmptyAndTrim;
 
 /**
  * DatadogBuildListener {@link RunListener}.
- * <p>
  * When the user configures the project and runs a build,
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked and a new
  * {@link DatadogBuildListener} is created. The created instance is persisted to the project
  * configuration XML by using XStream, allowing you to use instance fields
  * (like {@literal}link #name) to remember the configuration.
- * <p>
  * When a build starts, the {@link #onStarted(Run, TaskListener)} method will be invoked. And
  * when a build finishes, the {@link #onCompleted(Run, TaskListener)} method will be invoked.
  *
@@ -376,7 +374,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     /**
      * Descriptor for {@link DatadogBuildListener}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
-     * <p>
      * See <tt>DatadogBuildListener/*.jelly</tt> for the actual HTML fragment
      * for the configuration screen.
      */
