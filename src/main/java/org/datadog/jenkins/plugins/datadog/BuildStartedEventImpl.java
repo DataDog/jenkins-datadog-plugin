@@ -8,14 +8,10 @@ import java.util.Map;
  * This event should contain all the data to construct a build started event. With
  * the right message for Datadog.
  */
-public class BuildStartedEventImpl implements DatadogEvent {
+public class BuildStartedEventImpl extends AbstractDatadogEvent {
 
-    private JSONObject builddata;
-    private Map<String, String> tags;
-
-    public BuildStartedEventImpl(JSONObject buildData, Map<String, String> tags) {
-        this.builddata = buildData;
-        this.tags = tags;
+    public BuildStartedEventImpl(JSONObject buildData, Map<String, String> buildTags) {
+        super(buildData, buildTags);
     }
 
     /**
@@ -23,43 +19,31 @@ public class BuildStartedEventImpl implements DatadogEvent {
      */
     @Override
     public JSONObject createPayload() {
-        JSONObject payload = new JSONObject();
-        // Add event_type to assist in roll-ups
-        payload.put("event_type", "build start"); // string
+        JSONObject payload = createPayload("build start");
         String hostname = DatadogUtilities.nullSafeGetString(builddata, "hostname");
         String number = DatadogUtilities.nullSafeGetString(builddata, "number");
         String buildurl = DatadogUtilities.nullSafeGetString(builddata, "buildurl");
         String job = DatadogUtilities.nullSafeGetString(builddata, "job");
-        long timestamp = builddata.getLong("timestamp");
-        String message = "";
 
         // Build title
         StringBuilder title = new StringBuilder();
-        title.append(job).append(" build #").append(number);
-        title.append(" started");
-        message = "%%% \n [Follow build #" + number + " progress](" + buildurl + ") ";
+        title.append(job).append(" build #").append(number).append(" started").append(" on ").append(hostname);
+        payload.put("title", title.toString());
 
-        title.append(" on ").append(hostname);
-        // Add duration
-        if (builddata.get("duration") != null) {
-            message = message + DatadogUtilities.durationToString(builddata.getDouble("duration"));
-        }
+        // Build Text
+        StringBuilder message = new StringBuilder();
+        message.append("%%% \n [Follow build #").
+                append(number).
+                append(" progress](").
+                append(buildurl).
+                append(") ").
+                append(getDuration()).
+                append(" \n %%%");
+        payload.put("text", message.toString());
 
-        // Close markdown
-        message = message + " \n %%%";
-
-        // Build payload
         payload.put("alert_type", "info");
         payload.put("priority", "low");
-        payload.put("title", title.toString());
-        payload.put("text", message);
-        payload.put("date_happened", timestamp);
         payload.put("event_type", builddata.get("event_type"));
-        payload.put("host", hostname);
-        payload.put("result", builddata.get("result"));
-        payload.put("tags", DatadogUtilities.assembleTags(builddata, tags));
-        payload.put("aggregation_key", job);
-        payload.put("source_type_name", "jenkins");
 
         return payload;
     }

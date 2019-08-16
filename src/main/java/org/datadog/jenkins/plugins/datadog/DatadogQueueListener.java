@@ -1,11 +1,8 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.PeriodicWork;
 import hudson.model.Queue;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;

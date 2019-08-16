@@ -19,7 +19,9 @@ import java.util.logging.Logger;
  */
 public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     private static final Logger LOGGER = Logger.getLogger(DatadogBuildListener.class.getName());
+
     private static final String DISPLAY_NAME = "Datadog Job Tagging";
+
     private String tagProperties = null;
     private String tagFile = null;
     private boolean emitOnCheckout = false;
@@ -147,8 +149,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
             //invoked, the workspace has not yet been established, so this check is necessary.
             FilePath workspace = r.getExecutor().getCurrentWorkspace();
             if (workspace != null) {
-                FilePath path = new FilePath(workspace,
-                        tagFile);
+                FilePath path = new FilePath(workspace, tagFile);
                 if (path.exists()) {
                     s = path.readToString();
                 }

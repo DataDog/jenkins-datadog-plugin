@@ -11,18 +11,13 @@ import hudson.util.FormValidation;
 import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +29,13 @@ import static hudson.Util.fixEmptyAndTrim;
 
 /**
  * DatadogBuildListener {@link RunListener}.
- *
+ * <p>
  * When the user configures the project and runs a build,
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked and a new
  * {@link DatadogBuildListener} is created. The created instance is persisted to the project
  * configuration XML by using XStream, allowing you to use instance fields
  * (like {@literal}link #name) to remember the configuration.
- *
+ * <p>
  * When a build starts, the {@link #onStarted(Run, TaskListener)} method will be invoked. And
  * when a build finishes, the {@link #onCompleted(Run, TaskListener)} method will be invoked.
  *
@@ -54,10 +49,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      * numbers.
      */
     static final String DISPLAY_NAME = "Datadog Plugin";
-    static final String VALIDATE = "v1/validate";
-    static final String METRIC = "v1/series";
-    static final String EVENT = "v1/events";
-    static final String SERVICECHECK = "v1/check_run";
     static final Integer OK = 0;
     static final Integer WARNING = 1;
     static final Integer CRITICAL = 2;
@@ -66,15 +57,16 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     static final long THOUSAND_LONG = 1000L;
     static final float MINUTE = 60;
     static final float HOUR = 3600;
-    static final Integer HTTP_FORBIDDEN = 403;
     static final Integer MAX_HOSTNAME_LEN = 255;
+
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
     private static final Queue queue = Queue.getInstance();
 
     /**
      * Runs when the {@link DatadogBuildListener} class is created.
      */
-    public DatadogBuildListener() {}
+    public DatadogBuildListener() {
+    }
 
     /**
      * Called when a build is first started.
@@ -119,9 +111,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
                 builddata.put("buildurl", envVars.get("BUILD_URL")); // string
                 builddata.put("node", envVars.get("NODE_NAME")); // string
-            } catch (IOException e) {
-                logger.severe(e.getMessage());
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 logger.severe(e.getMessage());
             }
 
@@ -133,7 +123,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             // queue times if the plugin is spinning up an instance/container for one/first job.
             try {
                 builddata.put("waiting", (System.currentTimeMillis() - item.getInQueueSince()) / DatadogBuildListener.THOUSAND_LONG);
-                gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
+                DatadogHttpRequests.gauge("jenkins.job.waiting", builddata, "waiting", extraTags);
             } catch (NullPointerException e) {
                 logger.warning("Unable to compute 'waiting' metric. item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
             }
@@ -170,22 +160,22 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             JSONArray tagArr = DatadogUtilities.assembleTags(builddata, extraTags);
             DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
             DatadogHttpRequests.sendEvent(evt);
-            gauge("jenkins.job.duration", builddata, "duration", extraTags);
+            DatadogHttpRequests.gauge("jenkins.job.duration", builddata, "duration", extraTags);
 
             String buildResult = Result.NOT_BUILT.toString();
             if (builddata.get("result") != null) {
                 buildResult = builddata.get("result").toString();
             }
             if (Result.SUCCESS.toString().equals(buildResult)) {
-                serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
+                DatadogHttpRequests.serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
             } else if (Result.UNSTABLE.toString().equals(buildResult) ||
                     Result.ABORTED.toString().equals(buildResult) ||
                     Result.NOT_BUILT.toString().equals(buildResult)) {
-                serviceCheck("jenkins.job.status", DatadogBuildListener.WARNING, builddata, extraTags);
+                DatadogHttpRequests.serviceCheck("jenkins.job.status", DatadogBuildListener.WARNING, builddata, extraTags);
             } else if (Result.FAILURE.toString().equals(buildResult)) {
-                serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
+                DatadogHttpRequests.serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
             } else {
-                serviceCheck("jenkins.job.status", DatadogBuildListener.UNKNOWN, builddata, extraTags);
+                DatadogHttpRequests.serviceCheck("jenkins.job.status", DatadogBuildListener.UNKNOWN, builddata, extraTags);
             }
 
             // Setup tags for StatsDClient reporting
@@ -195,7 +185,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             }
 
             // Report to StatsDClient
-            if (DatadogUtilities.isValidDaemon(getDescriptor().getDaemonHost())) {
+            if (isValidDaemon(getDescriptor().getDaemonHost())) {
                 logger.fine(String.format("Sending 'completed' counter to %s ", getDescriptor().getDaemonHost()));
                 StatsDClient statsd = null;
                 try {
@@ -250,6 +240,37 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         }
     }
 
+    /**
+     * @param daemonHost - The host to check
+     * @return - A boolean that checks if the daemonHost is valid
+     */
+    private boolean isValidDaemon(final String daemonHost) {
+        if (!daemonHost.contains(":")) {
+            logger.info("Daemon host does not contain the port seperator ':'");
+            return false;
+        }
+
+        String hn = daemonHost.split(":")[0];
+        String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
+
+        if (StringUtils.isBlank(hn)) {
+            logger.info("Daemon host part is empty");
+            return false;
+        }
+
+        //Match ports [1024-65535]
+        Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
+                + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
+
+        boolean match = p.matcher(pn).find();
+
+        if (!match) {
+            logger.info("Port number is invalid must be in the range [1024-65535]");
+        }
+
+        return match;
+    }
+
     private long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
@@ -295,14 +316,14 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     private JSONObject gatherBuildMetadata(final Run run, @Nonnull final TaskListener listener) {
         // Assemble JSON
-        long starttime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
+        long startTime = run.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
         double duration = duration(run);
-        long endtime = starttime + (long) duration; // ms to s
+        long endTime = startTime + (long) duration; // ms to s
         JSONObject builddata = new JSONObject();
         String jobName = run.getParent().getFullName();
-        builddata.put("starttime", starttime); // long
+        builddata.put("starttime", startTime); // long
         builddata.put("duration", duration); // double
-        builddata.put("timestamp", endtime); // long
+        builddata.put("timestamp", endTime); // long
         builddata.put("result", run.getResult().toString()); // string
         builddata.put("number", run.number); // int
         builddata.put("job", DatadogUtilities.normalizeFullDisplayName(jobName)); // string
@@ -318,9 +339,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             } else if (envVars.get("CVS_BRANCH") != null) {
                 builddata.put("branch", envVars.get("CVS_BRANCH")); // string
             }
-        } catch (IOException e) {
-            logger.severe(e.getMessage());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             logger.severe(e.getMessage());
         }
 
@@ -344,88 +363,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         }
     }
 
-
-    /**
-     * Sends a metric to the Datadog API, including the gauge name, and value.
-     *
-     * @param metricName - A String with the name of the metric to record.
-     * @param builddata  - A JSONObject containing a builds metadata.
-     * @param key        - A String with the name of the build metadata to be found in the {@link JSONObject}
-     *                   builddata.
-     * @param extraTags  - A list of tags, that are contributed via {@link DatadogJobProperty}.
-     */
-    public final void gauge(final String metricName, final JSONObject builddata,
-                            final String key, final Map<String, String> extraTags) {
-        String builddataKey = DatadogUtilities.nullSafeGetString(builddata, key);
-        logger.fine(String.format("Sending metric '%s' with value %s", metricName, builddataKey));
-
-        // Setup data point, of type [<unix_timestamp>, <value>]
-        JSONArray points = new JSONArray();
-        JSONArray point = new JSONArray();
-
-        long currentTime = System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG;
-        point.add(currentTime); // current time, s
-        point.add(builddata.get(key));
-        points.add(point); // api expects a list of points
-
-        // Build metric
-        JSONObject metric = new JSONObject();
-        metric.put("metric", metricName);
-        metric.put("points", points);
-        metric.put("type", "gauge");
-        metric.put("host", builddata.get("hostname"));
-        JSONArray myTags = DatadogUtilities.assembleTags(builddata, extraTags);
-        logger.fine(myTags.toString());
-        metric.put("tags", myTags);
-
-        // Place metric as item of series list
-        JSONArray series = new JSONArray();
-        series.add(metric);
-
-        // Add series to payload
-        JSONObject payload = new JSONObject();
-        payload.put("series", series);
-
-        logger.fine(String.format("Resulting payload: %s", payload.toString()));
-
-        try {
-            DatadogHttpRequests.post(payload, METRIC);
-        } catch (Exception e) {
-            logger.severe(e.toString());
-        }
-    }
-
-    /**
-     * Sends a service check to the Datadog API, including the check name, and status.
-     *
-     * @param checkName - A String with the name of the service check to record.
-     * @param status    - An Integer with the status code to record for this service check.
-     * @param builddata - A JSONObject containing a builds metadata.
-     * @param extraTags - A list of tags, that are contributed through the {@link DatadogJobProperty}.
-     */
-    public final void serviceCheck(final String checkName, final Integer status,
-                                   final JSONObject builddata, final HashMap<String, String> extraTags) {
-        logger.fine(String.format("Sending service check '%s' with status %s", checkName, status));
-
-        // Build payload
-        JSONObject payload = new JSONObject();
-        payload.put("check", checkName);
-        payload.put("host_name", builddata.get("hostname"));
-        payload.put("timestamp",
-                System.currentTimeMillis() / DatadogBuildListener.THOUSAND_LONG); // current time, s
-        payload.put("status", status);
-
-        // Remove result tag, so we don't create multiple service check groups
-        builddata.remove("result");
-        payload.put("tags", DatadogUtilities.assembleTags(builddata, extraTags));
-
-        try {
-            DatadogHttpRequests.post(payload, SERVICECHECK);
-        } catch (Exception e) {
-            logger.severe(e.toString());
-        }
-    }
-
     /**
      * Getter function for the {@link DescriptorImpl} class.
      *
@@ -439,7 +376,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     /**
      * Descriptor for {@link DatadogBuildListener}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
-     *
+     * <p>
      * See <tt>DatadogBuildListener/*.jelly</tt> for the actual HTML fragment
      * for the configuration screen.
      */
@@ -506,42 +443,13 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         public FormValidation doTestConnection(@QueryParameter("apiKey") final String formApiKey)
                 throws IOException, ServletException {
             String urlParameters = "?api_key=" + Secret.fromString(formApiKey);
-            HttpURLConnection conn = null;
+            String targetMetricURL = this.getTargetMetricURL();
+            boolean status = DatadogHttpRequests.validate(targetMetricURL, urlParameters);
 
-            try {
-                // Make request
-                conn = DatadogHttpRequests.getHttpURLConnection(new URL(this.getTargetMetricURL()
-                        + VALIDATE
-                        + urlParameters));
-                conn.setRequestMethod("GET");
-
-                // Get response
-                BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(),
-                        "utf-8"));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = rd.readLine()) != null) {
-                    result.append(line);
-                }
-                rd.close();
-
-                // Validate
-                JSONObject json = (JSONObject) JSONSerializer.toJSON(result.toString());
-                if (json.getBoolean("valid")) {
-                    return FormValidation.ok("Great! Your API key is valid.");
-                } else {
-                    return FormValidation.error("Hmmm, your API key seems to be invalid.");
-                }
-            } catch (Exception e) {
-                if (conn != null && (conn.getResponseCode() == DatadogBuildListener.HTTP_FORBIDDEN)) {
-                    return FormValidation.error("Hmmm, your API key may be invalid. "
-                            + "We received a 403 error.");
-                }
-                return FormValidation.error("Client error: " + e);
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
+            if (status) {
+                return FormValidation.ok("Great! Your API key is valid.");
+            } else {
+                return FormValidation.error("Hmmm, your API key seems to be invalid.");
             }
         }
 
