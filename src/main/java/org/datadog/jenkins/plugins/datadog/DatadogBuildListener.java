@@ -5,13 +5,7 @@ import com.timgroup.statsd.StatsDClient;
 import com.timgroup.statsd.StatsDClientException;
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.model.AbstractProject;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.Queue;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.model.listeners.RunListener;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
@@ -54,8 +48,7 @@ import static hudson.Util.fixEmptyAndTrim;
  */
 
 @Extension
-public class DatadogBuildListener extends RunListener<Run>
-        implements Describable<DatadogBuildListener> {
+public class DatadogBuildListener extends RunListener<Run> implements Describable<DatadogBuildListener> {
     /**
      * Static variables describing consistent plugin names, Datadog API endpoints/codes, and magic
      * numbers.
@@ -179,10 +172,21 @@ public class DatadogBuildListener extends RunListener<Run>
             DatadogEvent evt = new BuildFinishedEventImpl(builddata, extraTags);
             DatadogHttpRequests.sendEvent(evt);
             gauge("jenkins.job.duration", builddata, "duration", extraTags);
-            if ("SUCCESS".equals(builddata.get("result"))) {
+
+            String buildResult = Result.NOT_BUILT.toString();
+            if (builddata.get("result") != null) {
+                buildResult = builddata.get("result").toString();
+            }
+            if (Result.SUCCESS.toString().equals(buildResult)) {
                 serviceCheck("jenkins.job.status", DatadogBuildListener.OK, builddata, extraTags);
-            } else {
+            } else if (Result.UNSTABLE.toString().equals(buildResult) ||
+                    Result.ABORTED.toString().equals(buildResult) ||
+                    Result.NOT_BUILT.toString().equals(buildResult)) {
+                serviceCheck("jenkins.job.status", DatadogBuildListener.WARNING, builddata, extraTags);
+            } else if (Result.FAILURE.toString().equals(buildResult)) {
                 serviceCheck("jenkins.job.status", DatadogBuildListener.CRITICAL, builddata, extraTags);
+            } else {
+                serviceCheck("jenkins.job.status", DatadogBuildListener.UNKNOWN, builddata, extraTags);
             }
 
             // Setup tags for StatsDClient reporting
