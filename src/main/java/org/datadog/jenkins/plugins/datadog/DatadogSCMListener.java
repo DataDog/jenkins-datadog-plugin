@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Run;
@@ -8,7 +7,8 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.SCMListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
-import net.sf.json.JSONObject;
+import org.datadog.jenkins.plugins.datadog.events.CheckoutCompletedEventImpl;
+import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,45 +39,36 @@ public class DatadogSCMListener extends SCMListener {
     @Override
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
                            File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
-
         if (DatadogUtilities.isApiKeyNull()) {
             return;
         }
-        String jobName = build.getParent().getFullName();
-        String normalizedJobName = DatadogUtilities.normalizeFullDisplayName(jobName);
-        HashMap<String, String> tags = new HashMap<>();
-        DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
+
         // Process only if job is NOT in blacklist and is in whitelist
-        if (DatadogUtilities.isJobTracked(jobName)
-                && prop != null && prop.isEmitOnCheckout()) {
-            logger.fine("Checkout! in onCheckout()");
-
-            // Get the list of global tags to apply
-            tags.putAll(DatadogUtilities.getRegexJobTags(jobName));
-
-            // Grab environment variables
-            EnvVars envVars = new EnvVars();
-            try {
-                envVars = build.getEnvironment(listener);
-                tags = DatadogUtilities.parseTagList(build, listener);
-            } catch (IOException | InterruptedException e) {
-                logger.severe(e.getMessage());
-            }
-
-            // Gather pre-build metadata
-            JSONObject builddata = new JSONObject();
-            builddata.put("hostname", DatadogUtilities.getHostname(envVars)); // string
-            builddata.put("job", normalizedJobName); // string
-            builddata.put("number", build.number); // int
-            builddata.put("result", null); // null
-            builddata.put("duration", null); // null
-            builddata.put("buildurl", envVars.get("BUILD_URL")); // string
-            long starttime = build.getStartTimeInMillis() / DatadogBuildListener.THOUSAND_LONG; // ms to s
-            builddata.put("timestamp", starttime); // string
-
-            DatadogEvent evt = new CheckoutCompletedEventImpl(builddata, tags);
-
-            DatadogHttpRequests.sendEvent(evt);
+        DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
+        if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
+                && prop != null && prop.isEmitOnCheckout())) {
+            return;
         }
+        logger.fine("Checkout! in onCheckout()");
+
+        // Instanciate the Datadog Client
+        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+
+        // Collect Build Data
+        BuildData buildData;
+        try {
+            buildData = new BuildData(build, listener);
+        } catch (IOException | InterruptedException e) {
+            logger.severe(e.getMessage());
+            return;
+        }
+
+        // Get the list of global tags to apply
+        HashMap<String, String> extraTags = DatadogUtilities.buildExtraTags(build, listener);
+
+        // Send event
+        DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);
+        client.sendEvent(event.createPayload());
     }
+
 }

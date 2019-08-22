@@ -18,7 +18,6 @@ public class DatadogQueueListener extends PeriodicWork {
     private static final long RECURRENCE_PERIOD = TimeUnit.MINUTES.toMillis(1);
     private static final Queue queue = Queue.getInstance();
 
-
     @Override
     public long getRecurrencePeriod() {
         return RECURRENCE_PERIOD;
@@ -30,6 +29,13 @@ public class DatadogQueueListener extends PeriodicWork {
             return;
         }
         logger.fine("doRun called: Computing queue metrics");
-        DatadogHttpRequests.gauge("jenkins.queue.size", queue.getApproximateItemsQuickly().size());
+
+        // Instanciate the Datadog Client
+        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+
+        client.gauge("jenkins.queue.size",
+                queue.getApproximateItemsQuickly().size(),
+                DatadogUtilities.getHostname(null),
+                null);
     }
 }

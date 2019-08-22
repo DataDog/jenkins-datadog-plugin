@@ -9,5 +9,5 @@ public interface DatadogEvent {
     /**
      * @return The payload for the given event. Events usually have a custom message
      */
-    public JSONObject createPayload();
+    JSONObject createPayload();
 }
