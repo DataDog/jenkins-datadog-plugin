@@ -14,6 +14,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -172,9 +174,11 @@ public class BuildStartedEventTest {
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
         JSONObject o = event.createPayload();
 
-        Assert.assertTrue(o.getJSONArray("tags").size() == 2);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:parentFullName/jobName"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(1), "result:FAILURE"));
+        Object[] sortedTags = o.getJSONArray("tags").toArray();
+        Arrays.sort(sortedTags);
+        Assert.assertTrue(sortedTags.length == 2);
+        Assert.assertTrue(Objects.equals(sortedTags[0], "job:parentFullName/jobName"));
+        Assert.assertTrue(Objects.equals(sortedTags[1], "result:FAILURE"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 started on unknown"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
     }
@@ -212,10 +216,12 @@ public class BuildStartedEventTest {
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
         Assert.assertTrue(o.getLong("date_happened") == 0); //TODO: IS THIS VALID?
-        Assert.assertTrue(o.getJSONArray("tags").size() == 3);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:ParentFullName/JobName"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(1), "node:test-node"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(2), "branch:test-branch"));
+        Object[] sortedTags = o.getJSONArray("tags").toArray();
+        Arrays.sort(sortedTags);
+        Assert.assertTrue(sortedTags.length == 3);
+        Assert.assertTrue(Objects.equals(sortedTags[0], "branch:test-branch"));
+        Assert.assertTrue(Objects.equals(sortedTags[1], "job:ParentFullName/JobName"));
+        Assert.assertTrue(Objects.equals(sortedTags[2], "node:test-node"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
         Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.00 secs)"));
@@ -258,11 +264,13 @@ public class BuildStartedEventTest {
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
         Assert.assertTrue(o.getLong("date_happened") == 0);
-        Assert.assertTrue(o.getJSONArray("tags").size() == 4);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:ParentFullName/JobName"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(1), "branch:csv-branch"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(2), "tag1:value1"));
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(3), "tag2:value2"));
+        Object[] sortedTags = o.getJSONArray("tags").toArray();
+        Arrays.sort(sortedTags);
+        Assert.assertTrue(sortedTags.length == 4);
+        Assert.assertTrue(Objects.equals(sortedTags[0], "branch:csv-branch"));
+        Assert.assertTrue(Objects.equals(sortedTags[1], "job:ParentFullName/JobName"));
+        Assert.assertTrue(Objects.equals(sortedTags[2], "tag1:value1"));
+        Assert.assertTrue(Objects.equals(sortedTags[3], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
         Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.00 secs)"));
