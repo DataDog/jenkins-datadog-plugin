@@ -51,7 +51,7 @@ public class DatadogSCMListener extends SCMListener {
         }
         logger.fine("Checkout! in onCheckout()");
 
-        // Instanciate the Datadog Client
+        // Instantiate the Datadog Client
         DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
 
         // Collect Build Data

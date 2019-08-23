@@ -1,10 +1,7 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
-import hudson.model.Result;
 import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogBuildListener;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
@@ -47,7 +44,7 @@ public abstract class AbstractDatadogEvent implements DatadogEvent {
                 output = output + String.format(format, d / HOUR) + " hrs)";
             }
             return output;
-        }else{
+        } else {
             return "";
         }
     }

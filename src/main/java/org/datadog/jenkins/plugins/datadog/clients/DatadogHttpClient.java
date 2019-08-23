@@ -167,7 +167,7 @@ public class DatadogHttpClient implements DatadogClient {
                 status = false;
             }
         } catch (Exception e) {
-            if (conn.getResponseCode() == HTTP_FORBIDDEN) {
+            if (conn != null && conn.getResponseCode() == HTTP_FORBIDDEN) {
                 logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
             } else {
                 logger.severe(String.format("Client error: %s", e.toString()));
@@ -205,7 +205,7 @@ public class DatadogHttpClient implements DatadogClient {
                 status = false;
             }
         } catch (Exception e) {
-            if (conn.getResponseCode() == HTTP_FORBIDDEN) {
+            if (conn != null && conn.getResponseCode() == HTTP_FORBIDDEN) {
                 logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
             } else {
                 logger.severe(String.format("Client error: %s", e.toString()));
@@ -228,7 +228,11 @@ public class DatadogHttpClient implements DatadogClient {
      */
     private HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
         HttpURLConnection conn = null;
-        ProxyConfiguration proxyConfig = Jenkins.getInstance().proxy;
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null){
+            return null;
+        }
+        ProxyConfiguration proxyConfig = jenkins.proxy;
 
         /* Attempt to use proxy */
         if (proxyConfig != null) {

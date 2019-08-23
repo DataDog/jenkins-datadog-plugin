@@ -18,7 +18,7 @@ public class DatadogStatsDClientStub implements StatsDClient {
     @Override
     public void incrementCounter(String s, String... strings) {
         JSONArray jtags = new JSONArray();
-        if (strings != null){
+        if (strings != null) {
             jtags.addAll(Arrays.asList(strings));
         }
         boolean exists = false;
@@ -32,7 +32,7 @@ public class DatadogStatsDClientStub implements StatsDClient {
                 break;
             }
         }
-        if (!exists){
+        if (!exists) {
             this.metrics.add(new DatadogMetric(s, 1, "", jtags));
         }
     }
@@ -40,7 +40,7 @@ public class DatadogStatsDClientStub implements StatsDClient {
     @Override
     public void gauge(String s, double v, String... strings) {
         JSONArray jtags = new JSONArray();
-        if (strings != null){
+        if (strings != null) {
             jtags.addAll(Arrays.asList(strings));
         }
         this.metrics.add(new DatadogMetric(s, v, "", jtags));
@@ -53,7 +53,7 @@ public class DatadogStatsDClientStub implements StatsDClient {
 
     public boolean assertMetric(String name, long value, String[] tags) {
         JSONArray jtags = new JSONArray();
-        if (tags != null){
+        if (tags != null) {
             jtags.addAll(Arrays.asList(tags));
         }
         DatadogMetric m = new DatadogMetric(name, value, "", jtags);
@@ -66,20 +66,20 @@ public class DatadogStatsDClientStub implements StatsDClient {
         return false;
     }
 
-    public boolean assertCounter(String name, long value, String[] tags) {
-        JSONArray jtags = new JSONArray();
-        if (tags != null){
-            jtags.addAll(Arrays.asList(tags));
-        }
-        DatadogMetric m = new DatadogMetric(name, value, "", jtags);
-        if (this.counters.contains(m)) {
-            this.counters.remove(m);
-            return true;
-        }
-        Assert.fail("counter { " + m.toString() + " does not exist. " +
-                "counters: {" + this.counters.toString() + " }");
-        return false;
-    }
+//    public boolean assertCounter(String name, long value, String[] tags) {
+//        JSONArray jtags = new JSONArray();
+//        if (tags != null) {
+//            jtags.addAll(Arrays.asList(tags));
+//        }
+//        DatadogMetric m = new DatadogMetric(name, value, "", jtags);
+//        if (this.counters.contains(m)) {
+//            this.counters.remove(m);
+//            return true;
+//        }
+//        Assert.fail("counter { " + m.toString() + " does not exist. " +
+//                "counters: {" + this.counters.toString() + " }");
+//        return false;
+//    }
 
     public boolean assertedAllMetricsAndCounters() {
         if (this.metrics.size() == 0 && this.counters.size() == 0) {

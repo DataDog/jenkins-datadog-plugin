@@ -184,7 +184,7 @@ public class DatadogBuildListenerTest {
     }
 
     private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client, StatsDClient statsd) {
-        DatadogBuildListener.DescriptorImpl descriptor =  mock(DatadogBuildListener.DescriptorImpl.class);
+        DatadogBuildListener.DescriptorImpl descriptor = mock(DatadogBuildListener.DescriptorImpl.class);
         when(descriptor.leaseDatadogClient()).thenReturn(client);
         when(descriptor.leaseStatDClient()).thenReturn(statsd);
         if (statsd != null) {

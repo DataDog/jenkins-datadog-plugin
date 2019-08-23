@@ -2,7 +2,6 @@ package org.datadog.jenkins.plugins.datadog.events;
 
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
@@ -27,25 +26,23 @@ public class BuildStartedEventImpl extends AbstractDatadogEvent {
                 "unknown" : builddata.getNumber(null).toString();
 
         // Build title
-        StringBuilder title = new StringBuilder();
-        title.append( builddata.getJob("unknown")).
-                append(" build #").
-                append(number).
-                append(" started").
-                append(" on ").
-                append(builddata.getHostname("unknown"));
-        payload.put("title", title.toString());
+        String title = builddata.getJob("unknown") +
+                " build #" +
+                number +
+                " started" +
+                " on " +
+                builddata.getHostname("unknown");
+        payload.put("title", title);
 
         // Build Text
-        StringBuilder message = new StringBuilder();
-        message.append("%%% \n [Follow build #").
-                append(number).
-                append(" progress](").
-                append(builddata.getBuildUrl("unknown")).
-                append(") ").
-                append(getDuration()).
-                append(" \n %%%");
-        payload.put("text", message.toString());
+        String message = "%%% \n [Follow build #" +
+                number +
+                " progress](" +
+                builddata.getBuildUrl("unknown") +
+                ") " +
+                getDuration() +
+                " \n %%%";
+        payload.put("text", message);
 
         payload.put("alert_type", "info");
         payload.put("priority", "low");

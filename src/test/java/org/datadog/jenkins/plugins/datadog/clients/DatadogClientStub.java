@@ -47,7 +47,7 @@ public class DatadogClientStub implements DatadogClient {
 
     public boolean assertMetric(String name, double value, String hostname, String[] tags) {
         JSONArray jtags = new JSONArray();
-        if (tags != null){
+        if (tags != null) {
             jtags.addAll(Arrays.asList(tags));
         }
         DatadogMetric m = new DatadogMetric(name, value, hostname, jtags);
@@ -60,26 +60,27 @@ public class DatadogClientStub implements DatadogClient {
         return false;
     }
 
-    public boolean assertMetricNotZero(String name, String hostname, String[] tags) {
-        JSONArray jtags = new JSONArray();
-        if (tags != null){
-            jtags.addAll(Arrays.asList(tags));
-        }
-        for (DatadogMetric m : this.metrics) {
-            if (m.getName() == name && m.getHostname() == hostname && Objects.equals(m.getTags(), jtags)) {
-                DatadogMetric r = new DatadogMetric(name, m.getValue(), hostname, jtags);
-                this.metrics.remove(r);
-                return true;
-            }
-        }
-        Assert.fail("metric with {name: " + name + ", hostname: " + hostname + ", tags: " + tags.toString() +
-                "} does not exist. metrics: {" + this.metrics.toString() + " }");
-        return false;
-    }
+//    public boolean assertMetricNotZero(String name, String hostname, String[] tags) {
+//        JSONArray jtags = new JSONArray();
+//        if (tags != null) {
+//            jtags.addAll(Arrays.asList(tags));
+//        }
+//        for (DatadogMetric m : this.metrics) {
+//            if (Objects.equals(m.getName(), name) && Objects.equals(m.getHostname(), hostname) &&
+//                    Objects.equals(m.getTags(), jtags)) {
+//                DatadogMetric r = new DatadogMetric(name, m.getValue(), hostname, jtags);
+//                this.metrics.remove(r);
+//                return true;
+//            }
+//        }
+//        Assert.fail("metric with {name: " + name + ", hostname: " + hostname + ", tags: " + tags.toString() +
+//                "} does not exist. metrics: {" + this.metrics.toString() + " }");
+//        return false;
+//    }
 
     public boolean assertServiceCheck(String name, int code, String hostname, String[] tags) {
         JSONArray jtags = new JSONArray();
-        if (tags != null){
+        if (tags != null) {
             jtags.addAll(Arrays.asList(tags));
         }
         DatadogMetric m = new DatadogMetric(name, code, hostname, jtags);

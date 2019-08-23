@@ -14,14 +14,13 @@ import java.util.Map;
 
 
 public class BuildData {
-    private String job; //jobName
+    private String job;
     private String result;
     private String hostname;
     private String buildUrl;
     private String node;
     private String branch;
     private Integer number;
-    private Long startTime;
     private Long duration;
     private Long timestamp;
 
@@ -36,13 +35,12 @@ public class BuildData {
                 envVars);
     }
 
-    private void create(String jobName, long startTimeMs, Long durationMs, Result result, int runNumber,
+    private void create(String jobName, long startTimeMs, long durationMs, Result result, int runNumber,
                         EnvVars envVars) {
-        setStartTime(startTimeMs / 1000); // ms to s
         long duration;
-        if (durationMs == null || durationMs == 0) {
+        if (durationMs == 0) {
             duration = System.currentTimeMillis() - startTimeMs;
-        }else{
+        } else {
             duration = durationMs;
         }
         setDuration(durationMs / 1000); //ms to s
@@ -53,10 +51,10 @@ public class BuildData {
         setResult(result == null ? null : result.toString());
 
         setJob(jobName == null ?
-                "": jobName.replaceAll("»", "/").replaceAll(" ", ""));
+                "" : jobName.replaceAll("»", "/").replaceAll(" ", ""));
 
         // Grab environment variables
-        setHostname(DatadogUtilities.getHostname(envVars == null? null : envVars.get("HOSTNAME")));
+        setHostname(DatadogUtilities.getHostname(envVars == null ? null : envVars.get("HOSTNAME")));
         if (envVars != null) {
             setBuildUrl(envVars.get("BUILD_URL"));
             setNode(envVars.get("NODE_NAME"));
@@ -78,7 +76,7 @@ public class BuildData {
      */
     public JSONArray getAssembledTags(Map<String, String> extra) {
         JSONArray tags = new JSONArray();
-        if(extra == null){
+        if (extra == null) {
             extra = new HashMap<>();
         }
         tags.add("job:" + getJob("null"));
@@ -102,10 +100,10 @@ public class BuildData {
         return tags;
     }
 
-    private <A> A defaultIfNull(A value, A defaultValue){
-        if (value == null){
+    private <A> A defaultIfNull(A value, A defaultValue) {
+        if (value == null) {
             return defaultValue;
-        }else{
+        } else {
             return value;
         }
     }
@@ -164,14 +162,6 @@ public class BuildData {
 
     public void setNumber(Integer number) {
         this.number = number;
-    }
-
-    public Long getStartTime(Long value) {
-        return defaultIfNull(startTime, value);
-    }
-
-    public void setStartTime(Long startTime) {
-        this.startTime = startTime;
     }
 
     public Long getDuration(Long value) {

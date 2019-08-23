@@ -78,7 +78,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
         logger.fine("Started build!");
 
-        // Instanciate the Datadog Client
+        // Instantiate the Datadog Client
         DatadogClient client = getDescriptor().leaseDatadogClient();
 
         // Collect Build Data
@@ -138,7 +138,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
         logger.fine("Completed build!");
 
-        // Instanciate the Datadog Client
+        // Instantiate the Datadog Client
         DatadogClient client = getDescriptor().leaseDatadogClient();
 
         // Collect Build Data
@@ -160,7 +160,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         // Send a metric
         JSONArray tags = buildData.getAssembledTags(extraTags);
         client.gauge("jenkins.job.duration",
-                buildData.getDuration(0l),
+                buildData.getDuration(0L),
                 buildData.getHostname("null"),
                 tags);
 
@@ -249,7 +249,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      * @return - A boolean that checks if the daemonHost is valid
      */
     private boolean isValidDaemon(String daemonHost) {
-        if (daemonHost == null){
+        if (daemonHost == null) {
             logger.info("Daemon host is not set");
             return false;
         }
@@ -300,11 +300,12 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         if (buildFailed(run.getPreviousBuiltBuild())) {
             Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
 
-            while (buildFailed(firstFailedRun.getPreviousBuiltBuild())) {
+            while (firstFailedRun != null && buildFailed(firstFailedRun.getPreviousBuiltBuild())) {
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
-
-            return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+            if (firstFailedRun != null) {
+                return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+            }
         }
         return 0;
     }
@@ -376,7 +377,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         public FormValidation doTestConnection(@QueryParameter("apiKey") final String formApiKey)
                 throws IOException, ServletException {
 
-            // Instanciate the Datadog Client
+            // Instantiate the Datadog Client
             DatadogClient client = new DatadogHttpClient(
                     this.getTargetMetricURL(),
                     Secret.fromString(formApiKey));
@@ -531,7 +532,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             if (datadogClient != null) {
                 try {
                     datadogClient = new DatadogHttpClient(targetMetricURL, apiKey);
-                    logger.finer(String.format("Created new datadogClient client!"));
+                    logger.finer("Created new datadogClient client!");
                 } catch (Exception e) {
                     logger.severe(String.format("Unable to create new datadogClient. Exception: %s", e.toString()));
                 }

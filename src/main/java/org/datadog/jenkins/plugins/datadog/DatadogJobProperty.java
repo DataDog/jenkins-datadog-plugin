@@ -63,7 +63,10 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
             throws Descriptor.FormException {
 
         DatadogJobProperty prop = (DatadogJobProperty) super.reconfigure(req, form);
-        System.out.println(form);
+        if (prop == null){
+            return null;
+        }
+
         boolean isEnableFile = form.getBoolean("enableFile");
         boolean isEnableTagProperties = form.getBoolean("enableProperty");
 

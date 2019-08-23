@@ -29,8 +29,11 @@ public class DatadogUtilities {
      * - configuration.
      */
     public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
-        return (DatadogBuildListener.DescriptorImpl) Jenkins.getInstance().
-                getDescriptorOrDie(DatadogBuildListener.class);
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            return null;
+        }
+        return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
     }
 
     /**
@@ -198,7 +201,7 @@ public class DatadogUtilities {
      * This method parses the contents of the configured Datadog tags. If they are present.
      * Takes the current build as a parameter. And returns the expanded tags and their
      * values in a HashMap.
-     *
+     * <p>
      * Always returns a HashMap, that can be empty, if no tagging is configured.
      *
      * @param run      - Current build
@@ -257,14 +260,14 @@ public class DatadogUtilities {
      */
     @CheckForNull
     public static DatadogJobProperty retrieveProperty(Run r) {
-        return  (DatadogJobProperty)r.getParent().getProperty(DatadogJobProperty.class);
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
     }
 
     /**
      * Getter function to return either the saved hostname global configuration,
      * or the hostname that is set in the Jenkins host itself. Returns null if no
      * valid hostname is found.
-     *
+     * <p>
      * Tries, in order:
      * Jenkins configuration
      * Jenkins hostname environment variable
@@ -350,8 +353,8 @@ public class DatadogUtilities {
      * @param hostname - A String object containing the name of a host.
      * @return a boolean representing the validity of the hostname
      */
-    public static final Boolean isValidHostname(String hostname) {
-        if (hostname == null){
+    public static Boolean isValidHostname(String hostname) {
+        if (hostname == null) {
             return false;
         }
 

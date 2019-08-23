@@ -52,16 +52,16 @@ public class BuildFinishedEventTest {
         try {
             o.getString("host");
             Assert.fail(o.getString("host"));
-        }catch (JSONException e){
+        } catch (JSONException e) {
             //continue
         }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "")); // TODO: IS THIS VALID?
+        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), ""));
         Assert.assertTrue(o.getLong("date_happened") != 0);
         Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:")); //TODO: IS THIS VALID?
+        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 unknown on unknown")); //TODO: IS THIS VALID?
-        Assert.assertTrue(o.getString("text").contains( "[See results for build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 unknown on unknown"));
+        Assert.assertTrue(o.getString("text").contains("[See results for build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "warning"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "normal"));
     }
@@ -233,7 +233,7 @@ public class BuildFinishedEventTest {
         Run run = mock(Run.class);
         when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(10l);
+        when(run.getDuration()).thenReturn(10L);
         when(run.getNumber()).thenReturn(2);
         when(run.getParent()).thenReturn(job);
 
@@ -245,7 +245,7 @@ public class BuildFinishedEventTest {
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
-        Assert.assertTrue(o.getLong("date_happened") == 0); //TODO: IS THIS VALID?
+        Assert.assertTrue(o.getLong("date_happened") == 0);
         Object[] sortedTags = o.getJSONArray("tags").toArray();
         Arrays.sort(sortedTags);
         Assert.assertTrue(sortedTags.length == 4);
@@ -280,7 +280,7 @@ public class BuildFinishedEventTest {
         Run run = mock(Run.class);
         when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(10l);
+        when(run.getDuration()).thenReturn(10L);
         when(run.getNumber()).thenReturn(2);
         when(run.getParent()).thenReturn(job);
 
@@ -288,7 +288,7 @@ public class BuildFinishedEventTest {
 
         BuildData bd = new BuildData(run, listener);
         Map<String, String> tags = new HashMap<>();
-        tags.put("tag1","value1");
+        tags.put("tag1", "value1");
         tags.put("tag2", "value2");
         BuildFinishedEventImpl event = new BuildFinishedEventImpl(bd, tags);
         JSONObject o = event.createPayload();

@@ -30,7 +30,7 @@ public class DatadogQueueListener extends PeriodicWork {
         }
         logger.fine("doRun called: Computing queue metrics");
 
-        // Instanciate the Datadog Client
+        // Instantiate the Datadog Client
         DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
 
         client.gauge("jenkins.queue.size",

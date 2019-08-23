@@ -3,7 +3,6 @@ package org.datadog.jenkins.plugins.datadog.events;
 import hudson.model.Result;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
@@ -26,25 +25,23 @@ public class BuildFinishedEventImpl extends AbstractDatadogEvent {
         String buildResult = builddata.getResult("UNKNOWN");
 
         // Build title
-        StringBuilder title = new StringBuilder();
-        title.append(builddata.getJob("unknown")).
-                append(" build #").
-                append(number).
-                append(" ").
-                append(buildResult.toLowerCase()).
-                append(" on ").
-                append(builddata.getHostname("unknown"));
-        payload.put("title", title.toString());
+        String title = builddata.getJob("unknown") +
+                " build #" +
+                number +
+                " " +
+                buildResult.toLowerCase() +
+                " on " +
+                builddata.getHostname("unknown");
+        payload.put("title", title);
 
-        StringBuilder message = new StringBuilder();
-        message.append("%%% \n [See results for build #").
-                append(number).
-                append("](").
-                append(builddata.getBuildUrl("unknown")).
-                append(") ").
-                append(getDuration()).
-                append(" \n %%%");
-        payload.put("text", message.toString());
+        String message = "%%% \n [See results for build #" +
+                number +
+                "](" +
+                builddata.getBuildUrl("unknown") +
+                ") " +
+                getDuration() +
+                " \n %%%";
+        payload.put("text", message);
 
         if (Result.SUCCESS.toString().equals(buildResult)) {
             payload.put("priority", "low");
