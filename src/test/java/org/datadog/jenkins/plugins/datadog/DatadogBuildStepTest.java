@@ -51,24 +51,23 @@ public class DatadogBuildStepTest {
 
         String pipelineTags = "myTag1=val1 myTag2=val2 myTag3=val3";
         String jobName = run.getParent().getFullName();
-        
+
         String badPipelineTags = "tag1=val1, tag2=val2, tag3=val3";
         String fakeJobName = "parent/fake-job";
 
         datadogBuildStep = spy(new DatadogBuildStep(pipelineTags));
-
 		datadogBuildStep.perform(run, workspace, launcher, taskListener);
 
 		Map<String,String> expectedTagPool = new ConcurrentHashMap<>();
 		expectedTagPool.put(jobName, pipelineTags);
-		
+
 		Map<String,String> notExpectedTagPool = new ConcurrentHashMap<>();
 		notExpectedTagPool.put(fakeJobName, badPipelineTags);
 
 		assertThat(datadogBuildStep.tagPool, is(expectedTagPool));
 		assertThat(datadogBuildStep.tagPool, IsMapContaining.hasKey(jobName));
 		assertThat(datadogBuildStep.tagPool, IsMapContaining.hasValue(pipelineTags));
-		
+
 		assertThat(datadogBuildStep.tagPool, not(is(notExpectedTagPool)));
 		assertThat(datadogBuildStep.tagPool, not(IsMapContaining.hasValue(badPipelineTags)));
 		assertThat(datadogBuildStep.tagPool, not(IsMapContaining.hasKey(fakeJobName)));

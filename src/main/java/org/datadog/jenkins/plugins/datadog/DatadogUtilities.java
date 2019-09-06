@@ -24,230 +24,26 @@ import java.util.regex.Pattern;
 
 public class DatadogUtilities {
 
-  private static final Logger logger =  Logger.getLogger(DatadogSCMListener.class.getName());
-  /**
-   *
-   * @return - The descriptor for the Datadog plugin. In this case the global
-   *         - configuration.
-   */
-  public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
-    DatadogBuildListener.DescriptorImpl desc = (DatadogBuildListener.DescriptorImpl)Jenkins.getInstance().getDescriptorOrDie(DatadogBuildListener.class);
-    return desc;
-  }
+    private static final Logger logger = Logger.getLogger(DatadogSCMListener.class.getName());
 
-  /**
-   *
-   * @return - The hostname configured in the global configuration. Shortcut method.
-   */
-  public static String getHostName()  {
-    return DatadogUtilities.getDatadogDescriptor().getHostname();
-  }
-
-  /**
-   * Set Hostname for global configuration.
-   *
-   * @param hostName - A string representing the hostname
-   */
-  public static void setHostName(String hostName)  {
-    DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
-  }
-
-  /**
-   *
-   * @return - The api key configured in the global configuration. Shortcut method.
-   */
-  public static Secret getApiKey() {
-    return DatadogUtilities.getDatadogDescriptor().getApiKey();
-  }
-
-  /**
-   *
-   * Set ApiKey for global configuration.
-   *
-   * @param apiKey - A string representing an apiKey
-   */
-  public static void setApiKey(String apiKey) {
-    DatadogUtilities.getDatadogDescriptor().setApiKey(apiKey);
-  }
-
-  /**
-   *
-   * Check if apiKey is null
-   *
-   * @return boolean - apiKey is null
-   */
-  public static boolean isApiKeyNull() {
-    return Secret.toString(DatadogUtilities.getApiKey()).isEmpty();
-  }
-
-  /**
-   *
-   * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
-   */
-  public static String getBlacklist() {
-    return DatadogUtilities.getDatadogDescriptor().getBlacklist();
-  }
-  /**
-   *
-   * @return - The list of included jobs configured in the global configuration. Shortcut method.
-   */
-  public static String getWhitelist() {
-    return DatadogUtilities.getDatadogDescriptor().getWhitelist();
-  }
-
-  /**
-   *
-   * @return - The list of included jobs configured in the global configuration. Shortcut method.
-   */
-  public static String getGlobalJobTags() {
-    return DatadogUtilities.getDatadogDescriptor().getGlobalJobTags();
-  }
-
-  /**
-   *
-   * @return - The target API URL
-   */
-  public static String getTargetMetricURL()  {
-    return DatadogUtilities.getDatadogDescriptor().getTargetMetricURL();
-  }
-
-  /**
-   * Checks if a jobName is blacklisted, whitelisted, or neither.
-   *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
-   */
-  public static boolean isJobTracked(final String jobName) {
-    return !DatadogUtilities.isJobBlacklisted(jobName) && DatadogUtilities.isJobWhitelisted(jobName);
-  }
-
-  /**
-   * Retrieve the list of tags from the Config file if regex Jobs was checked
-   *  @param jobName - A string containing the name of some job
-   *  @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
-   */
-  public static Map<String,String> getRegexJobTags(String jobName) {
-    Map<String,String> tags = new HashMap<String,String>();
-    final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList( DatadogUtilities.getGlobalJobTags() );
-
-    logger.fine(String.format("The list of Global Job Tags are: %s", globalTags));
-
-    // Each jobInfo is a list containing one regex, and a variable number of tags
-    for (List<String> jobInfo: globalTags) {
-
-      if(jobInfo.isEmpty()) {
-        continue;
-      }
-
-      Pattern p = Pattern.compile(jobInfo.get(0));
-      Matcher m = p.matcher(jobName);
-      if(m.matches()) {
-        for(int i = 1; i < jobInfo.size(); i++) {
-          String[] tagItem = jobInfo.get(i).split(":");
-          if(Character.toString(tagItem[1].charAt(0)).equals("$")) {
-            try {
-              tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
-            } catch(IndexOutOfBoundsException e) {
-              logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: %s Exception: %s", Arrays.toString(tagItem), e));
-            }
-          } else {
-            tags.put(tagItem[0], tagItem[1]);
-          }
-        }
-      }
-    }
-
-    return tags;
-  }
-
-  /**
-   * Checks if a jobName is blacklisted.
-   *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not blacklisted.
-   */
-  public static boolean isJobBlacklisted(final String jobName) {
-    final List<String> blacklist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getBlacklist() );
-    return blacklist.contains(jobName.toLowerCase());
-  }
-
-  /**
-   * Checks if a jobName is whitelisted.
-   *
-   * @param jobName - A String containing the name of some job.
-   * @return a boolean to signify if the jobName is or is not whitelisted.
-   */
-  public static boolean isJobWhitelisted(final String jobName) {
-    final List<String> whitelist = DatadogUtilities.joblistStringtoList( DatadogUtilities.getWhitelist() );
-
-    // Check if the user config is using regexes
-    return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
-  }
-
-  /**
-   * Converts a blacklist/whitelist string into a String array.
-   *
-   * @param joblist - A String containing a set of job names.
-   * @return a String array representing the job names to be whitelisted/blacklisted. Returns
-   *         empty string if blacklist is null.
-   */
-  private static List<String> joblistStringtoList(final String joblist) {
-    List<String> jobs = new ArrayList<>();
-    if ( joblist != null ) {
-      for (String job: joblist.trim().split(",")) {
-          if (!job.isEmpty()) {
-              jobs.add(job.trim().toLowerCase());
-          }
-      }
+    /**
+     * Human-friendly OS name. Commons return values are windows, linux, mac, sunos, freebsd
+     *
+     * @return a String with a human-friendly OS name
+     */
+    public static String getOS() {
+        String out = System.getProperty("os.name");
+        String os = out.split(" ")[0];
+        return os.toLowerCase();
     }
 
     /**
-   * Converts a blacklist/whitelist string into a String array.
-   * This is the implementation for when the Use Regex checkbox is enabled
-   *
-   * @param joblist - A String containing a set of job name regexes and tags.
-   * @return a String List representing the job names to be whitelisted/blacklisted and its associated tags.
-   *         Returns empty string if blacklist is null.
-   */
-  private static List<List<String>> regexJoblistStringtoList(final String joblist) {
-    List<List<String>> jobs = new ArrayList<>();
-    if ( joblist != null  && joblist.length() != 0) {
-      for (String job: joblist.split("\\r?\\n")) {
-        List<String> jobAndTags = new ArrayList<>();
-        for (String item: job.split(",")) {
-          if (!item.isEmpty()) {
-            jobAndTags.add(item);
-          }
-        }
-        jobs.add(jobAndTags);
-      }
-    }
-    return jobs;
-  }
-
-  /**
-   * This method parses the contents of the configured Datadog tags. If they are present.
-   * Takes the current build as a parameter. And returns the expanded tags and their
-   * values in a HashMap.
-   *
-   * Always returns a HashMap, that can be empty, if no tagging is configured.
-   *
-   * @param run - Current build
-   * @param listener - Current listener
-   * @return A {@link HashMap} containing the key,value pairs of tags. Never null.
-   * @throws IOException if an error occurs when reading from any objects
-   * @throws InterruptedException if an interrupt error occurs
-   */
-  @Nonnull
-  public static HashMap<String,String> parseTagList(Run run, TaskListener listener) throws IOException,
-          InterruptedException {
-    HashMap<String,String> map = new HashMap<String, String>();
-
-    DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
-
-    // If Null, nothing to retrieve
-    if( property == null ) {
-      return map;
+     * @return - The descriptor for the Datadog plugin. In this case the global
+     * - configuration.
+     */
+    public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
+        return (DatadogBuildListener.DescriptorImpl) Jenkins.getInstance().
+                getDescriptorOrDie(DatadogBuildListener.class);
     }
 
     /**
@@ -266,39 +62,11 @@ public class DatadogUtilities {
         DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
     }
 
-    String jobName = run.getParent().getFullName();
-    if( DatadogBuildStep.tagPool.containsKey(jobName)) {
-      String tags = DatadogBuildStep.tagPool.get(jobName);
-      DatadogBuildStep.tagPool.remove(jobName);
-      for(String tag : tags.split(" ")) {
-        String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
-        if( expanded.length > 1 ) {
-          map.put(expanded[0], expanded[1]);
-          logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
-        } else {
-          logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
-        }
-      }
-    }
-
-    return map;
-  }
-
-  /**
-   * Builds extraTags if any are configured in the Job.
-   *
-   * @param run - Current build
-   * @param listener - Current listener
-   * @return A {@link HashMap} containing the key,value pairs of tags if any.
-   */
-  public static HashMap<String,String> buildExtraTags(Run run, TaskListener listener) {
-    HashMap<String,String> extraTags = new HashMap<String, String>();
-    try {
-      extraTags = DatadogUtilities.parseTagList(run, listener);
-    } catch (IOException ex) {
-      logger.severe(ex.getMessage());
-    } catch (InterruptedException ex) {
-      logger.severe(ex.getMessage());
+    /**
+     * @return - The api key configured in the global configuration. Shortcut method.
+     */
+    public static Secret getApiKey() {
+        return DatadogUtilities.getDatadogDescriptor().getApiKey();
     }
 
     /**
