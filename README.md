@@ -50,8 +50,17 @@ From the global configuration page, at `Manage Jenkins -> Configure System`.
 
 From a job specific configuration page
 * Custom tags
-	* Added from a file in the job workspace (not compatible with Pipeline jobs), or
+	* Added from a file in the job workspace
+    * Added from a pipeline
 	* Added as text directly from the configuration page
+
+**Pipeline Tags Usage**
+
+```
+node {
+   step([$class: 'DatadogBuildStep', tags: 'tag1=value1 tag2=value2 tag3=value3'])
+}
+```
 
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
