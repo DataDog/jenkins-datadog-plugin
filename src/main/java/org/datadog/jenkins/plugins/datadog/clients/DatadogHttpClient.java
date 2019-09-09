@@ -33,8 +33,8 @@ public class DatadogHttpClient implements DatadogClient {
 
     private static final Integer HTTP_FORBIDDEN = 403;
 
-    private String url = null;
-    private Secret apiKey = null;
+    private String url;
+    private Secret apiKey;
 
 
     public DatadogHttpClient(String url, Secret apiKey) {
@@ -112,14 +112,7 @@ public class DatadogHttpClient implements DatadogClient {
             logger.fine(tags.toString());
             payload.put("tags", tags);
         }
-        boolean status;
-        try {
-            status = post(payload, SERVICECHECK);
-        } catch (Exception e) {
-            logger.severe(e.toString());
-            status = false;
-        }
-        return status;
+        return post(payload, SERVICECHECK);
     }
 
     /**
@@ -131,7 +124,7 @@ public class DatadogHttpClient implements DatadogClient {
      * @return a boolean to signify the success or failure of the HTTP POST request.
      * @throws IOException if HttpURLConnection fails to open connection
      */
-    private boolean post(final JSONObject payload, final String type) throws IOException {
+    private boolean post(final JSONObject payload, final String type) {
         String urlParameters = "?api_key=" + Secret.toString(apiKey);
         HttpURLConnection conn = null;
         boolean status = true;
@@ -167,10 +160,14 @@ public class DatadogHttpClient implements DatadogClient {
                 status = false;
             }
         } catch (Exception e) {
-            if (conn != null && conn.getResponseCode() == HTTP_FORBIDDEN) {
-                logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
-            } else {
-                logger.severe(String.format("Client error: %s", e.toString()));
+            try {
+                if (conn != null && conn.getResponseCode() == HTTP_FORBIDDEN) {
+                    logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
+                } else {
+                    logger.severe(String.format("Client error: %s", e.toString()));
+                }
+            } catch (IOException ex) {
+                logger.severe(ex.toString());
             }
             status = false;
         } finally {

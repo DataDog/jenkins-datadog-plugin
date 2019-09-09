@@ -1,70 +1,30 @@
-# Testing
-This document serves as a place to document manual testing setups for ensuring proper functionality of the Jenkins plugin.
+## Developing on this Jenkins Plugin
 
-## Testing Proxy
-In order to test the proxy server functionality, from Jenkins, we need a development setup.
+This page outlines some example steps to spin up a development environment for the *jenkins-datadog-plugin* repository. The requirements are:
 
-Utilized the following docker containers:
-* https://github.com/sameersbn/docker-squid
-* https://github.com/jenkinsci/docker
+* [Java 1.8](https://www.java.com/en/download/)
+* [Docker](https://docs.docker.com/get-started/) & [docker-compose](https://docs.docker.com/compose/install/)
+* [A clone/fork of this repository](https://help.github.com/en/articles/fork-a-repo)
 
-### Make squid proxy server
-Pull down the `sameersbn/squid` docker image, and run while exposing port 3128.
 
-    docker pull sameersbn/squid:3.3.8-4
-    docker build -t sameersbn/squid github.com/sameersbn/docker-squid
-    docker run --name squid -d --restart=always \
-      --publish 3128:3128 \
-      --volume /srv/docker/squid/cache:/var/spool/squid3 \
-      sameersbn/squid:3.3.8-4
+To get started, save the following `docker-compose.yaml` file in your working directory locally:
 
-### Make jenkins server
-Run a Jenkins docker image, exposing ports 8080 and 50000:
+```
+version: "3.7"
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - 8080:8080
+    volumes:
+      - $JENKINS_PLUGIN/target/:/var/jenkins_home/plugins
+```
 
-    docker run -d --name web -p 8080:8080 -p 50000:50000 jenkins
+Set the `JENKINS_PLUGIN` environment variable to point to the folder of the clone/fork of this repository.
 
-From here, you'll connect to Jenkins UI from your browser, through `localhost:8080`. Once you are connected, follow these steps:
+Then run `docker-compose -f <DOCKER_COMPOSE_FILE_PATH> up -d`.
 
-1. Install the Datadog Plugin, either via the Update Center, or via .hpi
-2. Configure with an API key
-3. Create a test build
 
-Now, we need to connect to the squid docker container to do some introspection, so we can prove that the proxy is routing this data.
+This spins up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
 
-    docker exec -it squid bash
-
-Once you are conencted to the squid box, run a tcp dump to follow port 3128.
-
-    apt-get update
-    apt-get install -y tcpdump
-    sudo tcpdump -i eth0 -vvvvtttAXns 1500 'port 3128'
-
-Now that this window is following all the traffic coming through port 3128, let's go back to the Jenkins UI.
-
-1. Run the test build that you had setup previously.
-2. Look on the output from the tcpdump. You should NOT see any output.
-3. Now go to `Manage Jenkins` > `Manage Plugins`, and then select the `Advanced` tab.
-4. From here you will see the 'HTTP Proxy Configuration' section. Enter the following information:
-    * Server: 172.17.42.1
-    * Port: 3128
-5. Optionally, you can click `Advanced`, and then test `http://www.google.com` and you should see the output in the tcpdump terminal window.
-6. Finally, run the test build again.
-7. You should now see output from the tcpdump terminal window!
-
-Repeat this by enabling/disabling the proxy configuration in Jenkins and repeating the test to prove to yourself that it was not a fluke.
-**Note: I've noticed that Jenkins seems to send a disconnection series of packets to the proxy server with the first connection attempt (when you run your test build), after you've disabled the proxy configration. Run the test job a second time, and you'll again not see any output.**
-
-## Check Style
-In order to check that the Java style meets the recommendations of Sun and Google, as closely as possible, here is a way to test it.
-
-1. Download the most recent [checkstyle jar](http://sourceforge.net/projects/checkstyle/files/checkstyle/) from SourceForge.
-2. Grab the style checks from [Sun](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/sun_checks.xml) and [Google](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/google_checks.xml).
- * Note: We following 100 character line length, so remove the `<module name="LineLength"/>` line from sun_check.xml.
-3. Run each check, one at a time:
-
-    ```bash
-    java -jar checkstyle-6.13-all.jar -c /sun_checks.xml MyClass.java
-    java -jar checkstyle-6.13-all.jar -c /google_checks.xml MyClass.java
-    ```
-
-More detailed instructions on using checkstyle can be found [here](http://checkstyle.sourceforge.net/cmdline.html).
+To see updates, after re building the provider with `mvn clean package` on your local machine, run `docker-compose down` and spin this up again.

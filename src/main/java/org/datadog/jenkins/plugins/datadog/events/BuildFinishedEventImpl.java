@@ -8,7 +8,7 @@ import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import java.util.Map;
 
 /**
- * Class that implements the {@link DatadogEvent}. This event produces an event payload with a
+ * Class that implements the {@link DatadogEvent}. This event produces an event payload
  * with a proper description for a finished build.
  */
 public class BuildFinishedEventImpl extends AbstractDatadogEvent {
