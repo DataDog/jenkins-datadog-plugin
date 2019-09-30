@@ -199,27 +199,26 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
                 logger.fine("Computing KPI metrics");
                 // Send KPIs
-                double THOUSAND_DOUBLE = 1000.0;
                 if (run.getResult() == Result.SUCCESS) {
                     long mttr = getMeanTimeToRecovery(run);
                     long cycleTime = getCycleTime(run);
                     long leadTime = run.getDuration() + mttr;
 
-                    statsd.gauge("leadtime", leadTime / THOUSAND_DOUBLE, statsdTags);
+                    statsd.gauge("leadtime", leadTime / 1000.0, statsdTags);
                     if (cycleTime > 0) {
-                        statsd.gauge("cycletime", cycleTime / THOUSAND_DOUBLE, statsdTags);
+                        statsd.gauge("cycletime", cycleTime / 1000.0, statsdTags);
                     }
                     if (mttr > 0) {
-                        statsd.gauge("mttr", mttr / THOUSAND_DOUBLE, statsdTags);
+                        statsd.gauge("mttr", mttr / 1000.0, statsdTags);
                     }
                 } else {
                     long feedbackTime = run.getDuration();
                     long mtbf = getMeanTimeBetweenFailure(run);
 
-                    statsd.gauge("feedbacktime", feedbackTime / THOUSAND_DOUBLE, statsdTags);
+                    statsd.gauge("feedbacktime", feedbackTime / 1000.0, statsdTags);
 
                     if (mtbf > 0) {
-                        statsd.gauge("mtbf", mtbf / THOUSAND_DOUBLE, statsdTags);
+                        statsd.gauge("mtbf", mtbf / 1000.0, statsdTags);
                     }
                 }
 
@@ -229,7 +228,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             } finally {
                 if (statsd != null) {
                     try {
-                        // StatsDClient needs time to do its' thing.
+                        // StatsDClient needs time to do its thing.
                         // UDP messages fail to send at all without this sleep
                         TimeUnit.MILLISECONDS.sleep(100);
                     } catch (InterruptedException ex) {
