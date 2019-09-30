@@ -57,7 +57,8 @@ public class BuildData {
         setHostname(DatadogUtilities.getHostname(envVars == null ? null : envVars.get("HOSTNAME")));
         if (envVars != null) {
             setBuildUrl(envVars.get("BUILD_URL"));
-            setNode(envVars.get("NODE_NAME"));
+            boolean test = DatadogUtilities.isTagNodeEnable();
+            setNode(test ? envVars.get("NODE_NAME") : null);
             if (envVars.get("GIT_BRANCH") != null) {
                 setBranch(envVars.get("GIT_BRANCH"));
             } else if (envVars.get("CVS_BRANCH") != null) {

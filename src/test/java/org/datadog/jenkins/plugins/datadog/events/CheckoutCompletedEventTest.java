@@ -32,6 +32,7 @@ public class CheckoutCompletedEventTest {
     public void testWithNothingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("");
@@ -71,6 +72,7 @@ public class CheckoutCompletedEventTest {
     public void testWithNothingSet_parentFullName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -99,6 +101,7 @@ public class CheckoutCompletedEventTest {
     public void testWithNothingSet_parentFullName_2() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parent»Full  Name");
@@ -127,6 +130,7 @@ public class CheckoutCompletedEventTest {
     public void testWithNothingSet_jobName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -155,6 +159,7 @@ public class CheckoutCompletedEventTest {
     public void testWithNothingSet_result() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -186,6 +191,7 @@ public class CheckoutCompletedEventTest {
     public void testWithEverythingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");
@@ -232,6 +238,7 @@ public class CheckoutCompletedEventTest {
     public void testWithEverythingSet_envVarsAndTags() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
+        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");

@@ -387,4 +387,13 @@ public class DatadogUtilities {
         return m.find();
     }
 
+    /**
+     * Check if TagNode is enable
+     *
+     * @return boolean - tagNode
+     */
+    public static boolean isTagNodeEnable() {
+        return DatadogUtilities.getDatadogDescriptor().getTagNode();
+    }
+
 }
