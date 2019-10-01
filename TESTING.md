@@ -62,7 +62,7 @@ To spin up a development environment for the *jenkins-datadog-plugin* repository
 11. Go to http://localhost:8080/configure to configure the "Datadog Plugin", set your `API Key`.
   - Click on the "Test Key" to make sure your key is valid.
   - You can set your machine `hostname`.
-  - `.*, owner:$1, release_env:$2, optional:Tag3`.
+  - You can set Global Tag. For example `.*, owner:$1, release_env:$2, optional:Tag3`.
   - You can add the optional `node` tag to the collected metrics by clicking on the `node` checkbox.
   - Click on `Advanced...` and set `DogStatsD Host` to `datadog:8125`. This is in order to submit metrics to the dogStatsD Server.
 
