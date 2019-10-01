@@ -12,6 +12,6 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
-    checkStyleRunAnalysis: true # Optional
-    pmdRunAnalysis: true # Optional
-    findBugsRunAnalysis: true # Optional
+    checkStyleRunAnalysis: false
+    pmdRunAnalysis: false
+    findBugsRunAnalysis: false
