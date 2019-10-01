@@ -1,70 +1,85 @@
 # Testing
-This document serves as a place to document manual testing setups for ensuring proper functionality of the Jenkins plugin.
 
-## Testing Proxy
-In order to test the proxy server functionality, from Jenkins, we need a development setup.
+## Setup
 
-Utilized the following docker containers:
-* https://github.com/sameersbn/docker-squid
-* https://github.com/jenkinsci/docker
+To spin up a development environment for the *jenkins-datadog-plugin* repository. The requirements are:
 
-### Make squid proxy server
-Pull down the `sameersbn/squid` docker image, and run while exposing port 3128.
+* [Java 1.8](https://www.java.com/en/download/)
+* [Docker](https://docs.docker.com/get-started/) & [docker-compose](https://docs.docker.com/compose/install/)
+* [A clone/fork of this repository](https://help.github.com/en/articles/fork-a-repo)
 
-    docker pull sameersbn/squid:3.3.8-4
-    docker build -t sameersbn/squid github.com/sameersbn/docker-squid
-    docker run --name squid -d --restart=always \
-      --publish 3128:3128 \
-      --volume /srv/docker/squid/cache:/var/spool/squid3 \
-      sameersbn/squid:3.3.8-4
 
-### Make jenkins server
-Run a Jenkins docker image, exposing ports 8080 and 50000:
+1. To get started, save the following `docker-compose.yaml` file in your working directory locally:
 
-    docker run -d --name web -p 8080:8080 -p 50000:50000 jenkins
-
-From here, you'll connect to Jenkins UI from your browser, through `localhost:8080`. Once you are connected, follow these steps:
-
-1. Install the Datadog Plugin, either via the Update Center, or via .hpi
-2. Configure with an API key
-3. Create a test build
-
-Now, we need to connect to the squid docker container to do some introspection, so we can prove that the proxy is routing this data.
-
-    docker exec -it squid bash
-
-Once you are conencted to the squid box, run a tcp dump to follow port 3128.
-
-    apt-get update
-    apt-get install -y tcpdump
-    sudo tcpdump -i eth0 -vvvvtttAXns 1500 'port 3128'
-
-Now that this window is following all the traffic coming through port 3128, let's go back to the Jenkins UI.
-
-1. Run the test build that you had setup previously.
-2. Look on the output from the tcpdump. You should NOT see any output.
-3. Now go to `Manage Jenkins` > `Manage Plugins`, and then select the `Advanced` tab.
-4. From here you will see the 'HTTP Proxy Configuration' section. Enter the following information:
-    * Server: 172.17.42.1
-    * Port: 3128
-5. Optionally, you can click `Advanced`, and then test `http://www.google.com` and you should see the output in the tcpdump terminal window.
-6. Finally, run the test build again.
-7. You should now see output from the tcpdump terminal window!
-
-Repeat this by enabling/disabling the proxy configuration in Jenkins and repeating the test to prove to yourself that it was not a fluke.
-**Note: I've noticed that Jenkins seems to send a disconnection series of packets to the proxy server with the first connection attempt (when you run your test build), after you've disabled the proxy configration. Run the test job a second time, and you'll again not see any output.**
-
-## Check Style
-In order to check that the Java style meets the recommendations of Sun and Google, as closely as possible, here is a way to test it.
-
-1. Download the most recent [checkstyle jar](http://sourceforge.net/projects/checkstyle/files/checkstyle/) from SourceForge.
-2. Grab the style checks from [Sun](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/sun_checks.xml) and [Google](https://raw.githubusercontent.com/checkstyle/checkstyle/master/src/main/resources/google_checks.xml).
- * Note: We following 100 character line length, so remove the `<module name="LineLength"/>` line from sun_check.xml.
-3. Run each check, one at a time:
-
-    ```bash
-    java -jar checkstyle-6.13-all.jar -c /sun_checks.xml MyClass.java
-    java -jar checkstyle-6.13-all.jar -c /google_checks.xml MyClass.java
+    ```
+    version: "3.7"
+    services:
+      jenkins:
+        image: jenkins/jenkins:lts
+        ports:
+          - 8080:8080
+        volumes:
+          - $JENKINS_PLUGIN/target/:/var/jenkins_home/plugins
+      
+      dogstatsd:    
+        image: datadog/dogstatsd:latest 
+        environment:
+          - DD_API_KEY=<API_KEY>
+          - DD_LOG_LEVEL=debug
+        ports:
+          - 8125:8125/udp  
+               
     ```
 
-More detailed instructions on using checkstyle can be found [here](http://checkstyle.sourceforge.net/cmdline.html).
+2. Set the `JENKINS_PLUGIN` environment variable to point to the directory where this repository is cloned/forked.
+3. Run `docker-compose -f <DOCKER_COMPOSE_FILE_PATH> up`.
+    - NOTE: This spins up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
+    - NOTE: To see code updates, after re building the provider with `mvn clean package` on your local machine, run `docker-compose down` and spin this up again.
+4. Check your terminal and look for the admin password:
+    ```
+    jenkins_1    | *************************************************************
+    jenkins_1    | *************************************************************
+    jenkins_1    | *************************************************************
+    jenkins_1    |
+    jenkins_1    | Jenkins initial setup is required. An admin user has been created and a password generated.
+    jenkins_1    | Please use the following password to proceed to installation:
+    jenkins_1    |
+    jenkins_1    | <JENKINS_ADMIN_PASSWORD>
+    jenkins_1    |
+    jenkins_1    | This may also be found at: /var/jenkins_home/secrets/initialAdminPassword
+    jenkins_1    |
+    jenkins_1    | *************************************************************
+    jenkins_1    | *************************************************************
+    jenkins_1    | *************************************************************
+    ``` 
+
+5. Access your Jenkins instance http://localhost:8080
+6. Enter the administrator password in the Getting Started form.
+7. On the next page, click on the "Select plugins to be installed" unless you want to install all suggested plugins. 
+8. Select desired plugins depending on your needs. You can always add plugins later.
+9. Create a user so that you don't have to use the admin credential again (optional).
+10. Continue until the end of the setup process and log back in.
+11. Go to http://localhost:8080/configure to configure the "Datadog Plugin", set your `API Key`.
+  - Click on the "Test Key" to make sure your key is valid.
+  - You can set your machine `hostname`.
+  - You can set Global Tag. For example `.*, owner:$1, release_env:$2, optional:Tag3`.
+  - You can add the optional `node` tag to the collected metrics by clicking on the `node` checkbox.
+  - Click on `Advanced...` and set `DogStatsD Host` to `datadog:8125`. This is in order to submit metrics to the dogStatsD Server.
+
+## Create your first job
+
+1. On jenkins Home page, click on "Create a new Job" 
+2. Give it a name and select "freestyle project".
+3. Then add a build step (execute Shell):
+    ```
+    #!/bin/sh
+    
+    echo "Executing my job script"
+    sleep 5s
+    ```
+
+## Create Logger
+1. Go to http://localhost:8080/log/
+2. Give a name to your logger - For example `datadog`
+3. Add entries for all `org.datadog.jenkins.plugins.datadog.*` packages with log Level `ALL`.
+4. If you now run a job and go back to http://localhost:8080/log/datadog/, you should see your logs

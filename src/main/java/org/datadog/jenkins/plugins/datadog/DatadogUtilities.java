@@ -1,13 +1,9 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -24,58 +20,20 @@ import java.util.regex.Pattern;
 
 public class DatadogUtilities {
 
-    private static final Logger logger = Logger.getLogger(DatadogSCMListener.class.getName());
+    private static final Logger logger = Logger.getLogger(DatadogUtilities.class.getName());
 
-    /**
-     * Human-friendly OS name. Commons return values are windows, linux, mac, sunos, freebsd
-     *
-     * @return a String with a human-friendly OS name
-     */
-    public static String getOS() {
-        String out = System.getProperty("os.name");
-        String os = out.split(" ")[0];
-        return os.toLowerCase();
-    }
+    private static final Integer MAX_HOSTNAME_LEN = 255;
 
     /**
      * @return - The descriptor for the Datadog plugin. In this case the global
      * - configuration.
      */
     public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
-        return (DatadogBuildListener.DescriptorImpl) Jenkins.getInstance().
-                getDescriptorOrDie(DatadogBuildListener.class);
-    }
-
-    /**
-     * @return - The hostname configured in the global configuration. Shortcut method.
-     */
-    public static String getHostName() {
-        return DatadogUtilities.getDatadogDescriptor().getHostname();
-    }
-
-    /**
-     * Set Hostname for global configuration.
-     *
-     * @param hostName - A string representing the hostname
-     */
-    public static void setHostName(String hostName) {
-        DatadogUtilities.getDatadogDescriptor().setHostname(hostName);
-    }
-
-    /**
-     * @return - The api key configured in the global configuration. Shortcut method.
-     */
-    public static Secret getApiKey() {
-        return DatadogUtilities.getDatadogDescriptor().getApiKey();
-    }
-
-    /**
-     * Set ApiKey for global configuration.
-     *
-     * @param apiKey - A string representing an apiKey
-     */
-    public static void setApiKey(String apiKey) {
-        DatadogUtilities.getDatadogDescriptor().setApiKey(apiKey);
+        Jenkins jenkins = Jenkins.getInstance();
+        if (jenkins == null) {
+            return null;
+        }
+        return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
     }
 
     /**
@@ -84,35 +42,26 @@ public class DatadogUtilities {
      * @return boolean - apiKey is null
      */
     public static boolean isApiKeyNull() {
-        return Secret.toString(DatadogUtilities.getApiKey()).isEmpty();
+        return Secret.toString(DatadogUtilities.getDatadogDescriptor().getApiKey()).isEmpty();
     }
 
     /**
-     * @return - The list of excluded jobs configured in the global configuration. Shortcut method.
+     * Builds extraTags if any are configured in the Job.
+     *
+     * @param run      - Current build
+     * @param listener - Current listener
+     * @return A {@link HashMap} containing the key,value pairs of tags if any.
      */
-    public static String getBlacklist() {
-        return DatadogUtilities.getDatadogDescriptor().getBlacklist();
-    }
-
-    /**
-     * @return - The list of included jobs configured in the global configuration. Shortcut method.
-     */
-    public static String getWhitelist() {
-        return DatadogUtilities.getDatadogDescriptor().getWhitelist();
-    }
-
-    /**
-     * @return - The list of included jobs configured in the global configuration. Shortcut method.
-     */
-    public static String getGlobalJobTags() {
-        return DatadogUtilities.getDatadogDescriptor().getGlobalJobTags();
-    }
-
-    /**
-     * @return - The target API URL
-     */
-    public static String getTargetMetricURL() {
-        return DatadogUtilities.getDatadogDescriptor().getTargetMetricURL();
+    public static HashMap<String, String> buildExtraTags(Run run, TaskListener listener) {
+        String jobName = run.getParent().getFullName();
+        HashMap<String, String> extraTags = new HashMap<>();
+        try {
+            extraTags = DatadogUtilities.parseTagList(run, listener);
+        } catch (IOException | InterruptedException ex) {
+            logger.severe(ex.getMessage());
+        }
+        extraTags.putAll(DatadogUtilities.getRegexJobTags(jobName));
+        return extraTags;
     }
 
     /**
@@ -126,14 +75,26 @@ public class DatadogUtilities {
     }
 
     /**
+     * Human-friendly OS name. Commons return values are windows, linux, mac, sunos, freebsd
+     *
+     * @return a String with a human-friendly OS name
+     */
+    private static String getOS() {
+        String out = System.getProperty("os.name");
+        String os = out.split(" ")[0];
+        return os.toLowerCase();
+    }
+
+    /**
      * Retrieve the list of tags from the Config file if regex Jobs was checked
      *
      * @param jobName - A string containing the name of some job
      * @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
      */
-    public static Map<String, String> getRegexJobTags(String jobName) {
+    private static Map<String, String> getRegexJobTags(String jobName) {
         Map<String, String> tags = new HashMap<>();
-        final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList(DatadogUtilities.getGlobalJobTags());
+        final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList(
+                DatadogUtilities.getDatadogDescriptor().getGlobalJobTags());
 
         logger.fine(String.format("The list of Global Job Tags are: %s", globalTags));
 
@@ -153,7 +114,9 @@ public class DatadogUtilities {
                         try {
                             tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
                         } catch (IndexOutOfBoundsException e) {
-                            logger.fine(String.format("Specified a capture group that doesn't exist, not applying tag: %s Exception: %s", Arrays.toString(tagItem), e));
+                            logger.fine(String.format(
+                                    "Specified a capture group that doesn't exist, not applying tag: %s Exception: %s",
+                                    Arrays.toString(tagItem), e));
                         }
                     } else {
                         tags.put(tagItem[0], tagItem[1]);
@@ -171,8 +134,9 @@ public class DatadogUtilities {
      * @param jobName - A String containing the name of some job.
      * @return a boolean to signify if the jobName is or is not blacklisted.
      */
-    public static boolean isJobBlacklisted(final String jobName) {
-        final List<String> blacklist = DatadogUtilities.joblistStringtoList(DatadogUtilities.getBlacklist());
+    private static boolean isJobBlacklisted(final String jobName) {
+        final List<String> blacklist = DatadogUtilities.joblistStringtoList(
+                DatadogUtilities.getDatadogDescriptor().getBlacklist());
         return blacklist.contains(jobName.toLowerCase());
     }
 
@@ -182,8 +146,9 @@ public class DatadogUtilities {
      * @param jobName - A String containing the name of some job.
      * @return a boolean to signify if the jobName is or is not whitelisted.
      */
-    public static boolean isJobWhitelisted(final String jobName) {
-        final List<String> whitelist = DatadogUtilities.joblistStringtoList(DatadogUtilities.getWhitelist());
+    private static boolean isJobWhitelisted(final String jobName) {
+        final List<String> whitelist = DatadogUtilities.joblistStringtoList(
+                DatadogUtilities.getDatadogDescriptor().getWhitelist());
 
         // Check if the user config is using regexes
         return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
@@ -246,7 +211,7 @@ public class DatadogUtilities {
      * @throws InterruptedException if an interrupt error occurs
      */
     @Nonnull
-    public static HashMap<String, String> parseTagList(Run run, TaskListener listener) throws IOException,
+    private static HashMap<String, String> parseTagList(Run run, TaskListener listener) throws IOException,
             InterruptedException {
         HashMap<String, String> map = new HashMap<>();
 
@@ -290,62 +255,44 @@ public class DatadogUtilities {
     }
 
     /**
-     * Builds extraTags if any are configured in the Job.
-     *
-     * @param run      - Current build
-     * @param listener - Current listener
-     * @return A {@link HashMap} containing the key,value pairs of tags if any.
-     */
-    public static HashMap<String, String> buildExtraTags(Run run, TaskListener listener) {
-        HashMap<String, String> extraTags = new HashMap<>();
-        try {
-            extraTags = DatadogUtilities.parseTagList(run, listener);
-        } catch (IOException | InterruptedException ex) {
-            logger.severe(ex.getMessage());
-        }
-        return extraTags;
-    }
-
-    /**
      * @param r - Current build.
      * @return - The configured {@link DatadogJobProperty}. Null if not there
      */
     @CheckForNull
     public static DatadogJobProperty retrieveProperty(Run r) {
-        return  (DatadogJobProperty)r.getParent().getProperty(DatadogJobProperty.class);
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
     }
 
     /**
      * Getter function to return either the saved hostname global configuration,
      * or the hostname that is set in the Jenkins host itself. Returns null if no
      * valid hostname is found.
-     * 
+     *
      * Tries, in order:
      * Jenkins configuration
      * Jenkins hostname environment variable
      * Unix hostname via `/bin/hostname -f`
      * Localhost hostname
      *
-     * @param envVars - An EnvVars object containing a set of environment variables.
+     * @param envVarHostname - The Jenkins hostname environment variable
      * @return a human readable String for the hostname.
      */
-    public static String getHostname(final EnvVars envVars) {
+    public static String getHostname(String envVarHostname) {
         String[] UNIX_OS = {"mac", "linux", "freebsd", "sunos"};
 
         // Check hostname configuration from Jenkins
-        String hostname = DatadogUtilities.getHostName();
-        if ((hostname != null) && isValidHostname(hostname)) {
-            logger.fine(String.format("Using hostname set in 'Manage Plugins'. Hostname: %s", hostname));
+        String hostname = DatadogUtilities.getDatadogDescriptor().getHostname();
+        if (isValidHostname(hostname)) {
+            logger.fine("Using hostname set in 'Manage Plugins'. Hostname: " + hostname);
             return hostname;
         }
 
         // Check hostname using jenkins env variables
-        if (envVars.get("HOSTNAME") != null) {
-            hostname = envVars.get("HOSTNAME");
+        if (envVarHostname != null) {
+            hostname = envVarHostname;
         }
-        if ((hostname != null) && isValidHostname(hostname)) {
-            logger.fine(String.format("Using hostname found in $HOSTNAME host environment variable. "
-                    + "Hostname: %s", hostname));
+        if (isValidHostname(hostname)) {
+            logger.fine("Using hostname found in $HOSTNAME host environment variable. Hostname: " + hostname);
             return hostname;
         }
 
@@ -371,7 +318,7 @@ public class DatadogUtilities {
             }
 
             // Check hostname
-            if ((hostname != null) && isValidHostname(hostname)) {
+            if (isValidHostname(hostname)) {
                 logger.fine(String.format("Using unix hostname found via `/bin/hostname -f`. Hostname: %s",
                         hostname));
                 return hostname;
@@ -384,7 +331,7 @@ public class DatadogUtilities {
         } catch (UnknownHostException e) {
             logger.fine(String.format("Unknown hostname error received for localhost. Error: %s", e));
         }
-        if ((hostname != null) && isValidHostname(hostname)) {
+        if (isValidHostname(hostname)) {
             logger.fine(String.format("Using hostname found via "
                     + "Inet4Address.getLocalHost().getHostName()."
                     + " Hostname: %s", hostname));
@@ -392,7 +339,7 @@ public class DatadogUtilities {
         }
 
         // Never found the hostname
-        if ((hostname == null) || "".equals(hostname)) {
+        if (hostname == null || "".equals(hostname)) {
             logger.warning("Unable to reliably determine host name. You can define one in "
                     + "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
         }
@@ -406,7 +353,11 @@ public class DatadogUtilities {
      * @param hostname - A String object containing the name of a host.
      * @return a boolean representing the validity of the hostname
      */
-    public static final Boolean isValidHostname(final String hostname) {
+    public static Boolean isValidHostname(String hostname) {
+        if (hostname == null) {
+            return false;
+        }
+
         String[] localHosts = {"localhost", "localhost.localdomain",
                 "localhost6.localdomain6", "ip6-localhost"};
         String VALID_HOSTNAME_RFC_1123_PATTERN = "^(([a-zA-Z0-9]|"
@@ -422,9 +373,9 @@ public class DatadogUtilities {
         }
 
         // Ensure proper length
-        if (hostname.length() > DatadogBuildListener.MAX_HOSTNAME_LEN) {
+        if (hostname.length() > MAX_HOSTNAME_LEN) {
             logger.fine(String.format("Hostname: %s is too long (max length is %s characters)",
-                    hostname, DatadogBuildListener.MAX_HOSTNAME_LEN));
+                    hostname, MAX_HOSTNAME_LEN));
             return false;
         }
 
@@ -437,117 +388,12 @@ public class DatadogUtilities {
     }
 
     /**
-     * @param daemonHost - The host to check
-     * @return - A boolean that checks if the daemonHost is valid
-     */
-    public static boolean isValidDaemon(final String daemonHost) {
-        if (!daemonHost.contains(":")) {
-            logger.info("Daemon host does not contain the port seperator ':'");
-            return false;
-        }
-
-        String hn = daemonHost.split(":")[0];
-        String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
-
-        if (StringUtils.isBlank(hn)) {
-            logger.info("Daemon host part is empty");
-            return false;
-        }
-
-        //Match ports [1024-65535]
-        Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
-                + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
-
-        boolean match = p.matcher(pn).find();
-
-        if (!match) {
-            logger.info("Port number is invalid must be in the range [1024-65535]");
-        }
-
-        return match;
-    }
-
-    /**
-     * Safe getter function to make sure an exception is not reached.
+     * Check if TagNode is enable
      *
-     * @param data - A JSONObject containing a set of key/value pairs.
-     * @param key  - A String to be used to lookup a value in the JSONObject data.
-     * @return a String representing data.get(key), or "null" if it doesn't exist
+     * @return boolean - tagNode
      */
-    public static String nullSafeGetString(final JSONObject data, final String key) {
-        if (data.get(key) != null) {
-            return data.get(key).toString();
-        } else {
-            return "null";
-        }
+    public static boolean isTagNodeEnable() {
+        return DatadogUtilities.getDatadogDescriptor().getTagNode();
     }
 
-    /**
-     * Assembles a {@link JSONArray} from metadata available in the
-     * {@link JSONObject} builddata. Returns a {@link JSONArray} with the set
-     * of tags.
-     *
-     * @param builddata - A JSONObject containing a builds metadata.
-     * @param extra     - A list of tags, that are contributed via {@link DatadogJobProperty}.
-     * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
-     */
-    public static JSONArray assembleTags(final JSONObject builddata, final Map<String, String> extra) {
-        JSONArray tags = new JSONArray();
-
-        tags.add("job:" + builddata.get("job"));
-        if ((builddata.get("node") != null) && DatadogUtilities.getDatadogDescriptor().getTagNode()) {
-            tags.add("node:" + builddata.get("node"));
-        }
-
-        if (builddata.get("result") != null) {
-            tags.add("result:" + builddata.get("result"));
-        }
-
-        if (builddata.get("branch") != null && !extra.containsKey("branch")) {
-            tags.add("branch:" + builddata.get("branch"));
-        }
-
-        //Add the extra tags here
-        for (Map.Entry entry : extra.entrySet()) {
-            tags.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
-            logger.info(String.format("Emitted tag %s:%s", entry.getKey(), entry.getValue()));
-        }
-
-        return tags;
-    }
-
-    /**
-     * Converts from a double to a human readable string, representing a time duration.
-     *
-     * @param duration - A Double with a duration in seconds.
-     * @return a human readable String representing a time duration.
-     */
-    public static String durationToString(final double duration) {
-        String output = "(";
-        String format = "%.2f";
-        if (duration < DatadogBuildListener.MINUTE) {
-            output = output + String.format(format, duration) + " secs)";
-        } else if ((DatadogBuildListener.MINUTE <= duration)
-                && (duration < DatadogBuildListener.HOUR)) {
-            output = output + String.format(format, duration / DatadogBuildListener.MINUTE)
-                    + " mins)";
-        } else if (DatadogBuildListener.HOUR <= duration) {
-            output = output + String.format(format, duration / DatadogBuildListener.HOUR)
-                    + " hrs)";
-        }
-
-        return output;
-    }
-
-    /**
-     * Converts the returned String from calling run.getParent().getFullName(),
-     * to a String, usable as a tag.
-     *
-     * @param fullDisplayName - A String object representing a job's fullDisplayName
-     * @return a human readable String representing the fullDisplayName of the Job, in a
-     * format usable as a tag.
-     */
-    public static String normalizeFullDisplayName(final String fullDisplayName) {
-        return fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
-    }
 }
