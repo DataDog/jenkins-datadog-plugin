@@ -3,7 +3,7 @@
     <f:section title="Datadog Tagging">
         <f:optionalBlock name="enableFile" checked="${!instance.isTagFileEmpty()}" title="Add tags from file in workspace" inline="true">
             <f:entry title="File" field="tagFile">
-                <f:textbox value="datadog.tags"/>
+                <f:textbox/>
             </f:entry>
             <f:entry title="Send extra event after each successful checkout" field="emitOnCheckout"
 description="Note: Tags set this way, in the workspace, won't appear in started events.

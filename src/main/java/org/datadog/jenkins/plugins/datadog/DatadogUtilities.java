@@ -223,9 +223,23 @@ public class DatadogUtilities {
             InterruptedException {
         HashMap<String, String> map = new HashMap<>();
 
+        String jobName = run.getParent().getFullName();
+        if( DatadogBuildStep.tagPool.containsKey(jobName)) {
+            String tags = DatadogBuildStep.tagPool.get(jobName);
+            DatadogBuildStep.tagPool.remove(jobName);
+            for(String tag : tags.split(" ")) {
+                String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
+                if( expanded.length > 1 ) {
+                    map.put(expanded[0], expanded[1]);
+                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+                }
+            }
+        }
+
         DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
 
-        // If Null, nothing to retrieve
         if (property == null) {
             return map;
         }
@@ -251,21 +265,6 @@ public class DatadogUtilities {
             for (String tag : prop.split("\\r?\\n")) {
                 String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
                 if (expanded.length > 1) {
-                    map.put(expanded[0], expanded[1]);
-                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
-                } else {
-                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
-                }
-            }
-        }
-
-        String jobName = run.getParent().getFullName();
-        if( DatadogBuildStep.tagPool.containsKey(jobName)) {
-            String tags = DatadogBuildStep.tagPool.get(jobName);
-            DatadogBuildStep.tagPool.remove(jobName);
-            for(String tag : tags.split(" ")) {
-                String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
-                if( expanded.length > 1 ) {
                     map.put(expanded[0], expanded[1]);
                     logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
                 } else {
