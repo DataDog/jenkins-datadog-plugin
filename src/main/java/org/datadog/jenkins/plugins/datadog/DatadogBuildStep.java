@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DatadogBuildStep extends Builder implements SimpleBuildStep {
+
     public static Map<String,String> tagPool = new ConcurrentHashMap<>();
     private final String tags;
 
@@ -35,8 +36,7 @@ public class DatadogBuildStep extends Builder implements SimpleBuildStep {
 
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        public DescriptorImpl() {
-        }
+        public DescriptorImpl() {}
 
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;

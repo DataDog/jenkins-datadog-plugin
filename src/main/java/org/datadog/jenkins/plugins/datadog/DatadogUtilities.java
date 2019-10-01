@@ -259,6 +259,21 @@ public class DatadogUtilities {
             }
         }
 
+        String jobName = run.getParent().getFullName();
+        if( DatadogBuildStep.tagPool.containsKey(jobName)) {
+            String tags = DatadogBuildStep.tagPool.get(jobName);
+            DatadogBuildStep.tagPool.remove(jobName);
+            for(String tag : tags.split(" ")) {
+                String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
+                if( expanded.length > 1 ) {
+                    map.put(expanded[0], expanded[1]);
+                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+                }
+            }
+        }
+
         return map;
     }
 
@@ -402,17 +417,5 @@ public class DatadogUtilities {
      */
     public static boolean isTagNodeEnable() {
         return DatadogUtilities.getDatadogDescriptor().getTagNode();
-    }
-
-    /**
-     * Converts the returned String from calling run.getParent().getFullName(),
-     * to a String, usable as a tag.
-     *
-     * @param fullDisplayName - A String object representing a job's fullDisplayName
-     * @return a human readable String representing the fullDisplayName of the Job, in a
-     * format usable as a tag.
-     */
-    public static String normalizeFullDisplayName(final String fullDisplayName) {
-        return fullDisplayName.replaceAll("»", "/").replaceAll(" ", "");
     }
 }
