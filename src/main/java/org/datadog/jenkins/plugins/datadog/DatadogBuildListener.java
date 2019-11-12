@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -52,15 +53,16 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
 
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
-    //public static final int valueMetricTest = 100;
-    /*
-    private static final ThreadLocal<Integer> count = new ThreadLocal<>() {
-        @Override
-        public Integer initialValue() {
-            return Integer.valueOf(0);
-        }
-    };
-     */
+
+    private static final AtomicInteger nextId = new AtomicInteger(0);
+
+    // Thread local variable containing each thread's ID
+    private static final ThreadLocal<Integer> threadId =
+            new ThreadLocal<Integer>() {
+                @Override protected Integer initialValue() {
+                    return nextId.getAndIncrement();
+                }
+            };
 
 
     /**
@@ -177,15 +179,12 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
 
         // Threadlocal test 1
-        int valueMetricTest = 100;
-        ThreadLocal<Long> thread_local = new ThreadLocal<Long>();
-        thread_local.set((long) valueMetricTest);
+        threadId.set(threadId.get() + 1);
 
         client.gauge("jenkins.threadlocal.test",
-                thread_local.get(),
+                threadId.get(),
                 buildData.getHostname("null"),
                 tags);
-        ++valueMetricTest;
         logger.fine(String.format("Sending 'threadlocal' gauge to %s ", getDescriptor().getDaemonHost()));
 
         // Threadlocal test 2
