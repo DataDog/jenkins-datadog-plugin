@@ -50,7 +50,18 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     static final String DISPLAY_NAME = "Datadog Plugin";
 
+
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
+    //public static final int valueMetricTest = 100;
+    /*
+    private static final ThreadLocal<Integer> count = new ThreadLocal<>() {
+        @Override
+        public Integer initialValue() {
+            return Integer.valueOf(0);
+        }
+    };
+     */
+
 
     /**
      * Runs when the {@link DatadogBuildListener} class is created.
@@ -163,6 +174,44 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 buildData.getDuration(0L),
                 buildData.getHostname("null"),
                 tags);
+
+
+        // Threadlocal test 1
+        int valueMetricTest = 100;
+        ThreadLocal<Long> thread_local = new ThreadLocal<Long>();
+        thread_local.set((long) valueMetricTest);
+
+        client.gauge("jenkins.threadlocal.test",
+                thread_local.get(),
+                buildData.getHostname("null"),
+                tags);
+        ++valueMetricTest;
+        logger.fine(String.format("Sending 'threadlocal' gauge to %s ", getDescriptor().getDaemonHost()));
+
+        // Threadlocal test 2
+        /*
+        Runnable increment = () -> {
+            count.set(count.get().intValue() + 1);
+        };
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        executor.execute(increment);
+        executor.execute(increment);
+        executor.execute(increment);
+        executor.execute(increment);
+        executor.execute(increment);
+
+        executor.shutdown();
+
+        /*
+        thread_local.set((long) 101);
+        client.gauge("jenkins.threadlocal.test.2",
+                (Long) thread_local.get(),
+                buildData.getHostname("null"),
+                tags);
+         */
+
+        //client.gauge("jenkins.threadlocal.test", result, buildData.getHostname("null"), tags);
 
         // Send a service check
         String hostname = buildData.getHostname("null");
