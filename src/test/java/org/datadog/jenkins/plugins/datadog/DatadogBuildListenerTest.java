@@ -100,7 +100,7 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.threadlocal.test", 100, "null", expectedTags);
+        client.assertMetric("jenkins.threadlocal.test", 1.0, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
         client.assertedAllMetricsAndServiceChecks();
 
@@ -141,7 +141,7 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 0, "null", expectedTags);
-        client.assertMetric("jenkins.threadlocal.test", 100, "null", expectedTags);
+        client.assertMetric("jenkins.threadlocal.test", 1.0, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
         client.assertedAllMetricsAndServiceChecks();
     }

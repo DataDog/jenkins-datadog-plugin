@@ -54,16 +54,15 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
 
-    private static final AtomicInteger nextId = new AtomicInteger(0);
+    private static final AtomicInteger completed = new AtomicInteger(0);
 
     // Thread local variable containing each thread's ID
-    private static final ThreadLocal<Integer> threadId =
+    public static final ThreadLocal<Integer> threadId =
             new ThreadLocal<Integer>() {
                 @Override protected Integer initialValue() {
-                    return nextId.getAndIncrement();
+                    return completed.getAndIncrement();
                 }
             };
-
 
     /**
      * Runs when the {@link DatadogBuildListener} class is created.
@@ -177,15 +176,16 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 buildData.getHostname("null"),
                 tags);
 
-
-        // Threadlocal test 1
+        // Threadlocal test increment at each build execution
         threadId.set(threadId.get() + 1);
 
+        /*
         client.gauge("jenkins.threadlocal.test",
                 threadId.get(),
                 buildData.getHostname("null"),
                 tags);
         logger.fine(String.format("Sending 'threadlocal' gauge to %s ", getDescriptor().getDaemonHost()));
+         */
 
         // Threadlocal test 2
         /*
