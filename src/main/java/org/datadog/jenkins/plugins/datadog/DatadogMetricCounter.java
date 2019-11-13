@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.datadog.jenkins.plugins.datadog.model.Counter;
 import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 
 
