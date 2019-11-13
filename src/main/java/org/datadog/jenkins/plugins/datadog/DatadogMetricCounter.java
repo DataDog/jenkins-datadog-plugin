@@ -38,7 +38,7 @@ public class DatadogMetricCounter extends PeriodicWork {
 
         Map<Map<String, String>, Integer> localCache = LocalCacheCounters.Cache.get();
 
-        Map<Map<String, String>, Integer> cache = deepCopy(localCache); // to be implemented
+        Map<Map<String, String>, Integer> cache = LocalCacheCounters.deepCopy(localCache); // to be implemented
         LocalCacheCounters.Cache.set(new HashMap<>());
 
         for (Map<String,String> tags: cache.keySet()) {
