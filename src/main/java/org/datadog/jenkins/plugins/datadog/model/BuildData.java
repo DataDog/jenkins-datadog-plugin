@@ -101,6 +101,30 @@ public class BuildData {
         return tags;
     }
 
+    public Map<String,String> getAssembledTagsAsMap(Map<String, String> extra) {
+        Map<String,String> tags = new HashMap<String,String>();
+        if (extra == null) {
+            extra = new HashMap<>();
+        }
+        tags.put("job", getJob("null"));
+        if (node != null) {
+            tags.put("node", getNode("null"));
+        }
+
+        if (result != null) {
+            tags.put("result", getResult("null"));
+        }
+
+        if (branch != null && !extra.containsKey("branch")) {
+            tags.put("branch", getBranch("null"));
+        }
+
+        //Add the extra tags here
+        tags.putAll(extra);
+
+        return tags;
+    }
+
     private <A> A defaultIfNull(A value, A defaultValue) {
         if (value == null) {
             return defaultValue;

@@ -2,48 +2,58 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.Extension;
 import hudson.model.*;
+import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import javax.annotation.Nonnull;
+import javax.print.attribute.standard.JobName;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import org.datadog.jenkins.plugins.datadog.model.Counter;
+import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 
 
 public class DatadogMetricCounter extends PeriodicWork {
-    // run frequency - 15 seconds
+
     @Override
     public long getRecurrencePeriod() {
-        return PeriodicWork.MIN / 4;
+        // run frequency - 15 seconds
+        return PeriodicWork.MIN / 60 * 15;
     }
 
     @Override
-    public void pwRun(final Run run, @Nonnull final TaskListener listener) throws Exception {
-
-        @Override
-        public DatadogBuildListener.DescriptorImpl getDescriptor() {
-            return new DatadogBuildListener.DescriptorImpl();
-        }
-
-        // Collect Build Data
-        BuildData buildData;
-        try {
-            buildData = new BuildData(run, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
+    protected void doRun() throws Exception {
+        if (DatadogUtilities.isApiKeyNull()) {
             return;
         }
+        //logger.fine("doRun called: Computing queue metrics");
 
         // Instantiate the Datadog Client
-        DatadogClient client = getDescriptor().leaseDatadogClient();
+        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
 
-        // Get the list of global tags to apply
-        Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+        // Test with list of strings for tags instead of using a Map
+        // Map<String[], Integer> localCache = LocalCacheCounters.Cache.get();
 
-        client.gauge("jenkins.job.completed",
-                // Get the value of the completed counter
-                DatadogBuildListener.threadId.get(),
-                buildData.getHostname("null"),
-                buildData.getAssembledTags(extraTags));
+        Map<Map<String, String>, Integer> localCache = LocalCacheCounters.Cache.get();
+
+        Map<Map<String, String>, Integer> cache = deepCopy(localCache); // to be implemented
+        LocalCacheCounters.Cache.set(new HashMap<>());
+
+        for (Map<String,String> tags: cache.keySet()) {
+            int counter = cache.get(tags);
+
+            JSONArray tagsAsJSON = new JSONArray();
+
+            for (Map.Entry entry : tags.entrySet()) {
+                tagsAsJSON.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
+            }
+
+            client.gauge("jenkins.job.completed",
+                    counter,
+                    DatadogUtilities.getHostname(null),
+                    tagsAsJSON);
+        }
     }
 }

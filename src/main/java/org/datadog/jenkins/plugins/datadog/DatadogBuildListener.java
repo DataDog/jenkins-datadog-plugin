@@ -15,6 +15,8 @@ import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
+import org.datadog.jenkins.plugins.datadog.model.Counter;
+import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -50,19 +52,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      * numbers.
      */
     static final String DISPLAY_NAME = "Datadog Plugin";
-
-
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
-
-    private static final AtomicInteger completed = new AtomicInteger(0);
-
-    // Thread local variable containing each thread's ID
-    public static final ThreadLocal<Integer> threadId =
-            new ThreadLocal<Integer>() {
-                @Override protected Integer initialValue() {
-                    return completed.getAndIncrement();
-                }
-            };
 
     /**
      * Runs when the {@link DatadogBuildListener} class is created.
@@ -176,8 +166,16 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 buildData.getHostname("null"),
                 tags);
 
+        Map<String,String> tagsAsMap = buildData.getAssembledTagsAsMap(extraTags);
+
         // Threadlocal test increment at each build execution
-        threadId.set(threadId.get() + 1);
+        Map<Map<String, String>, Integer> cache = LocalCacheCounters.Cache.get();
+        if (cache.get(tagsAsMap) == null) {
+            cache.put(tagsAsMap, 1);
+        } else {
+            cache.put(tagsAsMap, cache.get(tagsAsMap) + 1);
+        }
+        LocalCacheCounters.Cache.set(cache);
 
         /*
         client.gauge("jenkins.threadlocal.test",
