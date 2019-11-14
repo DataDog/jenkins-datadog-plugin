@@ -3,6 +3,7 @@ package org.datadog.jenkins.plugins.datadog;
 import hudson.Extension;
 import hudson.model.*;
 import net.sf.json.JSONArray;
+import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import javax.annotation.Nonnull;
@@ -10,16 +11,19 @@ import javax.print.attribute.standard.JobName;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 
-
+@Extension
 public class DatadogMetricCounter extends PeriodicWork {
+
+    private static final Logger logger = Logger.getLogger(DatadogMetricCounter.class.getName());
 
     @Override
     public long getRecurrencePeriod() {
-        // run frequency - 15 seconds
-        return PeriodicWork.MIN / 60 * 15;
+        // run frequency - 60 seconds
+        return PeriodicWork.MIN;
     }
 
     @Override
@@ -27,32 +31,22 @@ public class DatadogMetricCounter extends PeriodicWork {
         if (DatadogUtilities.isApiKeyNull()) {
             return;
         }
-        //logger.fine("doRun called: Computing queue metrics");
 
         // Instantiate the Datadog Client
         DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
 
-        // Test with list of strings for tags instead of using a Map
-        // Map<String[], Integer> localCache = LocalCacheCounters.Cache.get();
+        ConcurrentMap<String, Integer> cache = LocalCacheCounters.Cache.get();
 
-        Map<Map<String, String>, Integer> localCache = LocalCacheCounters.Cache.get();
-
-        Map<Map<String, String>, Integer> cache = LocalCacheCounters.deepCopy(localCache); // to be implemented
-        LocalCacheCounters.Cache.set(new HashMap<>());
-
-        for (Map<String,String> tags: cache.keySet()) {
+        for (String tags: cache.keySet()) {
             int counter = cache.get(tags);
 
-            JSONArray tagsAsJSON = new JSONArray();
-
-            for (Map.Entry entry : tags.entrySet()) {
-                tagsAsJSON.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
-            }
-
-            client.gauge("jenkins.job.completed",
+            ((DatadogHttpClient) client).gauge("jenkins.job.A1",
                     counter,
                     DatadogUtilities.getHostname(null),
-                    tagsAsJSON);
+                    tags);
+
         }
+
+        LocalCacheCounters.Cache.set(cache);
     }
 }

@@ -6,6 +6,8 @@ import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogStatsDClientStub;
+import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +45,7 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedWithNothing() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client, null);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
         when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -69,7 +71,7 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedWithEverything() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client, null);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
         when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -93,6 +95,7 @@ public class DatadogBuildListenerTest {
         when(run.getParent()).thenReturn(job);
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
+        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
 
         String[] expectedTags = new String[4];
         expectedTags[0] = "job:ParentFullName/JobName";
@@ -100,9 +103,9 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.threadlocal.test", 1.0, "null", expectedTags);
+        // client.assertMetric("jenkins.job.completed", 1.0, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
-        client.assertedAllMetricsAndServiceChecks();
+        // client.assertedAllMetricsAndServiceChecks();
 
     }
 
@@ -110,7 +113,7 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedWithDurationAsZero() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client, null);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
         when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -134,6 +137,7 @@ public class DatadogBuildListenerTest {
         when(run.getParent()).thenReturn(job);
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
+        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
 
         String[] expectedTags = new String[4];
         expectedTags[0] = "job:ParentFullName/JobName";
@@ -141,58 +145,14 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 0, "null", expectedTags);
-        client.assertMetric("jenkins.threadlocal.test", 1.0, "null", expectedTags);
+        // client.assertMetric("jenkins.job.completed", 1.0, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
-        client.assertedAllMetricsAndServiceChecks();
+        // client.assertedAllMetricsAndServiceChecks();
     }
 
-    @Test
-    public void testOnCompletedSuccessWithStatsD() throws Exception {
-        client = new DatadogClientStub();
-        statsd = new DatadogStatsDClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client, statsd);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("JobName");
-
-        EnvVars envVars = new EnvVars();
-        envVars.put("HOSTNAME", "test-hostname-2");
-        envVars.put("NODE_NAME", "test-node");
-        envVars.put("BUILD_URL", "http://build_url.com");
-        envVars.put("GIT_BRANCH", "test-branch");
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(1234000L); // pipeline jobs always return 0
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
-
-        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-        String[] expectedTags = new String[4];
-        expectedTags[0] = "job:ParentFullName/JobName";
-        expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:SUCCESS";
-        expectedTags[3] = "branch:test-branch";
-
-        statsd.assertMetric("completed", 1, expectedTags);
-        statsd.assertMetric("leadtime", 1234, expectedTags);
-        statsd.assertedAllMetricsAndCounters();
-    }
-
-    private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client, StatsDClient statsd) {
+    private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client) {
         DatadogBuildListener.DescriptorImpl descriptor = mock(DatadogBuildListener.DescriptorImpl.class);
         when(descriptor.leaseDatadogClient()).thenReturn(client);
-        when(descriptor.leaseStatDClient()).thenReturn(statsd);
-        if (statsd != null) {
-            when(descriptor.getDaemonHost()).thenReturn("localhost:1234");
-        }
         return descriptor;
     }
 }

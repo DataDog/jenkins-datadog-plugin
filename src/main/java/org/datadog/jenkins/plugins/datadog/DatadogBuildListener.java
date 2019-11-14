@@ -15,7 +15,6 @@ import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-import org.datadog.jenkins.plugins.datadog.model.Counter;
 import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -25,8 +24,8 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -166,49 +165,14 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 buildData.getHostname("null"),
                 tags);
 
-        Map<String,String> tagsAsMap = buildData.getAssembledTagsAsMap(extraTags);
-
         // Threadlocal test increment at each build execution
-        Map<Map<String, String>, Integer> cache = LocalCacheCounters.Cache.get();
-        if (cache.get(tagsAsMap) == null) {
-            cache.put(tagsAsMap, 1);
+        ConcurrentMap<String, Integer> cache = LocalCacheCounters.Cache.get();
+        if (cache.get(tags.toString()) == null) {
+            cache.put(tags.toString(), 1);
         } else {
-            cache.put(tagsAsMap, cache.get(tagsAsMap) + 1);
+            cache.put(tags.toString(), cache.get(tags.toString()) + 1);
         }
         LocalCacheCounters.Cache.set(cache);
-
-        /*
-        client.gauge("jenkins.threadlocal.test",
-                threadId.get(),
-                buildData.getHostname("null"),
-                tags);
-        logger.fine(String.format("Sending 'threadlocal' gauge to %s ", getDescriptor().getDaemonHost()));
-         */
-
-        // Threadlocal test 2
-        /*
-        Runnable increment = () -> {
-            count.set(count.get().intValue() + 1);
-        };
-
-        ExecutorService executor = Executors.newCachedThreadPool();
-        executor.execute(increment);
-        executor.execute(increment);
-        executor.execute(increment);
-        executor.execute(increment);
-        executor.execute(increment);
-
-        executor.shutdown();
-
-        /*
-        thread_local.set((long) 101);
-        client.gauge("jenkins.threadlocal.test.2",
-                (Long) thread_local.get(),
-                buildData.getHostname("null"),
-                tags);
-         */
-
-        //client.gauge("jenkins.threadlocal.test", result, buildData.getHostname("null"), tags);
 
         // Send a service check
         String hostname = buildData.getHostname("null");
@@ -225,69 +189,46 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         }
         client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
 
-        // Report to StatsDClient
-        if (isValidDaemon(getDescriptor().getDaemonHost())) {
-            // Setup tags for StatsDClient reporting
-            String[] statsdTags = new String[tags.size()];
-            for (int i = 0; i < tags.size(); i++) {
-                statsdTags[i] = tags.getString(i);
+        if (run.getResult() == Result.SUCCESS) {
+            long mttr = getMeanTimeToRecovery(run);
+            long cycleTime = getCycleTime(run);
+            long leadTime = run.getDuration() + mttr;
+
+            client.gauge("jenkins.job.leadtime",
+                    (long) (leadTime / 1000.0),
+                    buildData.getHostname("null"),
+                    tags);
+
+            if (cycleTime > 0) {
+                client.gauge("jenkins.job.cycletime",
+                        (long) (cycleTime / 1000.0),
+                        buildData.getHostname("null"),
+                        tags);
             }
-
-            logger.fine(String.format("Sending 'completed' counter to %s ", getDescriptor().getDaemonHost()));
-            StatsDClient statsd = null;
-            try {
-                // The client is a thread pool so instead of creating a new instance of the pool
-                // we lease the exiting one registered with Jenkins.
-                statsd = getDescriptor().leaseStatDClient();
-                statsd.incrementCounter("completed", statsdTags);
-                logger.fine(String.format("Attempted to send 'completed' counter with tags: %s",
-                        Arrays.toString(statsdTags)));
-
-                logger.fine("Computing KPI metrics");
-                // Send KPIs
-                if (run.getResult() == Result.SUCCESS) {
-                    long mttr = getMeanTimeToRecovery(run);
-                    long cycleTime = getCycleTime(run);
-                    long leadTime = run.getDuration() + mttr;
-
-                    statsd.gauge("leadtime", leadTime / 1000.0, statsdTags);
-                    if (cycleTime > 0) {
-                        statsd.gauge("cycletime", cycleTime / 1000.0, statsdTags);
-                    }
-                    if (mttr > 0) {
-                        statsd.gauge("mttr", mttr / 1000.0, statsdTags);
-                    }
-                } else {
-                    long feedbackTime = run.getDuration();
-                    long mtbf = getMeanTimeBetweenFailure(run);
-
-                    statsd.gauge("feedbacktime", feedbackTime / 1000.0, statsdTags);
-
-                    if (mtbf > 0) {
-                        statsd.gauge("mtbf", mtbf / 1000.0, statsdTags);
-                    }
-                }
-
-            } catch (StatsDClientException e) {
-                logger.severe(String.format("Runtime exception thrown using the StatsDClient. Exception: %s",
-                        e.getMessage()));
-            } finally {
-                if (statsd != null) {
-                    try {
-                        // StatsDClient needs time to do its thing.
-                        // UDP messages fail to send at all without this sleep
-                        TimeUnit.MILLISECONDS.sleep(100);
-                    } catch (InterruptedException ex) {
-                        logger.severe(ex.getMessage());
-                    }
-                    statsd.stop();
-                }
+            if (mttr > 0) {
+                client.gauge("jenkins.job.mttr",
+                        (long) (cycleTime / 1000.0),
+                        buildData.getHostname("null"),
+                        tags);
             }
         } else {
-            logger.warning("Invalid dogstats daemon host specified");
+            long feedbackTime = run.getDuration();
+            long mtbf = getMeanTimeBetweenFailure(run);
+
+            client.gauge("jenkins.job.feedbacktime",
+                    (long) (feedbackTime / 1000.0),
+                    buildData.getHostname("null"),
+                    tags);
+
+            if (mtbf > 0) {
+                client.gauge("jenkins.job.mtbf",
+                        (long) (feedbackTime / 1000.0),
+                        buildData.getHostname("null"),
+                        tags);
+            }
         }
-        logger.fine("Finished onCompleted()");
-    }
+    logger.fine("Finished onCompleted()");
+}
 
     /**
      * @param daemonHost - The host to check

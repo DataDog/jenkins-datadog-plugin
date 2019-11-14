@@ -96,6 +96,46 @@ public class DatadogHttpClient implements DatadogClient {
         return status;
     }
 
+    public boolean gauge(String name, long value, String hostname, String tags) {
+        logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
+
+        // Setup data point, of type [<unix_timestamp>, <value>]
+        JSONArray points = new JSONArray();
+        JSONArray point = new JSONArray();
+
+        point.add(System.currentTimeMillis() / 1000); // current time, s
+        point.add(value);
+        points.add(point); // api expects a list of points
+
+        JSONObject metric = new JSONObject();
+        metric.put("metric", name);
+        metric.put("points", points);
+        metric.put("type", "gauge");
+        metric.put("host", hostname);
+        if (tags != null) {
+            logger.fine(tags);
+            metric.put("tags", tags);
+        }
+        // Place metric as item of series list
+        JSONArray series = new JSONArray();
+        series.add(metric);
+
+        // Add series to payload
+        JSONObject payload = new JSONObject();
+        payload.put("series", series);
+
+        logger.fine(String.format("payload: %s", payload.toString()));
+
+        boolean status;
+        try {
+            status = post(payload, METRIC);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+            status = false;
+        }
+        return status;
+    }
+
     @Override
     public boolean serviceCheck(String name, int code, String hostname, JSONArray tags) {
         logger.fine(String.format("Sending service check '%s' with status %s", name, code));
