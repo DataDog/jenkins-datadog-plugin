@@ -202,7 +202,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             }
             if (mttr > 0) {
                 client.gauge("jenkins.job.mttr",
-                        (long) (cycleTime / 1000.0),
+                        (long) (mttr / 1000.0),
                         buildData.getHostname("null"),
                         tags);
             }
@@ -217,47 +217,12 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
             if (mtbf > 0) {
                 client.gauge("jenkins.job.mtbf",
-                        (long) (feedbackTime / 1000.0),
+                        (long) (mtbf / 1000.0),
                         buildData.getHostname("null"),
                         tags);
             }
         }
-    logger.fine("Finished onCompleted()");
-}
-
-    /**
-     * @param daemonHost - The host to check
-     * @return - A boolean that checks if the daemonHost is valid
-     */
-    private boolean isValidDaemon(String daemonHost) {
-        if (daemonHost == null) {
-            logger.info("Daemon host is not set");
-            return false;
-        }
-        if (!daemonHost.contains(":")) {
-            logger.info("Daemon host does not contain the port seperator ':'");
-            return false;
-        }
-
-        String hn = daemonHost.split(":")[0];
-        String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
-
-        if (StringUtils.isBlank(hn)) {
-            logger.info("Daemon host part is empty");
-            return false;
-        }
-
-        //Match ports [1024-65535]
-        Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
-                + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
-
-        boolean match = p.matcher(pn).find();
-
-        if (!match) {
-            logger.info("Port number is invalid must be in the range [1024-65535]");
-        }
-
-        return match;
+        logger.fine("Finished onCompleted()");
     }
 
     private long getMeanTimeBetweenFailure(Run<?, ?> run) {
@@ -390,33 +355,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 return FormValidation.error("Your hostname is invalid, likely because"
                         + " it violates the format set in RFC 1123.");
             }
-        }
-
-        /**
-         * @param daemonHost - The hostname for the dogstatsdaemon. Defaults to localhost:8125
-         * @return a FormValidation object used to display a message to the user on the configuration
-         * screen.
-         */
-        public FormValidation doCheckDaemonHost(@QueryParameter("daemonHost") final String daemonHost) {
-            if (!daemonHost.contains(":")) {
-                return FormValidation.error("The field must be configured in the form <hostname>:<port>");
-            }
-
-            String hn = daemonHost.split(":")[0];
-            String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
-
-            if (StringUtils.isBlank(hn)) {
-                return FormValidation.error("Empty hostname");
-            }
-
-            //Match ports [1024-65535]
-            Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
-                    + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
-            if (!p.matcher(pn).find()) {
-                return FormValidation.error("Invalid port specified. Range must be 1024-65535");
-            }
-
-            return FormValidation.ok("Valid host specification");
         }
 
         /**

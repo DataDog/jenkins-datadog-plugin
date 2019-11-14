@@ -38,9 +38,6 @@
       <f:checkbox title="node" field="tagNode" optional="true" />
     </f:entry>
     <f:advanced>
-        <f:entry title="DogStatsD Host" field="daemonHost">
-          <f:textbox field="daemonHost" default="${daemonHost}" />
-        </f:entry>
         <f:entry title="Target API URL" field="targetMetricURL" description="URL which the plugin reports to." >
           <f:textbox field="targetMetricURL" default="${targetMetricURL}" />
         </f:entry>

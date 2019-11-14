@@ -88,6 +88,8 @@ public class DatadogBuildListenerTest {
         when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
         when(run.getDuration()).thenReturn(123000L);
+        // Try to get a value for mttr
+        when(run.getPreviousBuiltBuild());
         when(run.getNumber()).thenReturn(2);
         when(run.getParent()).thenReturn(job);
 
@@ -100,10 +102,11 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        // client.assertMetric("jenkins.job.completed", 1.0, "null", expectedTags);
+        client.assertMetric("jenkins.job.leadtime", 123, "null", expectedTags);
+        client.assertMetric("jenkins.job.leadtime", 123, "null", expectedTags);
+        client.assertMetric("jenkins.job.mttr", 123, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
-        // client.assertedAllMetricsAndServiceChecks();
-
+        client.assertedAllMetricsAndServiceChecks();
     }
 
     @Test
@@ -142,9 +145,83 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 0, "null", expectedTags);
-        // client.assertMetric("jenkins.job.completed", 1.0, "null", expectedTags);
+        client.assertMetric("jenkins.job.leadtime", 0, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
-        // client.assertedAllMetricsAndServiceChecks();
+        client.assertedAllMetricsAndServiceChecks();
+    }
+
+    @Test
+    public void testOnFailures() throws Exception {
+        client = new DatadogClientStub();
+        datadogBuildListener = mock(DatadogBuildListener.class);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
+        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
+
+        ItemGroup parent = mock(ItemGroup.class);
+        when(parent.getFullName()).thenReturn("ParentFullName");
+
+        Job job = mock(Job.class);
+        when(job.getParent()).thenReturn(parent);
+        when(job.getName()).thenReturn("JobName");
+
+        EnvVars envVars = new EnvVars();
+        envVars.put("HOSTNAME", "test-hostname-2");
+        envVars.put("NODE_NAME", "test-node");
+        envVars.put("BUILD_URL", "http://build_url.com");
+        envVars.put("GIT_BRANCH", "test-branch");
+
+        Run runFailures = mock(Run.class);
+        when(runFailures.getResult()).thenReturn(Result.FAILURE);
+        when(runFailures.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+        when(runFailures.getDuration()).thenReturn(123000L);
+        when(runFailures.getPreviousNotFailedBuild());
+        when(runFailures.getNumber()).thenReturn(2);
+        when(runFailures.getParent()).thenReturn(job);
+
+        datadogBuildListener.onCompleted(runFailures, mock(TaskListener.class));
+        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
+
+        String[] expectedTags = new String[4];
+        expectedTags[0] = "job:ParentFullName/JobName";
+        expectedTags[1] = "node:test-node";
+        expectedTags[2] = "result:SUCCESS";
+        expectedTags[3] = "branch:test-branch";
+        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
+        client.assertMetric("jenkins.job.feedbacktime", 123, "null", expectedTags);
+        client.assertMetric("jenkins.job.mtbf", 123, "null", expectedTags);
+        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
+    }
+
+    @Test
+    public void testTagsCache() throws Exception {
+        // Test that the cache contains the correct tags
+        client = new DatadogClientStub();
+        datadogBuildListener = mock(DatadogBuildListener.class);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
+        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
+
+        ItemGroup parent = mock(ItemGroup.class);
+        when(parent.getFullName()).thenReturn("ParentFullName");
+
+        Job job = mock(Job.class);
+        when(job.getParent()).thenReturn(parent);
+        when(job.getName()).thenReturn("JobName");
+
+        EnvVars envVars = new EnvVars();
+        envVars.put("HOSTNAME", "test-hostname-2");
+        envVars.put("NODE_NAME", "test-node");
+        envVars.put("BUILD_URL", "http://build_url.com");
+        envVars.put("GIT_BRANCH", "test-branch");
+
+        Run runTestCache = mock(Run.class);
+        when(runTestCache.getResult()).thenReturn(Result.SUCCESS);
+        when(runTestCache.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+        when(runTestCache.getDuration()).thenReturn(123000L);
+        when(runTestCache.getNumber()).thenReturn(2);
+        when(runTestCache.getParent()).thenReturn(job);
+
+        datadogBuildListener.onCompleted(runTestCache, mock(TaskListener.class));
+        Assert.assertEquals(LocalCacheCounters.Cache.get().containsKey("job:ParentFullName/JobName,node:test-node,result:SUCCESS,branch:test-branch"));
     }
 
     private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client) {
