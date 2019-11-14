@@ -1,11 +1,9 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import com.timgroup.statsd.StatsDClient;
 import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
-import org.datadog.jenkins.plugins.datadog.clients.DatadogStatsDClientStub;
 import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,7 +24,6 @@ public class DatadogBuildListenerTest {
     private Jenkins jenkins;
 
     private DatadogClientStub client;
-    private DatadogStatsDClientStub statsd;
 
     private DatadogBuildListener datadogBuildListener;
 

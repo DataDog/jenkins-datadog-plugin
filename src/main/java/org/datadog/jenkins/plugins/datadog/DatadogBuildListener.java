@@ -1,8 +1,5 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import com.timgroup.statsd.NonBlockingStatsDClient;
-import com.timgroup.statsd.StatsDClient;
-import com.timgroup.statsd.StatsDClientException;
 import hudson.Extension;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
@@ -22,10 +19,8 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -329,11 +324,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         private String whitelist = null;
         private String globalJobTags = null;
         private Boolean tagNode = false;
-        private String daemonHost = "localhost:8125";
         private String targetMetricURL = "https://api.datadoghq.com/api/";
 
-        //The StatsDClient instance variable. This variable is leased by the RunListener
-        private StatsDClient statsDClient;
         private DatadogClient datadogClient;
 
         /**
@@ -497,22 +489,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 this.setTagNode(false);
             }
 
-            daemonHost = formData.getString("daemonHost");
-            //When form is saved...reinitialize the StatsDClient.
-            //We need to stop the old one first. And create a new one with the new data from
-            //The global configuration
-            if (statsDClient != null) {
-                try {
-                    statsDClient.stop();
-                    String hp = daemonHost.split(":")[0];
-                    int pp = Integer.parseInt(daemonHost.split(":")[1]);
-                    statsDClient = new NonBlockingStatsDClient("jenkins.job", hp, pp);
-                    logger.finer(String.format("Created new DogStatsD client (%s:%S)!", hp, pp));
-                } catch (Exception e) {
-                    logger.severe(String.format("Unable to create new StatsDClient. Exception: %s", e.toString()));
-                }
-            }
-
             //When form is saved...reinitialize the DatadogClient.
             //Create a new one with the new data from the global configuration
             if (datadogClient != null) {
@@ -650,20 +626,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         }
 
         /**
-         * @return The host definition for the dogstats daemon
-         */
-        public String getDaemonHost() {
-            return daemonHost;
-        }
-
-        /**
-         * @param daemonHost - The host specification for the dogstats daemon
-         */
-        public void setDaemonHost(String daemonHost) {
-            this.daemonHost = daemonHost;
-        }
-
-        /**
          * @return The target API URL
          */
         public String getTargetMetricURL() {
@@ -675,23 +637,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
          */
         public void setTargetMetricURL(String targetMetricURL) {
             this.targetMetricURL = targetMetricURL;
-        }
-
-        /**
-         * @return - A {@link StatsDClient} lease for this registered {@link RunListener}
-         */
-        public StatsDClient leaseStatDClient() {
-            try {
-                if (statsDClient == null) {
-                    statsDClient = new NonBlockingStatsDClient("jenkins.job", daemonHost.split(":")[0],
-                            Integer.parseInt(daemonHost.split(":")[1]));
-                } else {
-                    logger.warning("StatsDClient is already set");
-                }
-            } catch (Exception e) {
-                logger.severe(String.format("Error while configuring StatsDClient. Exception: %s", e.toString()));
-            }
-            return statsDClient;
         }
 
         /**

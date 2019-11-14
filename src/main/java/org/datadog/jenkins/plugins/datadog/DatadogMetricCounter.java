@@ -2,15 +2,7 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.Extension;
 import hudson.model.*;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
-import org.datadog.jenkins.plugins.datadog.model.BuildData;
-
-import javax.annotation.Nonnull;
-import javax.print.attribute.standard.JobName;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
@@ -40,11 +32,10 @@ public class DatadogMetricCounter extends PeriodicWork {
         for (String tags: cache.keySet()) {
             int counter = cache.get(tags);
 
-            ((DatadogHttpClient) client).gauge("jenkins.job.A1",
+            ((DatadogHttpClient) client).gauge("jenkins.job.completed",
                     counter,
                     DatadogUtilities.getHostname(null),
                     tags);
-
         }
 
         LocalCacheCounters.Cache.set(cache);
