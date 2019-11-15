@@ -2,15 +2,17 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.Extension;
 import hudson.model.*;
-import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
+
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
+import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
 
 @Extension
-public class PeriodicCounterSender extends PeriodicWork {
+public class DatadogPeriodicCounterSender extends PeriodicWork {
 
-    private static final Logger logger = Logger.getLogger(PeriodicCounterSender.class.getName());
+    private static final Logger logger = Logger.getLogger(DatadogPeriodicCounterSender.class.getName());
 
     @Override
     public long getRecurrencePeriod() {
@@ -24,22 +26,20 @@ public class PeriodicCounterSender extends PeriodicWork {
             return;
         }
 
-        final String completed = "completed";
-
         // Instantiate the Datadog Client
         DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
 
-        ConcurrentMap<String, Integer> cache = ConcurrentMetricCounters.Counters.get();
-        ConcurrentMetricCounters.Counters.set(cache);
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
 
-        for (String tags: cache.keySet()) {
-            int counter = cache.get(tags);
+        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
 
-            ((DatadogHttpClient) client).gauge("jenkins.job." + completed,
-                    counter,
+        for (CounterMetric counterMetric: counters.keySet()) {
+            int count = counters.get(counterMetric);
+
+            client.gauge(counterMetric.getMetricName(),
+                    count,
                     DatadogUtilities.getHostname(null),
-                    tags);
+                    counterMetric.getTags());
         }
-
     }
 }

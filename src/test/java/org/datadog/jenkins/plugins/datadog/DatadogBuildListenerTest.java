@@ -4,7 +4,7 @@ import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
-import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
+import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,6 +16,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DatadogUtilities.class, Jenkins.class})
@@ -25,7 +26,7 @@ public class DatadogBuildListenerTest {
 
     private DatadogClientStub client;
 
-    private DatadogBuildListener datadogBuildListener;
+    public DatadogBuildListener datadogBuildListener;
 
     @Before
     public void setUp() throws Exception {
@@ -88,13 +89,14 @@ public class DatadogBuildListenerTest {
         when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
         when(run.getDuration()).thenReturn(123000L);
-        // Try to get a value for mttr
-        when(run.getPreviousBuiltBuild());
         when(run.getNumber()).thenReturn(2);
         when(run.getParent()).thenReturn(job);
+        when(datadogBuildListener.getMeanTimeBetweenFailure(run)).thenReturn(123000L);
+        when(datadogBuildListener.getCycleTime(run)).thenReturn(123000L);
+        when(datadogBuildListener.getMeanTimeToRecovery(run)).thenReturn(123000L);
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
+        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
 
         String[] expectedTags = new String[4];
         expectedTags[0] = "job:ParentFullName/JobName";
@@ -102,11 +104,16 @@ public class DatadogBuildListenerTest {
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.leadtime", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.leadtime", 123, "null", expectedTags);
+        client.assertMetric("jenkins.job.leadtime", 246, "null", expectedTags);
+        client.assertMetric("jenkins.job.cycletime", 123, "null", expectedTags);
         client.assertMetric("jenkins.job.mttr", 123, "null", expectedTags);
+        // client.assertMetric("jenkins.job.completed", 1, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
         client.assertedAllMetricsAndServiceChecks();
+
+        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
+        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
+        // TODO: test that counterMetric == 2
     }
 
     @Test
@@ -137,7 +144,7 @@ public class DatadogBuildListenerTest {
         when(run.getParent()).thenReturn(job);
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
+        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
 
         String[] expectedTags = new String[4];
         expectedTags[0] = "job:ParentFullName/JobName";
@@ -174,26 +181,25 @@ public class DatadogBuildListenerTest {
         when(runFailures.getResult()).thenReturn(Result.FAILURE);
         when(runFailures.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
         when(runFailures.getDuration()).thenReturn(123000L);
-        when(runFailures.getPreviousNotFailedBuild());
         when(runFailures.getNumber()).thenReturn(2);
         when(runFailures.getParent()).thenReturn(job);
+        when(datadogBuildListener.getMeanTimeBetweenFailure(runFailures)).thenReturn(123000L);
 
         datadogBuildListener.onCompleted(runFailures, mock(TaskListener.class));
-        Assert.assertEquals(LocalCacheCounters.Cache.get().size(), 1);
 
         String[] expectedTags = new String[4];
         expectedTags[0] = "job:ParentFullName/JobName";
         expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:SUCCESS";
+        expectedTags[2] = "result:FAILURE";
         expectedTags[3] = "branch:test-branch";
         client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
         client.assertMetric("jenkins.job.feedbacktime", 123, "null", expectedTags);
         client.assertMetric("jenkins.job.mtbf", 123, "null", expectedTags);
-        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
+        client.assertServiceCheck("jenkins.job.status", 2, "null", expectedTags);
     }
 
     @Test
-    public void testTagsCache() throws Exception {
+    public void testValuesCache() throws Exception {
         // Test that the cache contains the correct tags
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
@@ -221,7 +227,8 @@ public class DatadogBuildListenerTest {
         when(runTestCache.getParent()).thenReturn(job);
 
         datadogBuildListener.onCompleted(runTestCache, mock(TaskListener.class));
-        Assert.assertEquals(LocalCacheCounters.Cache.get().containsKey("job:ParentFullName/JobName,node:test-node,result:SUCCESS,branch:test-branch"));
+        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
+
     }
 
     private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client) {

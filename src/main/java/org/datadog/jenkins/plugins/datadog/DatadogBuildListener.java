@@ -12,7 +12,8 @@ import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-import org.datadog.jenkins.plugins.datadog.model.LocalCacheCounters;
+import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
+import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import static hudson.Util.fixEmptyAndTrim;
 
@@ -160,14 +160,15 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 buildData.getHostname("null"),
                 tags);
 
-        // Threadlocal test increment at each build execution
-        ConcurrentMap<String, Integer> cache = LocalCacheCounters.Cache.get();
-        if (cache.get(tags.toString()) == null) {
-            cache.put(tags.toString(), 1);
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
+        System.out.println("Sending the jenkins.job.completed metric with " + counters.toString());
+        CounterMetric counterMetric = new CounterMetric(tags, "jenkins.job.completed");
+        if (counters.get(counterMetric) == null) {
+            counters.put(counterMetric, 1);
         } else {
-            cache.put(tags.toString(), cache.get(tags.toString()) + 1);
+            counters.put(counterMetric, counters.get(counterMetric) + 1);
         }
-        LocalCacheCounters.Cache.set(cache);
+        ConcurrentMetricCounters.Counters.set(counters);
 
         // Send a service check
         String hostname = buildData.getHostname("null");
@@ -225,24 +226,26 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         logger.fine("Finished onCompleted()");
     }
 
-    private long getMeanTimeBetweenFailure(Run<?, ?> run) {
+    public long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
-            return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
+            long mtbf = run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
+            return mtbf;
         }
         return 0;
     }
 
-    private long getCycleTime(Run<?, ?> run) {
+    public long getCycleTime(Run<?, ?> run) {
         Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
         if (previousSuccessfulBuild != null) {
-            return (run.getStartTimeInMillis() + run.getDuration()) -
+            long cycleTime = (run.getStartTimeInMillis() + run.getDuration()) -
                     (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
+            return cycleTime;
         }
         return 0;
     }
 
-    private long getMeanTimeToRecovery(Run<?, ?> run) {
+    public long getMeanTimeToRecovery(Run<?, ?> run) {
         if (buildFailed(run.getPreviousBuiltBuild())) {
             Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
 
@@ -256,7 +259,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         return 0;
     }
 
-    private boolean buildFailed(Run<?, ?> run) {
+    public boolean buildFailed(Run<?, ?> run) {
         return run != null && run.getResult() != Result.SUCCESS;
     }
 
