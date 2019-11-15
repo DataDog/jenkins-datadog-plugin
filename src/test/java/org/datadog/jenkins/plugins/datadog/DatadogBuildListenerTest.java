@@ -5,6 +5,7 @@ import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
+import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,9 +15,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.AdditionalAnswers.returnsFirstArg;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DatadogUtilities.class, Jenkins.class})
@@ -107,13 +110,21 @@ public class DatadogBuildListenerTest {
         client.assertMetric("jenkins.job.leadtime", 246, "null", expectedTags);
         client.assertMetric("jenkins.job.cycletime", 123, "null", expectedTags);
         client.assertMetric("jenkins.job.mttr", 123, "null", expectedTags);
-        // client.assertMetric("jenkins.job.completed", 1, "null", expectedTags);
         client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
         client.assertedAllMetricsAndServiceChecks();
 
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
         Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
         // TODO: test that counterMetric == 2
+
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
+
+        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
+
+        for (CounterMetric counterMetric: counters.keySet()) {
+            Assert.assertEquals(counterMetric.getMetricName(), "jenkins.job.completed");
+            Assert.assertEquals(counterMetric.getTags().equals(["job:ParentFullName/JobName","node:test-node","result:SUCCESS","branch:test-branch"]);
+        }
     }
 
     @Test
