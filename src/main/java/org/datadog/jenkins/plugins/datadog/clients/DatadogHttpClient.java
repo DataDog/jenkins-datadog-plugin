@@ -31,6 +31,9 @@ public class DatadogHttpClient implements DatadogClient {
     private static final String SERVICECHECK = "v1/check_run";
     private static final String VALIDATE = "v1/validate";
 
+    private static final String LOGS_ENDPOINT_US = "https://http-intake.logs.datadoghq.com/v1/input";
+    private static final String LOGS_ENDPOINT_EU = "https://http-intake.logs.datadoghq.eu/v1/input";
+
     private static final Integer HTTP_FORBIDDEN = 403;
 
     private String url;
@@ -226,7 +229,7 @@ public class DatadogHttpClient implements DatadogClient {
     private HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
         HttpURLConnection conn = null;
         Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null){
+        if (jenkins == null) {
             return null;
         }
         ProxyConfiguration proxyConfig = jenkins.proxy;
@@ -254,4 +257,67 @@ public class DatadogHttpClient implements DatadogClient {
         return conn;
     }
 
+    /**
+     * Posts a given {@link JSONObject} payload to the Datadog API, using the
+     * user configured apiKey.
+     *
+     * @param payload - A JSONObject containing a specific subset of a builds metadata.
+     * @return a boolean to signify the success or failure of the HTTP POST request.
+     * @throws IOException if HttpURLConnection fails to open connection
+     */
+    public boolean sendLogs(final JSONObject payload, final String site) throws IOException {
+        String urlParameters = "?api_key=" + Secret.toString(apiKey);
+        HttpURLConnection conn = null;
+        boolean status = true;
+
+        try {
+            // https://docs.datadoghq.com/api/?lang=bash#logs
+            logger.finer("Setting up HttpURLConnection...");
+            // TODO or FIXME: define where we need to set the site endpoint
+            if (site == "US") {
+                conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_US));
+            } else if (site == "EU") {
+                conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_EU));
+            }
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setUseCaches(false);
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+            logger.finer("Writing to OutputStreamWriter...");
+            wr.write(payload.toString());
+            wr.close();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+            StringBuilder result = new StringBuilder();
+            String line;
+            while ((line = rd.readLine()) != null) {
+                result.append(line);
+            }
+            rd.close();
+            JSONObject json = (JSONObject) JSONSerializer.toJSON(result.toString());
+            if ("ok".equals(json.getString("status"))) {
+                logger.finer(String.format("Payload: %s", payload));
+            } else {
+                logger.fine(String.format("Payload: %s", payload));
+                status = false;
+            }
+        } catch (Exception e) {
+            try {
+                if (conn != null && conn.getResponseCode() == HTTP_FORBIDDEN) {
+                    logger.severe("Hmmm, your API key may be invalid. We received a 403 error.");
+                } else {
+                    logger.severe(String.format("Client error: %s", e.toString()));
+                }
+            } catch (IOException ex) {
+                logger.severe(ex.toString());
+            }
+            status = false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return status;
+    }
 }
