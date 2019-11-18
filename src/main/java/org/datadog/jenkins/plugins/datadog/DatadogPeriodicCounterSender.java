@@ -17,7 +17,7 @@ public class DatadogPeriodicCounterSender extends PeriodicWork {
     @Override
     public long getRecurrencePeriod() {
         // run frequency - 15 seconds
-        return PeriodicWork.MIN * 60 / 4;
+        return PeriodicWork.MIN / 4;
     }
 
     @Override

@@ -161,10 +161,9 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 tags);
 
         ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-        System.out.println("Sending the jenkins.job.completed metric with " + counters.toString());
         CounterMetric counterMetric = new CounterMetric(tags, "jenkins.job.completed");
         if (counters.get(counterMetric) == null) {
-            counters.put(counterMetric, 1);
+            counters.put(counterMetric, counters.getOrDefault(counterMetric, 0) + 1);
         } else {
             counters.put(counterMetric, counters.get(counterMetric) + 1);
         }
@@ -191,19 +190,19 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             long leadTime = run.getDuration() + mttr;
 
             client.gauge("jenkins.job.leadtime",
-                    (long) (leadTime / 1000.0),
+                    leadTime / 1000,
                     buildData.getHostname("null"),
                     tags);
 
             if (cycleTime > 0) {
                 client.gauge("jenkins.job.cycletime",
-                        (long) (cycleTime / 1000.0),
+                        cycleTime / 1000,
                         buildData.getHostname("null"),
                         tags);
             }
             if (mttr > 0) {
                 client.gauge("jenkins.job.mttr",
-                        (long) (mttr / 1000.0),
+                        mttr / 1000,
                         buildData.getHostname("null"),
                         tags);
             }
@@ -212,13 +211,13 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             long mtbf = getMeanTimeBetweenFailure(run);
 
             client.gauge("jenkins.job.feedbacktime",
-                    (long) (feedbackTime / 1000.0),
+                    feedbackTime / 1000,
                     buildData.getHostname("null"),
                     tags);
 
             if (mtbf > 0) {
                 client.gauge("jenkins.job.mtbf",
-                        (long) (mtbf / 1000.0),
+                        mtbf / 1000,
                         buildData.getHostname("null"),
                         tags);
             }
@@ -229,8 +228,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     public long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
-            long mtbf = run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
-            return mtbf;
+            return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
         }
         return 0;
     }
@@ -238,9 +236,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     public long getCycleTime(Run<?, ?> run) {
         Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
         if (previousSuccessfulBuild != null) {
-            long cycleTime = (run.getStartTimeInMillis() + run.getDuration()) -
+            return (run.getStartTimeInMillis() + run.getDuration()) -
                     (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
-            return cycleTime;
         }
         return 0;
     }
@@ -253,8 +250,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
             if (firstFailedRun != null) {
-                long mttf = run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
-                return mttf;
+                return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
             }
         }
         return 0;
