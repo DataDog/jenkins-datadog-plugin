@@ -253,7 +253,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
             if (firstFailedRun != null) {
-                return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+                long mttf = run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+                return mttf;
             }
         }
         return 0;
