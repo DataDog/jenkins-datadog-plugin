@@ -163,7 +163,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
         CounterMetric counterMetric = new CounterMetric(tags, "jenkins.job.completed");
         if (counters.get(counterMetric) == null) {
-            counters.put(counterMetric, counters.getOrDefault(counterMetric, 0) + 1);
+            counters.put(counterMetric, counters.get(counterMetric));
         } else {
             counters.put(counterMetric, counters.get(counterMetric) + 1);
         }

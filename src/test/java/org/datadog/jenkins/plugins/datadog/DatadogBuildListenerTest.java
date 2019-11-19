@@ -99,7 +99,6 @@ public class DatadogBuildListenerTest {
         when(datadogBuildListener.getCycleTime(run)).thenReturn(123000L);
         when(datadogBuildListener.getMeanTimeToRecovery(run)).thenReturn(123000L);
 
-        // First run
         datadogBuildListener.onCompleted(run, mock(TaskListener.class));
         Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
 
@@ -147,42 +146,32 @@ public class DatadogBuildListenerTest {
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("JobName");
+        Job job1 = mock(Job.class);
+        when(job1.getParent()).thenReturn(parent);
+        when(job1.getName()).thenReturn("JobName");
 
-        EnvVars envVars = new EnvVars();
-        envVars.put("HOSTNAME", "test-hostname-2");
-        envVars.put("NODE_NAME", "test-node");
-        envVars.put("BUILD_URL", "http://build_url.com");
-        envVars.put("GIT_BRANCH", "test-branch");
+        Job job2 = mock(Job.class);
+        when(job2.getParent()).thenReturn(parent);
+        when(job2.getName()).thenReturn("JobName");
 
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(123000L);
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
-        when(datadogBuildListener.getMeanTimeBetweenFailure(run)).thenReturn(123000L);
-        when(datadogBuildListener.getCycleTime(run)).thenReturn(123000L);
-        when(datadogBuildListener.getMeanTimeToRecovery(run)).thenReturn(123000L);
+        Run run1 = mock(Run.class);
+        when(run1.getResult()).thenReturn(Result.SUCCESS);
+        Run run2 = mock(Run.class);
+        when(run2.getResult()).thenReturn(Result.SUCCESS);
 
-        // First run
-        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
+        datadogBuildListener.onCompleted(run1, mock(TaskListener.class));
+        datadogBuildListener.onCompleted(run2, mock(TaskListener.class));
 
-        String[] expectedTags = new String[4];
-        expectedTags[0] = "job:ParentFullName/JobName";
-        expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:SUCCESS";
-        expectedTags[3] = "branch:test-branch";
-        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.leadtime", 246, "null", expectedTags);
-        client.assertMetric("jenkins.job.cycletime", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.mttr", 123, "null", expectedTags);
-        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
 
-        // Second run
-        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
+        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
+
+        // 2 runs
+        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 2);
+
+        // 2 completed jobs
+        Assert.assertTrue(counters.containsKey("jenkins.job.completed"));
+        Assert.assertTrue(counters.containsValue(2));
 
     }
 
@@ -269,30 +258,59 @@ public class DatadogBuildListenerTest {
     }
 
     @Test
-    public void testJenkinsRuns() throws Exception {
+    public void testMtbf() throws Exception {
+        client = new DatadogClientStub();
+        datadogBuildListener = mock(DatadogBuildListener.class);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
+        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
+        DatadogBuildListener listener = new DatadogBuildListener();
+
+        ItemGroup parent = mock(ItemGroup.class);
+        when(parent.getFullName()).thenReturn("ParentFullName");
+
+        Job job = mock(Job.class);
+
+        Run lastRun = mock(Run.class);
+        Run currentRun = mock(Run.class);
+
+        Assert.assertEquals(when(currentRun.getStartTimeInMillis()).thenReturn(123000L)
+                - when(lastRun.getStartTimeInMillis()).thenReturn(120000L), 3000L);
+    }
+
+    @Test
+    public void testCycleTime() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
         DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
         when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
 
-        // Mock returned values of getPreviousNotFailedBuild(), getPreviousSuccessfulBuild() and getPreviousBuiltBuild()
-        // Mock 2 runs
-        DatadogBuildListener listener = new DatadogBuildListener();
+        Job job = mock(Job.class);
+
         Run lastRun = mock(Run.class);
-        Run previousRun = mock(Run.class);
+        Run currentRun = mock(Run.class);
 
-        // getPreviousNotFailedBuild()
-        when(lastRun.getPreviousNotFailedBuild()).thenReturn(previousRun);
-        Assert.assertNotNull(listener.getMeanTimeBetweenFailure(lastRun));
-
-        // getPreviousSuccessfulBuild()
-        when(lastRun.getPreviousSuccessfulBuild()).thenReturn(previousRun);
-        Assert.assertNotNull(listener.getCycleTime(lastRun));
-
-        // getPreviousBuiltBuild()
-        when(lastRun.getPreviousSuccessfulBuild()).thenReturn(previousRun);
-        Assert.assertNotNull(listener.getMeanTimeToRecovery(lastRun));
+        Assert.assertEquals(when(lastRun.getStartTimeInMillis()).thenReturn(123000L)
+                + when(currentRun.getDuration()).thenReturn(120000L)
+                - (when(lastRun.getStartTimeInMillis()).thenReturn(10000L) +
+                when(lastRun.getStartTimeInMillis()).thenReturn(10000L)), 1000L);
     }
+
+    @Test
+    public void testMttf() throws Exception {
+        client = new DatadogClientStub();
+        datadogBuildListener = mock(DatadogBuildListener.class);
+        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
+        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
+
+        Job job = mock(Job.class);
+
+        Run lastRun = mock(Run.class);
+        Run currentRun = mock(Run.class);
+
+        Assert.assertEquals(when(currentRun.getStartTimeInMillis()).thenReturn(123000L)
+                - when(lastRun.getStartTimeInMillis()).thenReturn(120000L), 3000L);
+    }
+
 
     private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client) {
         DatadogBuildListener.DescriptorImpl descriptor = mock(DatadogBuildListener.DescriptorImpl.class);
