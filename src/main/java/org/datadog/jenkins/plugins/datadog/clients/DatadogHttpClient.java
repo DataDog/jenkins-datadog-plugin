@@ -7,6 +7,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.logs.LogsWriter;
 
 import javax.servlet.ServletException;
 import java.io.BufferedReader;
@@ -265,9 +266,10 @@ public class DatadogHttpClient implements DatadogClient {
      * @return a boolean to signify the success or failure of the HTTP POST request.
      * @throws IOException if HttpURLConnection fails to open connection
      */
-    public boolean sendLogs(final JSONObject payload) throws IOException {
-        String urlParameters = "?api_key=" + Secret.toString(apiKey);
+    public boolean sendLogs(final LogsWriter payload) throws IOException {
+        String urlParameters = Secret.toString(apiKey);
         HttpURLConnection conn = null;
+        String logsUrl = null;
         boolean status = true;
 
         try {
@@ -275,17 +277,19 @@ public class DatadogHttpClient implements DatadogClient {
             logger.finer("Setting up HttpURLConnection...");
             // Derive the logs intake endpoint URL from the API url (US or EU)
             if (this.url == "https://api.datadoghq.com/api/") {
-                conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_US));
+                logsUrl = LOGS_ENDPOINT_US;
             } else if (this.url == "https://api.datadoghq.eu/api") {
-                conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_EU));
+                logsUrl = LOGS_ENDPOINT_EU;
             }
+            conn = getHttpURLConnection(new URL(logsUrl
+                    + urlParameters));
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setUseCaches(false);
             conn.setDoInput(true);
             conn.setDoOutput(true);
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
-            logger.finer("Writing to OutputStreamWriter...");
+            logger.info("Writing to OutputStreamWriter...");
             wr.write(payload.toString());
             wr.close();
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
@@ -297,9 +301,9 @@ public class DatadogHttpClient implements DatadogClient {
             rd.close();
             JSONObject json = (JSONObject) JSONSerializer.toJSON(result.toString());
             if ("ok".equals(json.getString("status"))) {
-                logger.finer(String.format("Payload: %s", payload));
+                logger.info(String.format("Payload: %s", payload));
             } else {
-                logger.fine(String.format("Payload: %s", payload));
+                logger.info(String.format("Payload: %s", payload));
                 status = false;
             }
         } catch (Exception e) {

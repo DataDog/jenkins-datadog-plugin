@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.logs;
 
+import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.Run;
@@ -14,6 +15,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+
 
 public class LogsWriter {
 
@@ -33,7 +35,7 @@ public class LogsWriter {
         this.build = run;
         this.listener = listener;
         this.buildData = getBuildData();
-        this.jenkinsUrl = jenkinsUrl;
+        this.jenkinsUrl = getJenkinsUrl();
         this.charset = charset;
     }
 
@@ -45,6 +47,10 @@ public class LogsWriter {
     public Charset getCharset()
     {
         return charset;
+    }
+
+    String getJenkinsUrl() {
+        return Jenkins.getInstance().getRootUrl();
     }
 
     /**
@@ -63,7 +69,7 @@ public class LogsWriter {
      */
     public void writeBuildLog(int maxLines, boolean retry) {
         if (!isConnectionBroken()) {
-            List<String> logLines;
+            List<String> logLines = null;
             try {
                 if (maxLines < 0) {
                     logLines = build.getLog(Integer.MAX_VALUE);
@@ -74,14 +80,13 @@ public class LogsWriter {
                 if (retry == true) {
                     String msg = "Retrying to send logs...\n";
                     logger.info(msg);
-
                 } else {
                     String msg = "Unable to serialize log data.\n" +
                             ExceptionUtils.getStackTrace(e);
                 }
 
                 // Continue with error info as logs payload
-                logLines = Arrays.asList(msg.split("\n"));
+                // logLines = Arrays.asList(msg.split("\n"));
             }
 
             write(logLines);
