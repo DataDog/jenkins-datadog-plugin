@@ -43,13 +43,12 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
         }
         if (run != null) {
             LogsWriter datadoglogs = getLogsWriter(run, logger);
-            client.sendLogs(datadoglogs);
+            // client.sendLogs(datadoglogs);
             return new LogsOutputStream(logger, datadoglogs);
         }
         else {
             return logger;
         }
-        // TODO - figure out how to send logs to DD
     }
 
     LogsWriter getLogsWriter(Run<?, ?> build, OutputStream errorStream) throws IOException, InterruptedException {

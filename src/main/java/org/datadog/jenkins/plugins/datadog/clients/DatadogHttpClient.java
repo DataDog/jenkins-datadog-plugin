@@ -6,14 +6,19 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.protocol.HTTP;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
-import org.datadog.jenkins.plugins.datadog.logs.LogsWriter;
 
 import javax.servlet.ServletException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -32,8 +37,8 @@ public class DatadogHttpClient implements DatadogClient {
     private static final String SERVICECHECK = "v1/check_run";
     private static final String VALIDATE = "v1/validate";
 
-    private static final String LOGS_ENDPOINT_US = "https://http-intake.logs.datadoghq.com/v1/input";
-    private static final String LOGS_ENDPOINT_EU = "https://http-intake.logs.datadoghq.eu/v1/input";
+    private static final String LOGS_ENDPOINT_US = "https://http-intake.logs.datadoghq.com/v1/input/";
+    private static final String LOGS_ENDPOINT_EU = "https://http-intake.logs.datadoghq.eu/v1/input/";
 
     private static final Integer HTTP_FORBIDDEN = 403;
 
@@ -266,21 +271,22 @@ public class DatadogHttpClient implements DatadogClient {
      * @return a boolean to signify the success or failure of the HTTP POST request.
      * @throws IOException if HttpURLConnection fails to open connection
      */
-    public boolean sendLogs(final LogsWriter payload) throws IOException {
+    public boolean sendLogs(final JSONObject payload) throws IOException {
         String urlParameters = Secret.toString(apiKey);
         HttpURLConnection conn = null;
         String logsUrl = null;
         boolean status = true;
 
+        // https://docs.datadoghq.com/api/?lang=bash#logs
+        logger.finer("Setting up HttpURLConnection...");
+        // Derive the logs intake endpoint URL from the API url (US or EU)
+        if (this.url == "https://api.datadoghq.com/api/") {
+            logsUrl = LOGS_ENDPOINT_US;
+        } else if (this.url == "https://api.datadoghq.eu/api") {
+            logsUrl = LOGS_ENDPOINT_EU;
+        }
         try {
-            // https://docs.datadoghq.com/api/?lang=bash#logs
             logger.finer("Setting up HttpURLConnection...");
-            // Derive the logs intake endpoint URL from the API url (US or EU)
-            if (this.url == "https://api.datadoghq.com/api/") {
-                logsUrl = LOGS_ENDPOINT_US;
-            } else if (this.url == "https://api.datadoghq.eu/api") {
-                logsUrl = LOGS_ENDPOINT_EU;
-            }
             conn = getHttpURLConnection(new URL(logsUrl
                     + urlParameters));
             conn.setRequestMethod("POST");
@@ -288,7 +294,13 @@ public class DatadogHttpClient implements DatadogClient {
             conn.setUseCaches(false);
             conn.setDoInput(true);
             conn.setDoOutput(true);
+            // Debug
+            logger.info(conn.toString());
+            logger.info(conn.getRequestProperties().toString());
+            // logger.info(conn.getResponseMessage());
+            // End debug
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+            logger.info(wr.toString());
             logger.info("Writing to OutputStreamWriter...");
             wr.write(payload.toString());
             wr.close();
@@ -301,8 +313,10 @@ public class DatadogHttpClient implements DatadogClient {
             rd.close();
             JSONObject json = (JSONObject) JSONSerializer.toJSON(result.toString());
             if ("ok".equals(json.getString("status"))) {
+                logger.info(String.format("API call of type '%s' was sent successfully!"));
                 logger.info(String.format("Payload: %s", payload));
             } else {
+                logger.info(String.format("API call of type '%s' failed!"));
                 logger.info(String.format("Payload: %s", payload));
                 status = false;
             }

@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog.logs;
 
-import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.Run;
@@ -12,7 +11,6 @@ import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
