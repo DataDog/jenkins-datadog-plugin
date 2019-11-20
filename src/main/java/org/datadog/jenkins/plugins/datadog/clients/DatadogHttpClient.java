@@ -265,7 +265,7 @@ public class DatadogHttpClient implements DatadogClient {
      * @return a boolean to signify the success or failure of the HTTP POST request.
      * @throws IOException if HttpURLConnection fails to open connection
      */
-    public boolean sendLogs(final JSONObject payload, final String site) throws IOException {
+    public boolean sendLogs(final JSONObject payload) throws IOException {
         String urlParameters = "?api_key=" + Secret.toString(apiKey);
         HttpURLConnection conn = null;
         boolean status = true;
@@ -273,10 +273,10 @@ public class DatadogHttpClient implements DatadogClient {
         try {
             // https://docs.datadoghq.com/api/?lang=bash#logs
             logger.finer("Setting up HttpURLConnection...");
-            // TODO or FIXME: define where we need to set the site endpoint
-            if (site == "US") {
+            // Derive the logs intake endpoint URL from the API url (US or EU)
+            if (this.url == "https://api.datadoghq.com/api/") {
                 conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_US));
-            } else if (site == "EU") {
+            } else if (this.url == "https://api.datadoghq.eu/api") {
                 conn = getHttpURLConnection(new URL(LOGS_ENDPOINT_EU));
             }
             conn.setRequestMethod("POST");

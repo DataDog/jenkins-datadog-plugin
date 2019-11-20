@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class LogsWriter {
 
@@ -24,13 +25,15 @@ public class LogsWriter {
     private boolean connectionBroken;
     private final Charset charset;
 
+    Logger logger = Logger.getLogger(LogsWriter.class.getName());
+
     public LogsWriter(Run<?, ?> run, OutputStream error, TaskListener listener, Charset charset)
             throws IOException, InterruptedException {
         this.errorStream = error != null ? error : System.err;
         this.build = run;
         this.listener = listener;
         this.buildData = getBuildData();
-        this.jenkinsUrl = getJenkinsUrl();
+        this.jenkinsUrl = jenkinsUrl;
         this.charset = charset;
     }
 
@@ -58,7 +61,7 @@ public class LogsWriter {
      * Sends a Datadog logs payload containing log lines from the current build.
      * @param maxLines
      */
-    public void writeBuildLog(int maxLines) {
+    public void writeBuildLog(int maxLines, boolean retry) {
         if (!isConnectionBroken()) {
             List<String> logLines;
             try {
@@ -68,9 +71,14 @@ public class LogsWriter {
                     logLines = build.getLog(maxLines);
                 }
             } catch (IOException e) {
-                String msg = "Unable to serialize log data.\n" +
-                        ExceptionUtils.getStackTrace(e);
-                logErrorMessage(msg);
+                if (retry == true) {
+                    String msg = "Retrying to send logs...\n";
+                    logger.info(msg);
+
+                } else {
+                    String msg = "Unable to serialize log data.\n" +
+                            ExceptionUtils.getStackTrace(e);
+                }
 
                 // Continue with error info as logs payload
                 logLines = Arrays.asList(msg.split("\n"));
@@ -93,10 +101,6 @@ public class LogsWriter {
         } else {
             return new BuildData(build, listener);
         }
-    }
-
-    String getJenkinsUrl() {
-        return Jenkins.getInstance().getRootUrl();
     }
 
     /**
