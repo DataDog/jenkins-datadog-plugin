@@ -45,6 +45,11 @@ public class DatadogClientStub implements DatadogClient {
         return true;
     }
 
+    @Override
+    public boolean sendLogs(JSONObject payloadLogs) throws IOException {
+        return false;
+    }
+
     public boolean assertMetric(String name, double value, String hostname, String[] tags) {
         JSONArray jtags = new JSONArray();
         if (tags != null) {

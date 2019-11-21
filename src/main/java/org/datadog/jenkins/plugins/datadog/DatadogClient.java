@@ -51,4 +51,12 @@ public interface DatadogClient {
      * @throws ServletException if there is a servlet exception.
      */
     public boolean validate() throws IOException, ServletException;
+
+    /**
+     * Sends a service check to the Datadog API, including the check name, and status.
+     *
+     * @param payloadLogs     - A JSONObject with the logs payload
+     * @return a boolean to signify the success or failure of the HTTP POST request.
+     */
+    public boolean sendLogs(JSONObject payloadLogs) throws IOException;
 }

@@ -81,24 +81,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         // Instantiate the Datadog Client
         DatadogClient client = getDescriptor().leaseDatadogClient();
 
-        // This is for a local test, not to be committed later on
-        String apiKey = "<the-api-key>";
-
-        // Instantiate the HTTP Client
-        DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
-        DatadogHttpClient clientLogs = new DatadogHttpClient("https://api.datadoghq.com/api/", Secret.decrypt(apiKey));
-
-        // Call sendlogs here with a test log payload
-        JSONObject testLogs = new JSONObject();
-        testLogs.put("message", "hello workd");
-        testLogs.put("ddsource", "Jenkins");
-        try {
-            clientLogs.sendLogs(testLogs);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         // Collect Build Data
         BuildData buildData;
         try {
@@ -196,6 +178,17 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             statusCode = DatadogClient.CRITICAL;
         }
         client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
+
+        // Send a log
+        // Call sendlogs here with a test log payload
+        JSONObject testLogs = new JSONObject();
+        testLogs.put("message", "hello world");
+        testLogs.put("ddsource", "Jenkins");
+        try {
+            client.sendLogs(testLogs);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // Report to StatsDClient
         if (isValidDaemon(getDescriptor().getDaemonHost())) {
