@@ -6,15 +6,6 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.protocol.HTTP;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 
 import javax.servlet.ServletException;
@@ -280,30 +271,28 @@ public class DatadogHttpClient implements DatadogClient {
         // https://docs.datadoghq.com/api/?lang=bash#logs
         logger.finer("Setting up HttpURLConnection...");
         // Derive the logs intake endpoint URL from the API url (US or EU)
-        if (this.url == "https://api.datadoghq.com/api/") {
+        if (this.url.equals("https://api.datadoghq.com/api/")) {
             logsUrl = LOGS_ENDPOINT_US;
-        } else if (this.url == "https://api.datadoghq.eu/api") {
+        } else if (this.url.equals("https://api.datadoghq.eu/api/")) {
             logsUrl = LOGS_ENDPOINT_EU;
         }
+        String logsEndpoint = logsUrl + urlParameters;
+        URL logsEndpointURL = new URL(logsEndpoint);
+        logger.info(logsEndpointURL.toString());
         try {
-            logger.finer("Setting up HttpURLConnection...");
-            conn = getHttpURLConnection(new URL(logsUrl
-                    + urlParameters));
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setUseCaches(false);
-            conn.setDoInput(true);
+            logger.info("Setting up HttpURLConnection...");
+            conn = (HttpURLConnection) logsEndpointURL.openConnection();
             conn.setDoOutput(true);
-            // Debug
-            logger.info(conn.toString());
-            logger.info(conn.getRequestProperties().toString());
-            // logger.info(conn.getResponseMessage());
-            // End debug
-            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
-            logger.info(wr.toString());
-            logger.info("Writing to OutputStreamWriter...");
-            wr.write(payload.toString());
-            wr.close();
+            conn.setInstanceFollowRedirects(false);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty( "Content-Type", "application/json");
+            conn.setUseCaches(false);
+            // OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+            OutputStream os = conn.getOutputStream();
+            logger.finer("Writing to OutputStreamWriter...");
+            os.write(payload.toString().getBytes("utf-8"));
+            os.close();
+            logger.info("Sending HttpURLConnection...");
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
             StringBuilder result = new StringBuilder();
             String line;
