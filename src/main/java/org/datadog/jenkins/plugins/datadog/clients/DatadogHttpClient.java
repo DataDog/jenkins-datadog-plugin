@@ -13,6 +13,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -286,12 +287,12 @@ public class DatadogHttpClient implements DatadogClient {
             conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
             conn.setRequestProperty( "Content-Type", "application/json");
+            conn.setDoOutput(true);
             conn.setUseCaches(false);
-            // OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
-            OutputStream os = conn.getOutputStream();
+            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
             logger.finer("Writing to OutputStreamWriter...");
-            os.write(payload.toString().getBytes("utf-8"));
-            os.close();
+            wr.write(Arrays.toString(payload.toString().getBytes("utf-8")));
+            wr.close();
             logger.info("Sending HttpURLConnection...");
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
             StringBuilder result = new StringBuilder();
