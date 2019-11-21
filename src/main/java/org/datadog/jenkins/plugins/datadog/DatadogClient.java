@@ -21,6 +21,11 @@ public interface DatadogClient {
      */
     public boolean sendEvent(JSONObject payload);
 
+
+    public void incrementCounter(String name, String hostname, JSONArray tags);
+
+    public void flushCounters();
+
     /**
      * Sends a metric to the Datadog API, including the gauge name, and value.
      *

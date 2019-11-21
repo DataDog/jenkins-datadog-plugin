@@ -29,6 +29,37 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     @Override
+    public void incrementCounter(String name, String hostname, JSONArray tags) {
+        for (DatadogMetric m : this.metrics) {
+            if(m.getName() == name && m.getHostname() == hostname && equalsTags(m.getTags(),tags)) {
+                double value = m.getValue() + 1;
+                this.metrics.remove(m);
+                this.metrics.add(new DatadogMetric(name, value, hostname, tags));
+                return;
+            }
+        }
+        this.metrics.add(new DatadogMetric(name, 1, hostname, tags));
+    }
+
+    private static boolean equalsTags(JSONArray j1, JSONArray j2){
+        if(j1.size() != j2.size()){
+            return false;
+        }
+        for (Object j: j1){
+            String j1s = (String)j;
+            if(!j2.contains(j1s)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void flushCounters() {
+        // noop
+    }
+
+    @Override
     public boolean gauge(String name, long value, String hostname, JSONArray tags) {
         this.metrics.add(new DatadogMetric(name, value, hostname, tags));
         return true;

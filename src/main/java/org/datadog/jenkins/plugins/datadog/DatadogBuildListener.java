@@ -12,8 +12,6 @@ import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
-import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -21,7 +19,6 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 import static hudson.Util.fixEmptyAndTrim;
@@ -88,6 +85,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
         // Get the list of global tags to apply
         Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+        String hostname = buildData.getHostname("null");
 
         // Send an event
         BuildStartedEventImpl event = new BuildStartedEventImpl(buildData, extraTags);
@@ -100,16 +98,17 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         Queue queue = Queue.getInstance();
         Queue.Item item = queue.getItem(run.getQueueId());
         try {
+            long waiting = (System.currentTimeMillis() - item.getInQueueSince()) / 1000;
             JSONArray tags = buildData.getAssembledTags(extraTags);
-            client.gauge("jenkins.job.waiting",
-                    (System.currentTimeMillis() - item.getInQueueSince()) / 1000,
-                    buildData.getHostname("null"),
-                    tags);
+            client.gauge("jenkins.job.waiting", waiting, hostname, tags);
         } catch (NullPointerException e) {
             logger.warning("Unable to compute 'waiting' metric. " +
                     "item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
         }
 
+        // Submit counter
+        JSONArray tags = buildData.getAssembledTags(extraTags);
+        client.incrementCounter("jenkins.job.started", hostname, tags);
         logger.fine("Finished onStarted()");
     }
 
@@ -145,6 +144,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             logger.severe(e.getMessage());
             return;
         }
+        String hostname = buildData.getHostname("null");
 
         // Get the list of global tags to apply
         Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
@@ -155,22 +155,12 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
         // Send a metric
         JSONArray tags = buildData.getAssembledTags(extraTags);
-        client.gauge("jenkins.job.duration",
-                buildData.getDuration(0L),
-                buildData.getHostname("null"),
-                tags);
+        client.gauge("jenkins.job.duration", buildData.getDuration(0L), hostname, tags);
 
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-        CounterMetric counterMetric = new CounterMetric(tags, "jenkins.job.completed");
-        if (counters.get(counterMetric) == null) {
-            counters.put(counterMetric, counters.get(counterMetric));
-        } else {
-            counters.put(counterMetric, counters.get(counterMetric) + 1);
-        }
-        ConcurrentMetricCounters.Counters.set(counters);
+        // Submit counter
+        client.incrementCounter("jenkins.job.completed", hostname, tags);
 
         // Send a service check
-        String hostname = buildData.getHostname("null");
         String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
         int statusCode = DatadogClient.UNKNOWN;
         if (Result.SUCCESS.toString().equals(buildResult)) {
@@ -189,43 +179,26 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             long cycleTime = getCycleTime(run);
             long leadTime = run.getDuration() + mttr;
 
-            client.gauge("jenkins.job.leadtime",
-                    leadTime / 1000,
-                    buildData.getHostname("null"),
-                    tags);
-
+            client.gauge("jenkins.job.leadtime", leadTime / 1000, hostname, tags);
             if (cycleTime > 0) {
-                client.gauge("jenkins.job.cycletime",
-                        cycleTime / 1000,
-                        buildData.getHostname("null"),
-                        tags);
+                client.gauge("jenkins.job.cycletime", cycleTime / 1000, hostname, tags);
             }
             if (mttr > 0) {
-                client.gauge("jenkins.job.mttr",
-                        mttr / 1000,
-                        buildData.getHostname("null"),
-                        tags);
+                client.gauge("jenkins.job.mttr", mttr / 1000, hostname, tags);
             }
         } else {
             long feedbackTime = run.getDuration();
             long mtbf = getMeanTimeBetweenFailure(run);
 
-            client.gauge("jenkins.job.feedbacktime",
-                    feedbackTime / 1000,
-                    buildData.getHostname("null"),
-                    tags);
-
+            client.gauge("jenkins.job.feedbacktime", feedbackTime / 1000, hostname, tags);
             if (mtbf > 0) {
-                client.gauge("jenkins.job.mtbf",
-                        mtbf / 1000,
-                        buildData.getHostname("null"),
-                        tags);
+                client.gauge("jenkins.job.mtbf", mtbf / 1000, hostname, tags);
             }
         }
         logger.fine("Finished onCompleted()");
     }
 
-    public long getMeanTimeBetweenFailure(Run<?, ?> run) {
+    private long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
             return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
@@ -233,7 +206,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         return 0;
     }
 
-    public long getCycleTime(Run<?, ?> run) {
+    private long getCycleTime(Run<?, ?> run) {
         Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
         if (previousSuccessfulBuild != null) {
             return (run.getStartTimeInMillis() + run.getDuration()) -
@@ -242,11 +215,11 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         return 0;
     }
 
-    public long getMeanTimeToRecovery(Run<?, ?> run) {
-        if (buildFailed(run.getPreviousBuiltBuild())) {
+    private long getMeanTimeToRecovery(Run<?, ?> run) {
+        if (isFailedBuild(run.getPreviousBuiltBuild())) {
             Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
 
-            while (firstFailedRun != null && buildFailed(firstFailedRun.getPreviousBuiltBuild())) {
+            while (firstFailedRun != null && isFailedBuild(firstFailedRun.getPreviousBuiltBuild())) {
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
             if (firstFailedRun != null) {
@@ -256,7 +229,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         return 0;
     }
 
-    public boolean buildFailed(Run<?, ?> run) {
+    private boolean isFailedBuild(Run<?, ?> run) {
         return run != null && run.getResult() != Result.SUCCESS;
     }
 
@@ -581,16 +554,12 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
          * @return - A {@link DatadogClient} lease for this registered {@link RunListener}
          */
         public DatadogClient leaseDatadogClient() {
-            try {
-                if (datadogClient == null) {
-                    datadogClient = new DatadogHttpClient(targetMetricURL, apiKey);
-                } else {
-                    logger.warning("datadogClient is already set");
-                }
-            } catch (Exception e) {
-                logger.severe(String.format("Error while configuring DatadogClient. Exception: %s", e.toString()));
+            if (this.datadogClient == null) {
+                this.datadogClient =  new DatadogHttpClient(targetMetricURL, apiKey);
+            } else {
+                logger.warning("datadogClient is already set");
             }
-            return datadogClient;
+            return this.datadogClient;
         }
     }
 }

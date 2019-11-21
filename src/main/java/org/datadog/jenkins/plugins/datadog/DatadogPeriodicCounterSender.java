@@ -6,8 +6,8 @@ import hudson.model.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
-import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
-import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
+import org.datadog.jenkins.plugins.datadog.clients.ConcurrentMetricCounters;
+import org.datadog.jenkins.plugins.datadog.clients.CounterMetric;
 
 @Extension
 public class DatadogPeriodicCounterSender extends PeriodicWork {
@@ -17,7 +17,7 @@ public class DatadogPeriodicCounterSender extends PeriodicWork {
     @Override
     public long getRecurrencePeriod() {
         // run frequency - 15 seconds
-        return PeriodicWork.MIN / 4;
+        return (PeriodicWork.MIN / 60) * 15;
     }
 
     @Override
@@ -28,18 +28,7 @@ public class DatadogPeriodicCounterSender extends PeriodicWork {
 
         // Instantiate the Datadog Client
         DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+        client.flushCounters();
 
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-
-        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
-
-        for (CounterMetric counterMetric: counters.keySet()) {
-            int count = counters.get(counterMetric);
-
-            client.gauge(counterMetric.getMetricName(),
-                    count,
-                    DatadogUtilities.getHostname(null),
-                    counterMetric.getTags());
-        }
     }
 }

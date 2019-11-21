@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.SCMListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.events.CheckoutCompletedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
@@ -69,6 +70,10 @@ public class DatadogSCMListener extends SCMListener {
         // Send event
         DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);
         client.sendEvent(event.createPayload());
+
+        // Submit counter
+        JSONArray tags = buildData.getAssembledTags(extraTags);
+        client.incrementCounter("jenkins.scm.checkout", buildData.getHostname("null"), tags);
     }
 
 }

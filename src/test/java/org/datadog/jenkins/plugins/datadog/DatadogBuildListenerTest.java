@@ -3,11 +3,7 @@ package org.datadog.jenkins.plugins.datadog;
 import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
-import org.datadog.jenkins.plugins.datadog.model.ConcurrentMetricCounters;
-import org.datadog.jenkins.plugins.datadog.model.CounterMetric;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,9 +11,6 @@ import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -70,7 +63,7 @@ public class DatadogBuildListenerTest {
     }
 
     @Test
-    public void testOnCompletedWithEverything() throws Exception {
+    public void testOnCompletedOnSuccessfulRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
         DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
@@ -89,94 +82,86 @@ public class DatadogBuildListenerTest {
         envVars.put("BUILD_URL", "http://build_url.com");
         envVars.put("GIT_BRANCH", "test-branch");
 
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(123000L);
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
-        when(datadogBuildListener.getMeanTimeBetweenFailure(run)).thenReturn(123000L);
-        when(datadogBuildListener.getCycleTime(run)).thenReturn(123000L);
-        when(datadogBuildListener.getMeanTimeToRecovery(run)).thenReturn(123000L);
+        Run previousSuccessfulRun = mock(Run.class);
+        when(previousSuccessfulRun.getResult()).thenReturn(Result.SUCCESS);
+        when(previousSuccessfulRun.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+//        when(previousSuccessfulRun.timestamp).thenReturn(1000000L);
+        when(previousSuccessfulRun.getDuration()).thenReturn(121000L);
+        when(previousSuccessfulRun.getNumber()).thenReturn(1);
+        when(previousSuccessfulRun.getParent()).thenReturn(job);
 
-        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
+        Run previousFailedRun1 = mock(Run.class);
+        when(previousFailedRun1.getResult()).thenReturn(Result.FAILURE);
+        when(previousFailedRun1.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+//        when(previousFailedRun1.getStartTimeInMillis()).thenReturn(2000000L);
+        when(previousFailedRun1.getDuration()).thenReturn(122000L);
+        when(previousFailedRun1.getNumber()).thenReturn(2);
+        when(previousFailedRun1.getParent()).thenReturn(job);
+        when(previousFailedRun1.getPreviousBuiltBuild()).thenReturn(previousSuccessfulRun);
+        when(previousFailedRun1.getPreviousSuccessfulBuild()).thenReturn(previousSuccessfulRun);
 
-        String[] expectedTags = new String[4];
-        expectedTags[0] = "job:ParentFullName/JobName";
-        expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:SUCCESS";
-        expectedTags[3] = "branch:test-branch";
-        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.leadtime", 246, "null", expectedTags);
-        client.assertMetric("jenkins.job.cycletime", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.mttr", 123, "null", expectedTags);
-        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
+        Run previousFailedRun2 = mock(Run.class);
+        when(previousFailedRun2.getResult()).thenReturn(Result.FAILURE);
+        when(previousFailedRun2.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+//        when(previousFailedRun2.getStartTimeInMillis()).thenReturn(3000000L);
+        when(previousFailedRun2.getDuration()).thenReturn(123000L);
+        when(previousFailedRun2.getNumber()).thenReturn(3);
+        when(previousFailedRun2.getParent()).thenReturn(job);
+        when(previousFailedRun2.getPreviousBuiltBuild()).thenReturn(previousFailedRun1);
+        when(previousFailedRun2.getPreviousSuccessfulBuild()).thenReturn(previousSuccessfulRun);
+
+        Run failedRun = mock(Run.class);
+        when(failedRun.getResult()).thenReturn(Result.SUCCESS);
+        when(failedRun.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+        when(failedRun.getPreviousSuccessfulBuild()).thenReturn(previousSuccessfulRun);
+        when(failedRun.getDuration()).thenReturn(124000L);
+//        when(failedRun.getStartTimeInMillis()).thenReturn(4000000L);
+        when(failedRun.getNumber()).thenReturn(4);
+        when(failedRun.getParent()).thenReturn(job);
+        when(failedRun.getPreviousBuiltBuild()).thenReturn(previousFailedRun2);
+        when(failedRun.getPreviousSuccessfulBuild()).thenReturn(previousSuccessfulRun);
+
+        datadogBuildListener.onCompleted(previousSuccessfulRun, mock(TaskListener.class));
+        String[] expectedTags1 = new String[4];
+        expectedTags1[0] = "job:ParentFullName/JobName";
+        expectedTags1[1] = "node:test-node";
+        expectedTags1[2] = "result:SUCCESS";
+        expectedTags1[3] = "branch:test-branch";
+        client.assertMetric("jenkins.job.duration", 121, "null", expectedTags1);
+        client.assertMetric("jenkins.job.leadtime", 121, "null", expectedTags1);
+        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags1);
+
+        datadogBuildListener.onCompleted(previousFailedRun1, mock(TaskListener.class));
+        String[] expectedTags2 = new String[4];
+        expectedTags2[0] = "job:ParentFullName/JobName";
+        expectedTags2[1] = "node:test-node";
+        expectedTags2[2] = "result:FAILURE";
+        expectedTags2[3] = "branch:test-branch";
+        client.assertMetric("jenkins.job.duration", 122, "null", expectedTags2);
+//        client.assertMetric("jenkins.job.mtbf", 2000-1000, "null", expectedTags2);
+        client.assertMetric("jenkins.job.feedbacktime", 122, "null", expectedTags2);
+        client.assertServiceCheck("jenkins.job.status", 2, "null", expectedTags2);
+
+        datadogBuildListener.onCompleted(previousFailedRun2, mock(TaskListener.class));
+        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags2);
+//        client.assertMetric("jenkins.job.mtbf", 3000-1000, "null", expectedTags2);
+        client.assertMetric("jenkins.job.feedbacktime", 123, "null", expectedTags2);
+        client.assertMetric("jenkins.job.completed", 2, "null", expectedTags2);
+        client.assertServiceCheck("jenkins.job.status", 2, "null", expectedTags2);
+
+        datadogBuildListener.onCompleted(failedRun, mock(TaskListener.class));
+        client.assertMetric("jenkins.job.duration", 124, "null", expectedTags1);
+        client.assertMetric("jenkins.job.leadtime", 124, "null", expectedTags1);
+        client.assertMetric("jenkins.job.cycletime", (0+124)-(0+121), "null", expectedTags1);
+//        client.assertMetric("jenkins.job.mttr", 4000-2000, "null", expectedTags1);
+        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags1);
+        client.assertMetric("jenkins.job.completed", 2, "null", expectedTags1);
         client.assertedAllMetricsAndServiceChecks();
 
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-
-        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
-
-        // Test that both the metric name and tags in the counters cache match
-        JSONArray tags = new JSONArray();
-        tags.add("job:ParentFullName/JobName");
-        tags.add("node:test-node");
-        tags.add("result:SUCCESS");
-        tags.add("branch:test-branch");
-
-        Assert.assertTrue(counters.containsKey("jenkins.job.completed"));
-        Assert.assertTrue(counters.containsValue(1));
-        /*
-        for (CounterMetric counterMetric: counters.keySet()) {
-            System.out.println("In the loop");
-            Assert.assertEquals(counterMetric.getMetricName(), "jenkins.job.completed");
-            Assert.assertEquals(counterMetric.getTags(), tags);
-        }
-        */
     }
 
     @Test
-    public void testOnTwoCompletedRuns() throws Exception {
-        client = new DatadogClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job1 = mock(Job.class);
-        when(job1.getParent()).thenReturn(parent);
-        when(job1.getName()).thenReturn("JobName");
-
-        Job job2 = mock(Job.class);
-        when(job2.getParent()).thenReturn(parent);
-        when(job2.getName()).thenReturn("JobName");
-
-        Run run1 = mock(Run.class);
-        when(run1.getResult()).thenReturn(Result.SUCCESS);
-        Run run2 = mock(Run.class);
-        when(run2.getResult()).thenReturn(Result.SUCCESS);
-
-        datadogBuildListener.onCompleted(run1, mock(TaskListener.class));
-        datadogBuildListener.onCompleted(run2, mock(TaskListener.class));
-
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-
-        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
-
-        // 2 runs
-        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 2);
-
-        // 2 completed jobs
-        Assert.assertTrue(counters.containsKey("jenkins.job.completed"));
-        Assert.assertTrue(counters.containsValue(2));
-
-    }
-
-    @Test
-    public void testOnCompletedWithDurationAsZero() throws Exception {
+    public void testOnCompletedOnFailedRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
         DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
@@ -195,122 +180,50 @@ public class DatadogBuildListenerTest {
         envVars.put("BUILD_URL", "http://build_url.com");
         envVars.put("GIT_BRANCH", "test-branch");
 
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(0L); // pipeline jobs always return 0
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
+        Run previousSuccessfulRun = mock(Run.class);
+        when(previousSuccessfulRun.getResult()).thenReturn(Result.SUCCESS);
+        when(previousSuccessfulRun.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+        when(previousSuccessfulRun.getDuration()).thenReturn(123000L);
+//        when(previousSuccessfulRun.getStartTimeInMillis()).thenReturn(1000000L);
+        when(previousSuccessfulRun.getNumber()).thenReturn(1);
+        when(previousSuccessfulRun.getParent()).thenReturn(job);
 
-        datadogBuildListener.onCompleted(run, mock(TaskListener.class));
-        Assert.assertEquals(ConcurrentMetricCounters.Counters.get().size(), 1);
+        Run failedRun = mock(Run.class);
+        when(failedRun.getResult()).thenReturn(Result.FAILURE);
+        when(failedRun.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
+        when(failedRun.getDuration()).thenReturn(124000L);
+//        when(failedRun.getStartTimeInMillis()).thenReturn(2000000L);
+        when(failedRun.getNumber()).thenReturn(2);
+        when(failedRun.getParent()).thenReturn(job);
+        when(failedRun.getPreviousNotFailedBuild()).thenReturn(previousSuccessfulRun);
 
-        String[] expectedTags = new String[4];
-        expectedTags[0] = "job:ParentFullName/JobName";
-        expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:SUCCESS";
-        expectedTags[3] = "branch:test-branch";
-        client.assertMetric("jenkins.job.duration", 0, "null", expectedTags);
-        client.assertMetric("jenkins.job.leadtime", 0, "null", expectedTags);
-        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags);
+        datadogBuildListener.onCompleted(previousSuccessfulRun, mock(TaskListener.class));
+        String[] expectedTags1 = new String[4];
+        expectedTags1[0] = "job:ParentFullName/JobName";
+        expectedTags1[1] = "node:test-node";
+        expectedTags1[2] = "result:SUCCESS";
+        expectedTags1[3] = "branch:test-branch";
+        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags1);
+        client.assertMetric("jenkins.job.leadtime", 123, "null", expectedTags1);
+        client.assertMetric("jenkins.job.completed", 1, "null", expectedTags1);
+        client.assertServiceCheck("jenkins.job.status", 0, "null", expectedTags1);
+        client.assertedAllMetricsAndServiceChecks();
+
+        datadogBuildListener.onCompleted(failedRun, mock(TaskListener.class));
+        String[] expectedTags2 = new String[4];
+        expectedTags2[0] = "job:ParentFullName/JobName";
+        expectedTags2[1] = "node:test-node";
+        expectedTags2[2] = "result:FAILURE";
+        expectedTags2[3] = "branch:test-branch";
+        client.assertMetric("jenkins.job.duration", 124, "null", expectedTags2);
+//        client.assertMetric("jenkins.job.mtbf", 2000, "null", expectedTags2);
+        client.assertMetric("jenkins.job.feedbacktime", 124, "null", expectedTags2);
+        client.assertMetric("jenkins.job.completed", 1, "null", expectedTags2);
+        client.assertServiceCheck("jenkins.job.status", 2, "null", expectedTags2);
         client.assertedAllMetricsAndServiceChecks();
     }
 
-    @Test
-    public void testOnFailures() throws Exception {
-        client = new DatadogClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("JobName");
-
-        EnvVars envVars = new EnvVars();
-        envVars.put("HOSTNAME", "test-hostname-2");
-        envVars.put("NODE_NAME", "test-node");
-        envVars.put("BUILD_URL", "http://build_url.com");
-        envVars.put("GIT_BRANCH", "test-branch");
-
-        Run runFailures = mock(Run.class);
-        when(runFailures.getResult()).thenReturn(Result.FAILURE);
-        when(runFailures.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(runFailures.getDuration()).thenReturn(123000L);
-        when(runFailures.getNumber()).thenReturn(2);
-        when(runFailures.getParent()).thenReturn(job);
-        when(datadogBuildListener.getMeanTimeBetweenFailure(runFailures)).thenReturn(123000L);
-
-        datadogBuildListener.onCompleted(runFailures, mock(TaskListener.class));
-
-        String[] expectedTags = new String[4];
-        expectedTags[0] = "job:ParentFullName/JobName";
-        expectedTags[1] = "node:test-node";
-        expectedTags[2] = "result:FAILURE";
-        expectedTags[3] = "branch:test-branch";
-        client.assertMetric("jenkins.job.duration", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.feedbacktime", 123, "null", expectedTags);
-        client.assertMetric("jenkins.job.mtbf", 123, "null", expectedTags);
-        client.assertServiceCheck("jenkins.job.status", 2, "null", expectedTags);
-    }
-
-    @Test
-    public void testMtbf() throws Exception {
-        client = new DatadogClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-        DatadogBuildListener listener = new DatadogBuildListener();
-
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job = mock(Job.class);
-
-        Run lastRun = mock(Run.class);
-        Run currentRun = mock(Run.class);
-
-        Assert.assertEquals(when(currentRun.getStartTimeInMillis()).thenReturn(123000L)
-                - when(lastRun.getStartTimeInMillis()).thenReturn(120000L), 3000L);
-    }
-
-    @Test
-    public void testCycleTime() throws Exception {
-        client = new DatadogClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-
-        Job job = mock(Job.class);
-
-        Run lastRun = mock(Run.class);
-        Run currentRun = mock(Run.class);
-
-        Assert.assertEquals(when(lastRun.getStartTimeInMillis()).thenReturn(123000L)
-                + when(currentRun.getDuration()).thenReturn(120000L)
-                - (when(lastRun.getStartTimeInMillis()).thenReturn(10000L) +
-                when(lastRun.getStartTimeInMillis()).thenReturn(10000L)), 1000L);
-    }
-
-    @Test
-    public void testMttf() throws Exception {
-        client = new DatadogClientStub();
-        datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = descriptor(client);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
-
-        Job job = mock(Job.class);
-
-        Run lastRun = mock(Run.class);
-        Run currentRun = mock(Run.class);
-
-        Assert.assertEquals(when(currentRun.getStartTimeInMillis()).thenReturn(123000L)
-                - when(lastRun.getStartTimeInMillis()).thenReturn(120000L), 3000L);
-    }
-
+    // TODO onCreated
 
     private DatadogBuildListener.DescriptorImpl descriptor(DatadogClient client) {
         DatadogBuildListener.DescriptorImpl descriptor = mock(DatadogBuildListener.DescriptorImpl.class);

@@ -16,6 +16,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 /**
@@ -53,6 +55,31 @@ public class DatadogHttpClient implements DatadogClient {
             status = false;
         }
         return status;
+    }
+
+    @Override
+    public void incrementCounter(String name, String hostname, JSONArray tags) {
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
+        CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
+        if (counters.get(counterMetric) == null) {
+            counters.put(counterMetric, counters.get(counterMetric));
+        } else {
+            counters.put(counterMetric, counters.get(counterMetric) + 1);
+        }
+        ConcurrentMetricCounters.Counters.set(counters);
+    }
+
+    @Override
+    public void flushCounters() {
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
+
+        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
+
+        for (CounterMetric counterMetric: counters.keySet()) {
+            int count = counters.get(counterMetric);
+
+            this.gauge(counterMetric.getMetricName(), count, counterMetric.getHostname(), counterMetric.getTags());
+        }
     }
 
     @Override
