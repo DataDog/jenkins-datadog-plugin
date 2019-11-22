@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -181,16 +182,14 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
         // Send a log
         // Call sendlogs here with a test log payload
-        JSONObject testLogs = new JSONObject();
-        testLogs.put("message", "hello world");
-        testLogs.put("ddsource", "Jenkins");
-        /*
         try {
-            client.sendLogs(testLogs);
+            JSONObject logs = new LogSender(run.getLog());
+            client.sendLogs(logs);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        */
+        // testLogs.put("message", "hello world");
+        // testLogs.put("ddsource", "Jenkins");
 
         // Report to StatsDClient
         if (isValidDaemon(getDescriptor().getDaemonHost())) {

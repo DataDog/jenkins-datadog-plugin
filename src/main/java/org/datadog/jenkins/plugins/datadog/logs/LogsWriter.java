@@ -82,9 +82,6 @@ public class LogsWriter {
                     String msg = "Unable to serialize log data.\n" +
                             ExceptionUtils.getStackTrace(e);
                 }
-
-                // Continue with error info as logs payload
-                // logLines = Arrays.asList(msg.split("\n"));
             }
 
             write(logLines);
