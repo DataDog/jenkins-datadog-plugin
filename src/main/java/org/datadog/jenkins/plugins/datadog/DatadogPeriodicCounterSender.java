@@ -22,13 +22,17 @@ public class DatadogPeriodicCounterSender extends PeriodicWork {
 
     @Override
     protected void doRun() throws Exception {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
+        try {
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
+            }
 
-        // Instantiate the Datadog Client
-        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
-        client.flushCounters();
+            // Instantiate the Datadog Client
+            DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+            client.flushCounters();
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
+        }
 
     }
 }

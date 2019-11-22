@@ -86,7 +86,6 @@ public class DatadogHttpClient implements DatadogClient {
                 ok = counters.replace(counterMetric, previousValue, previousValue + 1);
             }
         }
-        ConcurrentMetricCounters.Counters.set(counters);
     }
 
     @Override

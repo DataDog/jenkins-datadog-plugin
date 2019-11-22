@@ -25,16 +25,22 @@ public class DatadogQueueListener extends PeriodicWork {
 
     @Override
     protected void doRun() throws Exception {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
+        try {
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
+            }
+            logger.fine("doRun called: Computing queue metrics");
+
+            // Instantiate the Datadog Client
+            DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+
+            long size = queue.getApproximateItemsQuickly().size();
+            String hostname = DatadogUtilities.getHostname(null);
+            client.gauge("jenkins.queue.size", size, hostname, null);
+
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-        logger.fine("doRun called: Computing queue metrics");
 
-        // Instantiate the Datadog Client
-        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
-
-        long size = queue.getApproximateItemsQuickly().size();
-        String hostname = DatadogUtilities.getHostname(null);
-        client.gauge("jenkins.queue.size", size, hostname,null);
     }
 }

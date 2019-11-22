@@ -60,56 +60,60 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     @Override
     public final void onStarted(final Run run, final TaskListener listener) {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
-
-        // Process only if job is NOT in blacklist and is in whitelist
-        if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
-            return;
-        }
-
-        logger.fine("Started build!");
-
-        // Instantiate the Datadog Client
-        DatadogClient client = getDescriptor().leaseDatadogClient();
-
-        // Collect Build Data
-        BuildData buildData;
         try {
-            buildData = new BuildData(run, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
-            return;
-        }
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
+            }
 
-        // Get the list of global tags to apply
-        Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
-        String hostname = buildData.getHostname("null");
+            // Process only if job is NOT in blacklist and is in whitelist
+            if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
+                return;
+            }
 
-        // Send an event
-        BuildStartedEventImpl event = new BuildStartedEventImpl(buildData, extraTags);
-        client.sendEvent(event.createPayload());
+            logger.fine("Started build!");
 
-        // Send an metric
-        // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
-        // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
-        // queue times if the plugin is spinning up an instance/container for one/first job.
-        Queue queue = Queue.getInstance();
-        Queue.Item item = queue.getItem(run.getQueueId());
-        try {
-            long waiting = (currentTimeMillis() - item.getInQueueSince()) / 1000;
+            // Instantiate the Datadog Client
+            DatadogClient client = getDescriptor().leaseDatadogClient();
+
+            // Collect Build Data
+            BuildData buildData;
+            try {
+                buildData = new BuildData(run, listener);
+            } catch (IOException | InterruptedException e) {
+                logger.severe(e.getMessage());
+                return;
+            }
+
+            // Get the list of global tags to apply
+            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+            String hostname = buildData.getHostname("null");
+
+            // Send an event
+            BuildStartedEventImpl event = new BuildStartedEventImpl(buildData, extraTags);
+            client.sendEvent(event.createPayload());
+
+            // Send an metric
+            // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
+            // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
+            // queue times if the plugin is spinning up an instance/container for one/first job.
+            Queue queue = Queue.getInstance();
+            Queue.Item item = queue.getItem(run.getQueueId());
+            try {
+                long waiting = (currentTimeMillis() - item.getInQueueSince()) / 1000;
+                JSONArray tags = buildData.getAssembledTags(extraTags);
+                client.gauge("jenkins.job.waiting", waiting, hostname, tags);
+            } catch (NullPointerException e) {
+                logger.warning("Unable to compute 'waiting' metric. " +
+                        "item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
+            }
+
+            // Submit counter
             JSONArray tags = buildData.getAssembledTags(extraTags);
-            client.gauge("jenkins.job.waiting", waiting, hostname, tags);
-        } catch (NullPointerException e) {
-            logger.warning("Unable to compute 'waiting' metric. " +
-                    "item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
+            client.incrementCounter("jenkins.job.started", hostname, tags);
+            logger.fine("Finished onStarted()");
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-
-        // Submit counter
-        JSONArray tags = buildData.getAssembledTags(extraTags);
-        client.incrementCounter("jenkins.job.started", hostname, tags);
-        logger.fine("Finished onStarted()");
     }
 
     /**
@@ -122,80 +126,84 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
     @Override
     public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
-
-        // Process only if job in NOT in blacklist and is in whitelist
-        if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
-            return;
-        }
-
-        logger.fine("Completed build!");
-
-        // Instantiate the Datadog Client
-        DatadogClient client = getDescriptor().leaseDatadogClient();
-
-        // Collect Build Data
-        BuildData buildData;
         try {
-            buildData = new BuildData(run, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
-            return;
-        }
-        String hostname = buildData.getHostname("null");
-
-        // Get the list of global tags to apply
-        Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
-
-        // Send an event
-        DatadogEvent event = new BuildFinishedEventImpl(buildData, extraTags);
-        client.sendEvent(event.createPayload());
-
-        // Send a metric
-        JSONArray tags = buildData.getAssembledTags(extraTags);
-        client.gauge("jenkins.job.duration", buildData.getDuration(0L), hostname, tags);
-
-        // Submit counter
-        client.incrementCounter("jenkins.job.completed", hostname, tags);
-
-        // Send a service check
-        String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
-        int statusCode = DatadogClient.UNKNOWN;
-        if (Result.SUCCESS.toString().equals(buildResult)) {
-            statusCode = DatadogClient.OK;
-        } else if (Result.UNSTABLE.toString().equals(buildResult) ||
-                Result.ABORTED.toString().equals(buildResult) ||
-                Result.NOT_BUILT.toString().equals(buildResult)) {
-            statusCode = DatadogClient.WARNING;
-        } else if (Result.FAILURE.toString().equals(buildResult)) {
-            statusCode = DatadogClient.CRITICAL;
-        }
-        client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
-
-        if (run.getResult() == Result.SUCCESS) {
-            long mttr = getMeanTimeToRecovery(run);
-            long cycleTime = getCycleTime(run);
-            long leadTime = run.getDuration() + mttr;
-
-            client.gauge("jenkins.job.leadtime", leadTime / 1000, hostname, tags);
-            if (cycleTime > 0) {
-                client.gauge("jenkins.job.cycletime", cycleTime / 1000, hostname, tags);
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
             }
-            if (mttr > 0) {
-                client.gauge("jenkins.job.mttr", mttr / 1000, hostname, tags);
-            }
-        } else {
-            long feedbackTime = run.getDuration();
-            long mtbf = getMeanTimeBetweenFailure(run);
 
-            client.gauge("jenkins.job.feedbacktime", feedbackTime / 1000, hostname, tags);
-            if (mtbf > 0) {
-                client.gauge("jenkins.job.mtbf", mtbf / 1000, hostname, tags);
+            // Process only if job in NOT in blacklist and is in whitelist
+            if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
+                return;
             }
+
+            logger.fine("Completed build!");
+
+            // Instantiate the Datadog Client
+            DatadogClient client = getDescriptor().leaseDatadogClient();
+
+            // Collect Build Data
+            BuildData buildData;
+            try {
+                buildData = new BuildData(run, listener);
+            } catch (IOException | InterruptedException e) {
+                logger.severe(e.getMessage());
+                return;
+            }
+            String hostname = buildData.getHostname("null");
+
+            // Get the list of global tags to apply
+            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+
+            // Send an event
+            DatadogEvent event = new BuildFinishedEventImpl(buildData, extraTags);
+            client.sendEvent(event.createPayload());
+
+            // Send a metric
+            JSONArray tags = buildData.getAssembledTags(extraTags);
+            client.gauge("jenkins.job.duration", buildData.getDuration(0L), hostname, tags);
+
+            // Submit counter
+            client.incrementCounter("jenkins.job.completed", hostname, tags);
+
+            // Send a service check
+            String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
+            int statusCode = DatadogClient.UNKNOWN;
+            if (Result.SUCCESS.toString().equals(buildResult)) {
+                statusCode = DatadogClient.OK;
+            } else if (Result.UNSTABLE.toString().equals(buildResult) ||
+                    Result.ABORTED.toString().equals(buildResult) ||
+                    Result.NOT_BUILT.toString().equals(buildResult)) {
+                statusCode = DatadogClient.WARNING;
+            } else if (Result.FAILURE.toString().equals(buildResult)) {
+                statusCode = DatadogClient.CRITICAL;
+            }
+            client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
+
+            if (run.getResult() == Result.SUCCESS) {
+                long mttr = getMeanTimeToRecovery(run);
+                long cycleTime = getCycleTime(run);
+                long leadTime = run.getDuration() + mttr;
+
+                client.gauge("jenkins.job.leadtime", leadTime / 1000, hostname, tags);
+                if (cycleTime > 0) {
+                    client.gauge("jenkins.job.cycletime", cycleTime / 1000, hostname, tags);
+                }
+                if (mttr > 0) {
+                    client.gauge("jenkins.job.mttr", mttr / 1000, hostname, tags);
+                }
+            } else {
+                long feedbackTime = run.getDuration();
+                long mtbf = getMeanTimeBetweenFailure(run);
+
+                client.gauge("jenkins.job.feedbacktime", feedbackTime / 1000, hostname, tags);
+                if (mtbf > 0) {
+                    client.gauge("jenkins.job.mtbf", mtbf / 1000, hostname, tags);
+                }
+            }
+            logger.fine("Finished onCompleted()");
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-        logger.fine("Finished onCompleted()");
     }
 
     public long currentTimeMillis(){
