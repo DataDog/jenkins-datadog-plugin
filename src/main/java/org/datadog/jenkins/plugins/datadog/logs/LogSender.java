@@ -15,38 +15,41 @@ import java.util.logging.Logger;
 
 @Extension
 public class LogSender extends ConsoleLogFilter implements Serializable {
-    public final static Logger LOG = Logger.getLogger(LogSender.class.getName());
+    private static final Logger logger = Logger.getLogger(LogSender.class.getName());
 
     private static final long serialVersionUID = 1L;
 
     private transient Run<?, ?> run;
-    public LogSender() {}
 
-    @Override
-    public OutputStream decorateLogger(AbstractBuild abstractBuild, OutputStream outputStream) throws IOException, InterruptedException {
-        return null;
-    }
+    public LogSender() {}
 
     public LogSender(Run<?, ?> run) {
         this.run = run;
     }
 
+    @Override
+    public OutputStream decorateLogger(AbstractBuild abstractBuild, OutputStream outputStream)
+            throws IOException, InterruptedException {
+        return null;
+    }
+
     // Based on https://github.com/jenkinsci/jenkins/blob/360029e9d52152425dbabca9f1072fcd919772b6/core/src/main/java/hudson/console/ConsoleLogFilter.java#L76-L95
-    public OutputStream decorateLogger(Run build, OutputStream logger) throws IOException, InterruptedException {
+    public OutputStream decorateLogger(Run build, OutputStream loggerOutputStream) throws IOException, InterruptedException {
         // Instantiate the Datadog Client
         DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
         DatadogHttpClient client = null;
 
         if (build != null && build instanceof AbstractBuild<?, ?>) {
-            return logger;
+            return loggerOutputStream;
         }
         if (run != null) {
-            LogsWriter datadoglogs = getLogsWriter(run, logger);
+            LogsWriter datadoglogs = getLogsWriter(run, loggerOutputStream);
+            logger.info("Sending logs from build...");
             // client.sendLogs(datadoglogs);
-            return new LogsOutputStream(logger, datadoglogs);
+            return new LogsOutputStream(loggerOutputStream, datadoglogs);
         }
         else {
-            return logger;
+            return loggerOutputStream;
         }
     }
 
