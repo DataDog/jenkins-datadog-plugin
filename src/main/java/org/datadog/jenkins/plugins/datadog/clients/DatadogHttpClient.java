@@ -283,7 +283,7 @@ public class DatadogHttpClient implements DatadogClient {
         URL logsEndpointURL = new URL(logsEndpoint);
 
         try {
-            logger.finer("Setting up HttpURLConnection...");
+            logger.info("Setting up HttpURLConnection...");
             conn = getHttpURLConnection(logsEndpointURL);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -291,7 +291,7 @@ public class DatadogHttpClient implements DatadogClient {
             conn.setDoInput(true);
             conn.setDoOutput(true);
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
-            logger.finer("Writing to OutputStreamWriter...");
+            logger.info("Writing to OutputStreamWriter...");
             wr.write(payload.toString());
             wr.close();
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
@@ -302,22 +302,22 @@ public class DatadogHttpClient implements DatadogClient {
             }
             rd.close();
             if (result.equals("")) {
-                logger.finer(String.format("Logs API call was sent successfully!"));
-                logger.finer(String.format("Payload: %s", payload.toString()));
+                logger.info(String.format("Logs API call was sent successfully!"));
+                logger.info(String.format("Payload: %s", payload.toString()));
             } else {
-                logger.fine(String.format("Logs API call failed!"));
-                logger.fine(String.format("Payload: %s", payload.toString()));
+                logger.info(String.format("Logs API call failed!"));
+                logger.info(String.format("Payload: %s", payload.toString()));
                 status = false;
             }
         } catch (Exception e) {
             try {
                 if (conn != null && conn.getResponseCode() == BAD_REQUEST) {
-                    logger.severe("Hmmm, your API key may be invalid. We received a 400 in response.");
+                    logger.info("Hmmm, your API key may be invalid. We received a 400 in response.");
                 } else {
-                    logger.severe(String.format("Client error: %s", e.toString()));
+                    logger.info(String.format("Client error: %s", e.toString()));
                 }
             } catch (IOException ex) {
-                logger.severe(ex.toString());
+                logger.info(ex.toString());
             }
             status = false;
         } finally {

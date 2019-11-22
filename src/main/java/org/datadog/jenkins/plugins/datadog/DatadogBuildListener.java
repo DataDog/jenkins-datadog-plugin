@@ -184,11 +184,13 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         JSONObject testLogs = new JSONObject();
         testLogs.put("message", "hello world");
         testLogs.put("ddsource", "Jenkins");
+        /*
         try {
             client.sendLogs(testLogs);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        */
 
         // Report to StatsDClient
         if (isValidDaemon(getDescriptor().getDaemonHost())) {
