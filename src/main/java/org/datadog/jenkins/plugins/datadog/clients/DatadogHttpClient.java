@@ -38,9 +38,26 @@ public class DatadogHttpClient implements DatadogClient {
     private String url;
     private Secret apiKey;
 
+    public DatadogHttpClient() { }
 
     public DatadogHttpClient(String url, Secret apiKey) {
         this.url = url;
+        this.apiKey = apiKey;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Secret getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(Secret apiKey) {
         this.apiKey = apiKey;
     }
 
@@ -61,10 +78,13 @@ public class DatadogHttpClient implements DatadogClient {
     public void incrementCounter(String name, String hostname, JSONArray tags) {
         ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
         CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
-        if (counters.get(counterMetric) == null) {
-            counters.put(counterMetric, counters.get(counterMetric));
-        } else {
-            counters.put(counterMetric, counters.get(counterMetric) + 1);
+        Integer previousValue = counters.putIfAbsent(counterMetric, 1);
+        if (previousValue != null){
+            boolean ok = counters.replace(counterMetric, previousValue, previousValue + 1);
+            while(!ok) {
+                previousValue = counters.get(counterMetric);
+                ok = counters.replace(counterMetric, previousValue, previousValue + 1);
+            }
         }
         ConcurrentMetricCounters.Counters.set(counters);
     }
@@ -72,9 +92,9 @@ public class DatadogHttpClient implements DatadogClient {
     @Override
     public void flushCounters() {
         ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-
         ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
 
+        // Submit all metrics as gauge
         for (CounterMetric counterMetric: counters.keySet()) {
             int count = counters.get(counterMetric);
 

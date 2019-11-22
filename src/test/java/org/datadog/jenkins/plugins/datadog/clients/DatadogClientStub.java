@@ -42,7 +42,7 @@ public class DatadogClientStub implements DatadogClient {
         this.metrics.add(new DatadogMetric(name, 1, hostname, tags));
     }
 
-    private static boolean equalsTags(JSONArray j1, JSONArray j2){
+    public static boolean equalsTags(JSONArray j1, JSONArray j2){
         if(j1.size() != j2.size()){
             return false;
         }
