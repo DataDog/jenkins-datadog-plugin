@@ -1,32 +1,35 @@
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.publishers;
 
 import hudson.Extension;
 import hudson.model.*;
+import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import org.datadog.jenkins.plugins.datadog.clients.ConcurrentMetricCounters;
-import org.datadog.jenkins.plugins.datadog.clients.CounterMetric;
 
 @Extension
-public class DatadogPeriodicCounterSender extends PeriodicWork {
+public class DatadogCountersPublisher extends AsyncPeriodicWork {
 
-    private static final Logger logger = Logger.getLogger(DatadogPeriodicCounterSender.class.getName());
+    private static final Logger logger = Logger.getLogger(DatadogCountersPublisher.class.getName());
+
+    public DatadogCountersPublisher() {
+        super("Datadog Counters Publisher");
+    }
 
     @Override
     public long getRecurrencePeriod() {
-        // run frequency - 10 seconds
         return TimeUnit.SECONDS.toSeconds(10);
     }
 
     @Override
-    protected void doRun() throws Exception {
+    protected void execute(TaskListener taskListener) throws IOException, InterruptedException {
         try {
             if (DatadogUtilities.isApiKeyNull()) {
                 return;
             }
+            logger.fine("execute called: Publishing counters");
 
             // Instantiate the Datadog Client
             DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
@@ -34,6 +37,5 @@ public class DatadogPeriodicCounterSender extends PeriodicWork {
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-
     }
 }
