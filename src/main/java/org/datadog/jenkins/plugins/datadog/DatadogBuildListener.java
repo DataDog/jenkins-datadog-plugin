@@ -98,7 +98,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         Queue queue = Queue.getInstance();
         Queue.Item item = queue.getItem(run.getQueueId());
         try {
-            long waiting = (System.currentTimeMillis() - item.getInQueueSince()) / 1000;
+            long waiting = (currentTimeMillis() - item.getInQueueSince()) / 1000;
             JSONArray tags = buildData.getAssembledTags(extraTags);
             client.gauge("jenkins.job.waiting", waiting, hostname, tags);
         } catch (NullPointerException e) {
@@ -198,10 +198,15 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         logger.fine("Finished onCompleted()");
     }
 
+    public long currentTimeMillis(){
+        // This method exist so we can mock System.currentTimeMillis in unit tests
+        return System.currentTimeMillis();
+    }
+
     private long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
-            return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
+            return getStartTimeInMillis(run) - getStartTimeInMillis(lastGreenRun);
         }
         return 0;
     }
@@ -209,8 +214,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     private long getCycleTime(Run<?, ?> run) {
         Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
         if (previousSuccessfulBuild != null) {
-            return (run.getStartTimeInMillis() + run.getDuration()) -
-                    (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
+            return (getStartTimeInMillis(run) + run.getDuration()) -
+                    (getStartTimeInMillis(previousSuccessfulBuild) + previousSuccessfulBuild.getDuration());
         }
         return 0;
     }
@@ -223,10 +228,15 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
             if (firstFailedRun != null) {
-                return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+                return getStartTimeInMillis(run) - getStartTimeInMillis(firstFailedRun);
             }
         }
         return 0;
+    }
+
+    public long getStartTimeInMillis(Run run) {
+        // getStartTimeInMillis wrapper in order to mock it in unit tests
+        return run.getStartTimeInMillis();
     }
 
     private boolean isFailedBuild(Run<?, ?> run) {

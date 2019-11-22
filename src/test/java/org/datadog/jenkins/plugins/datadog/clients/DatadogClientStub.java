@@ -31,7 +31,8 @@ public class DatadogClientStub implements DatadogClient {
     @Override
     public void incrementCounter(String name, String hostname, JSONArray tags) {
         for (DatadogMetric m : this.metrics) {
-            if(m.getName() == name && m.getHostname() == hostname && equalsTags(m.getTags(),tags)) {
+            if(Objects.equals(m.getName(), name) && Objects.equals(m.getHostname(), hostname) &&
+                    equalsTags(m.getTags(),tags)) {
                 double value = m.getValue() + 1;
                 this.metrics.remove(m);
                 this.metrics.add(new DatadogMetric(name, value, hostname, tags));
@@ -90,24 +91,6 @@ public class DatadogClientStub implements DatadogClient {
                 "metrics: {" + this.metrics.toString() + " }");
         return false;
     }
-
-//    public boolean assertMetricNotZero(String name, String hostname, String[] tags) {
-//        JSONArray jtags = new JSONArray();
-//        if (tags != null) {
-//            jtags.addAll(Arrays.asList(tags));
-//        }
-//        for (DatadogMetric m : this.metrics) {
-//            if (Objects.equals(m.getName(), name) && Objects.equals(m.getHostname(), hostname) &&
-//                    Objects.equals(m.getTags(), jtags)) {
-//                DatadogMetric r = new DatadogMetric(name, m.getValue(), hostname, jtags);
-//                this.metrics.remove(r);
-//                return true;
-//            }
-//        }
-//        Assert.fail("metric with {name: " + name + ", hostname: " + hostname + ", tags: " + tags.toString() +
-//                "} does not exist. metrics: {" + this.metrics.toString() + " }");
-//        return false;
-//    }
 
     public boolean assertServiceCheck(String name, int code, String hostname, String[] tags) {
         JSONArray jtags = new JSONArray();
