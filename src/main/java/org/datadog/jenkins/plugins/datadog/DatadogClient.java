@@ -21,9 +21,19 @@ public interface DatadogClient {
      */
     public boolean sendEvent(JSONObject payload);
 
-
+    /**
+     * Increment a counter for the given metrics.
+     * NOTE: To submit all counters you need to execute the flushCounters method.
+     * This is to aggregate counters and submit them in batch to Datadog in order to minimize network traffic.
+     * @param name - metric name
+     * @param hostname - metric hostname
+     * @param tags - metric tags
+     */
     public void incrementCounter(String name, String hostname, JSONArray tags);
 
+    /**
+     * Submit all your counters as gauge.
+     */
     public void flushCounters();
 
     /**
