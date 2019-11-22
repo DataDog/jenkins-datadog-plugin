@@ -122,6 +122,9 @@ public class DatadogHttpClient implements DatadogClient {
         metric.put("points", points);
         metric.put("type", type);
         metric.put("host", hostname);
+        if(type.equals("rate")){
+            metric.put("interval", 10);
+        }
         if (tags != null) {
             logger.fine(tags.toString());
             metric.put("tags", tags);
