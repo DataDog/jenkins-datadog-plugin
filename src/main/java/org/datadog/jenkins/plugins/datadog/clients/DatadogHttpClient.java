@@ -97,12 +97,16 @@ public class DatadogHttpClient implements DatadogClient {
         for (CounterMetric counterMetric: counters.keySet()) {
             int count = counters.get(counterMetric);
 
-            this.gauge(counterMetric.getMetricName(), count, counterMetric.getHostname(), counterMetric.getTags());
+            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(), counterMetric.getTags(), "rate");
         }
     }
 
     @Override
     public boolean gauge(String name, long value, String hostname, JSONArray tags) {
+        return postMetric(name, value, hostname, tags, "gauge");
+    }
+
+    private boolean postMetric(String name, long value, String hostname, JSONArray tags, String type) {
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
 
         // Setup data point, of type [<unix_timestamp>, <value>]
@@ -116,7 +120,7 @@ public class DatadogHttpClient implements DatadogClient {
         JSONObject metric = new JSONObject();
         metric.put("metric", name);
         metric.put("points", points);
-        metric.put("type", "gauge");
+        metric.put("type", type);
         metric.put("host", hostname);
         if (tags != null) {
             logger.fine(tags.toString());
