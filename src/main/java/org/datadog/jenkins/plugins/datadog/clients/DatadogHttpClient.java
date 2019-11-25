@@ -7,6 +7,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 
 import javax.servlet.ServletException;
 import java.io.*;
@@ -267,7 +268,7 @@ public class DatadogHttpClient implements DatadogClient {
      * @return a boolean to signify the success or failure of the HTTP POST request.
      * @throws IOException if HttpURLConnection fails to open connection
      */
-    public boolean sendLogs(final JSONObject payload) throws IOException {
+    public boolean sendLogs(final LogSender payload) throws IOException {
         HttpURLConnection conn = null;
         String logsUrl = null;
         boolean status = true;
@@ -301,6 +302,7 @@ public class DatadogHttpClient implements DatadogClient {
                 result.append(line);
             }
             rd.close();
+            /*
             if (result.equals("")) {
                 logger.info(String.format("Logs API call was sent successfully!"));
                 logger.info(String.format("Payload: %s", payload.toString()));
@@ -309,6 +311,7 @@ public class DatadogHttpClient implements DatadogClient {
                 logger.info(String.format("Payload: %s", payload.toString()));
                 status = false;
             }
+             */
         } catch (Exception e) {
             try {
                 if (conn != null && conn.getResponseCode() == BAD_REQUEST) {

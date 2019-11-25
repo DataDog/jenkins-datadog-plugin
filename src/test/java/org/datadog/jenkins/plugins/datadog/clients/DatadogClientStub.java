@@ -3,6 +3,7 @@ package org.datadog.jenkins.plugins.datadog.clients;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import org.junit.Assert;
 
 import javax.servlet.ServletException;
@@ -10,7 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class DatadogClientStub implements DatadogClient {
 
@@ -46,7 +46,7 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     @Override
-    public boolean sendLogs(JSONObject payloadLogs) throws IOException {
+    public boolean sendLogs(LogSender payloadLogs) throws IOException {
         return false;
     }
 

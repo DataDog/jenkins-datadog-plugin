@@ -2,6 +2,7 @@ package org.datadog.jenkins.plugins.datadog;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -58,5 +59,5 @@ public interface DatadogClient {
      * @param payloadLogs     - A JSONObject with the logs payload
      * @return a boolean to signify the success or failure of the HTTP POST request.
      */
-    public boolean sendLogs(JSONObject payloadLogs) throws IOException;
+    public boolean sendLogs(LogSender payloadLogs) throws IOException;
 }

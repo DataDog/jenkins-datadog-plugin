@@ -19,10 +19,17 @@ import java.util.logging.Logger;
 public class LogSender extends ConsoleLogFilter implements Serializable {
 
     private static final Logger logger = Logger.getLogger(LogSender.class.getName());
+    public transient Run<?,?> run;
 
     BuildData buildData;
 
-    public LogSender(Run run) {}
+    public LogSender() {}
+
+    public LogSender(Run<?, ?> run)
+    {
+        this.run = run;
+    }
+    private static final long serialVersionUID = 1L;
 
     public OutputStream decorateLogger(Run run, OutputStream loggerOutputstream, @Nonnull final TaskListener listener) {
         try {
