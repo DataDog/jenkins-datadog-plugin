@@ -6,11 +6,9 @@ import hudson.model.*;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -31,13 +29,27 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
     }
     private static final long serialVersionUID = 1L;
 
-    public OutputStream decorateLogger(Run run, OutputStream loggerOutputstream, @Nonnull final TaskListener listener) {
+    public OutputStream decorateLogger(Run run, OutputStream loggerOutputstream) throws IOException, InterruptedException {
+        if (loggerOutputstream == null) {
+            logger.info("No logger..");
+            return null;
+        }
+        /*
         try {
             buildData = new BuildData(run, listener);
         } catch (IOException | InterruptedException e) {
             logger.severe(e.getMessage());
         }
+         */
+        if (run != null) {
+            LogsWriter logswriter = getLogsWriter(run, loggerOutputstream);
+            return new LogsOutputStream(loggerOutputstream, logswriter);
+        }
+        else {
+            return loggerOutputstream;
+        }
 
+        /*
         try {
             logger.info(run.getLog());
             write(Collections.singletonList(run.getLog()));
@@ -45,8 +57,11 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
+         */
+    }
 
-        return loggerOutputstream;
+    LogsWriter getLogsWriter(Run<?, ?> run, OutputStream errorStream) throws IOException, InterruptedException {
+        return new LogsWriter(run, errorStream, null, run.getCharset());
     }
 
     private void write(List<String> lines) throws IOException {
