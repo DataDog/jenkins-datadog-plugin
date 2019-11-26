@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog;
 
+import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -13,6 +14,9 @@ public interface DatadogClient {
     public Integer CRITICAL = 2;
     public Integer UNKNOWN = 3;
 
+    public void setUrl(String url);
+
+    public void setApiKey(Secret apiKey);
     /**
      * Sends an event to the Datadog API, including the event payload.
      *

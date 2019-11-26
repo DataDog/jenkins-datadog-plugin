@@ -53,8 +53,8 @@ public class DatadogSCMListener extends SCMListener {
             }
             logger.fine("Checkout! in onCheckout()");
 
-            // Instantiate the Datadog Client
-            DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -74,7 +74,8 @@ public class DatadogSCMListener extends SCMListener {
 
             // Submit counter
             JSONArray tags = buildData.getAssembledTags(extraTags);
-            client.incrementCounter("jenkins.scm.checkout", buildData.getHostname("null"), tags);
+            String hostname = DatadogUtilities.getHostname("null");
+            client.incrementCounter("jenkins.scm.checkout", hostname, tags);
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());
         }

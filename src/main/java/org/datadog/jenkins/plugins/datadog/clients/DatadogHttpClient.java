@@ -16,7 +16,6 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
@@ -26,6 +25,7 @@ import java.util.logging.Logger;
  */
 public class DatadogHttpClient implements DatadogClient {
 
+    private static DatadogClient instance;
     private static final Logger logger = Logger.getLogger(DatadogHttpClient.class.getName());
 
     private static final String EVENT = "v1/events";
@@ -38,9 +38,21 @@ public class DatadogHttpClient implements DatadogClient {
     private String url;
     private Secret apiKey;
 
-    public DatadogHttpClient() { }
+    public static DatadogClient getInstance(String url, Secret apiKey){
+        if(instance == null){
+            synchronized (DatadogHttpClient.class) {
+                if(instance == null){
+                    instance = new DatadogHttpClient(url, apiKey);
+                }
+            }
+        }
+        // We reset param just in case we change values
+        instance.setApiKey(apiKey);
+        instance.setUrl(url);
+        return instance;
+    }
 
-    public DatadogHttpClient(String url, Secret apiKey) {
+    private DatadogHttpClient(String url, Secret apiKey) {
         this.url = url;
         this.apiKey = apiKey;
     }
@@ -49,6 +61,7 @@ public class DatadogHttpClient implements DatadogClient {
         return url;
     }
 
+    @Override
     public void setUrl(String url) {
         this.url = url;
     }
@@ -57,6 +70,7 @@ public class DatadogHttpClient implements DatadogClient {
         return apiKey;
     }
 
+    @Override
     public void setApiKey(Secret apiKey) {
         this.apiKey = apiKey;
     }
@@ -76,28 +90,51 @@ public class DatadogHttpClient implements DatadogClient {
 
     @Override
     public void incrementCounter(String name, String hostname, JSONArray tags) {
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-        CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
-        Integer previousValue = counters.putIfAbsent(counterMetric, 1);
-        if (previousValue != null){
-            boolean ok = counters.replace(counterMetric, previousValue, previousValue + 1);
-            while(!ok) {
-                previousValue = counters.get(counterMetric);
-                ok = counters.replace(counterMetric, previousValue, previousValue + 1);
+        ConcurrentMetricCounters.lock.lock();
+        try {
+            ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
+            ConcurrentMap<CounterMetric, Integer> counters = countersInstance.get();
+            CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
+            Integer previousValue = counters.putIfAbsent(counterMetric, 1);
+            if (previousValue != null){
+                boolean ok = counters.replace(counterMetric, previousValue, previousValue + 1);
+                // NOTE:
+                // This while loop below should never be called since we are using a lock when flushing and
+                // incrementing counters.
+                while(!ok) {
+                    logger.warning("Couldn't increment counter " + name + " with value " + (previousValue + 1) +
+                            " previousValue = " + previousValue);
+                    previousValue = counters.get(counterMetric);
+                    ok = counters.replace(counterMetric, previousValue, previousValue + 1);
+                }
             }
+            previousValue = previousValue == null ? 0 : previousValue;
+            logger.fine("Counter " + name + " updated from previousValue " + previousValue + " to "
+                    + (previousValue + 1));
+        } finally {
+            ConcurrentMetricCounters.lock.unlock();
         }
     }
 
     @Override
     public void flushCounters() {
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.Counters.get();
-        ConcurrentMetricCounters.Counters.set(new ConcurrentHashMap<CounterMetric, Integer>());
-
+        ConcurrentMetricCounters.lock.lock();
+        ConcurrentMap<CounterMetric, Integer> counters;
+        try {
+            ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
+            counters = countersInstance.get();
+            countersInstance.reset();
+        } finally {
+            ConcurrentMetricCounters.lock.unlock();
+        }
+        logger.fine("Run flushCounters method");
         // Submit all metrics as gauge
         for (CounterMetric counterMetric: counters.keySet()) {
             int count = counters.get(counterMetric);
+            logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
+            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(),
+                    counterMetric.getTags(), "count");
 
-            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(), counterMetric.getTags(), "rate");
         }
     }
 
@@ -122,7 +159,7 @@ public class DatadogHttpClient implements DatadogClient {
         metric.put("points", points);
         metric.put("type", type);
         metric.put("host", hostname);
-        if(type.equals("rate")){
+        if(type.equals("count")){
             metric.put("interval", 10);
         }
         if (tags != null) {

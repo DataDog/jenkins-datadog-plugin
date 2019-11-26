@@ -20,7 +20,7 @@ public class DatadogCountersPublisher extends AsyncPeriodicWork {
 
     @Override
     public long getRecurrencePeriod() {
-        return TimeUnit.SECONDS.toSeconds(10);
+        return TimeUnit.SECONDS.toMillis(10);
     }
 
     @Override
@@ -29,10 +29,10 @@ public class DatadogCountersPublisher extends AsyncPeriodicWork {
             if (DatadogUtilities.isApiKeyNull()) {
                 return;
             }
-            logger.fine("execute called: Publishing counters");
+            logger.fine("Execute called: Publishing counters");
 
-            // Instantiate the Datadog Client
-            DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
             client.flushCounters();
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());

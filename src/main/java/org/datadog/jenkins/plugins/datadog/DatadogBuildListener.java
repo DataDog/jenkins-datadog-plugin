@@ -72,8 +72,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
             logger.fine("Started build!");
 
-            // Instantiate the Datadog Client
-            DatadogClient client = getDescriptor().leaseDatadogClient();
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -138,8 +138,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
             logger.fine("Completed build!");
 
-            // Instantiate the Datadog Client
-            DatadogClient client = getDescriptor().leaseDatadogClient();
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -258,7 +258,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     @Override
     public DescriptorImpl getDescriptor() {
-        return new DescriptorImpl();
+        return DatadogUtilities.getDatadogDescriptor();
     }
 
     /**
@@ -312,8 +312,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 throws IOException, ServletException {
 
             // Instantiate the Datadog Client
-            DatadogClient client = new DatadogHttpClient(
-                    this.getTargetMetricURL(),
+            DatadogClient client = DatadogHttpClient.getInstance(this.getTargetMetricURL(),
                     Secret.fromString(formApiKey));
 
             boolean status = client.validate();
@@ -422,7 +421,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             //Create a new one with the new data from the global configuration
             if (datadogClient != null) {
                 try {
-                    datadogClient = new DatadogHttpClient(targetMetricURL, apiKey);
+                    datadogClient =  DatadogHttpClient.getInstance(targetMetricURL, apiKey);
                     logger.finer("Created new datadogClient client!");
                 } catch (Exception e) {
                     logger.severe(String.format("Unable to create new datadogClient. Exception: %s", e.toString()));
@@ -568,16 +567,5 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             this.targetMetricURL = targetMetricURL;
         }
 
-        /**
-         * @return - A {@link DatadogClient} lease for this registered {@link RunListener}
-         */
-        public DatadogClient leaseDatadogClient() {
-            if (this.datadogClient == null) {
-                this.datadogClient =  new DatadogHttpClient(targetMetricURL, apiKey);
-            } else {
-                logger.warning("datadogClient is already set");
-            }
-            return this.datadogClient;
-        }
     }
 }

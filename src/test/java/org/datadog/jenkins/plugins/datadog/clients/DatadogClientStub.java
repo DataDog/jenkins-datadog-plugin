@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
+import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
@@ -20,6 +21,16 @@ public class DatadogClientStub implements DatadogClient {
     public DatadogClientStub() {
         this.metrics = new ArrayList<>();
         this.serviceChecks = new ArrayList<>();
+    }
+
+    @Override
+    public void setUrl(String url) {
+        // noop
+    }
+
+    @Override
+    public void setApiKey(Secret apiKey) {
+        // noop
     }
 
     @Override

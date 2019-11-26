@@ -31,11 +31,11 @@ public class DatadogQueueListener extends PeriodicWork {
             }
             logger.fine("doRun called: Computing queue metrics");
 
-            // Instantiate the Datadog Client
-            DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
 
             long size = queue.getApproximateItemsQuickly().size();
-            String hostname = DatadogUtilities.getHostname(null);
+            String hostname = DatadogUtilities.getHostname("null");
             client.gauge("jenkins.queue.size", size, hostname, null);
 
         } catch (Exception e) {
