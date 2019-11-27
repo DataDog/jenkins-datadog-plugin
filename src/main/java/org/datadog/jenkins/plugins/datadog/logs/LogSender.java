@@ -25,8 +25,7 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
 
     public LogSender() {}
 
-    public LogSender(Run<?, ?> run)
-    {
+    public LogSender(Run<?, ?> run) {
         this.run = run;
     }
 
