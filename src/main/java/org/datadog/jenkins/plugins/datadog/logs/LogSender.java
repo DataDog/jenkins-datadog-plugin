@@ -19,6 +19,8 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
     private static final Logger logger = Logger.getLogger(LogSender.class.getName());
     public transient Run<?,?> run;
 
+    private static final long serialVersionUID = 1L;
+
     BuildData buildData;
 
     public LogSender() {}
@@ -27,7 +29,6 @@ public class LogSender extends ConsoleLogFilter implements Serializable {
     {
         this.run = run;
     }
-    private static final long serialVersionUID = 1L;
 
     public OutputStream decorateLogger(Run run, OutputStream loggerOutputstream) throws IOException, InterruptedException {
         if (loggerOutputstream == null) {
