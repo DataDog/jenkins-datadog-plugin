@@ -4,6 +4,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
+import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -25,8 +26,7 @@ public class DatadogUtilities {
     private static final Integer MAX_HOSTNAME_LEN = 255;
 
     /**
-     * @return - The descriptor for the Datadog plugin. In this case the global
-     * - configuration.
+     * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
     public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
         Jenkins jenkins = Jenkins.getInstance();
@@ -34,6 +34,14 @@ public class DatadogUtilities {
             return null;
         }
         return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
+    }
+
+    /**
+     * @return - The descriptor for the Datadog plugin. In this case the global configuration.
+     */
+    public static DatadogClient getDatadogClient() {
+        DatadogBuildListener.DescriptorImpl descriptor = getDatadogDescriptor();
+       return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
     }
 
     /**

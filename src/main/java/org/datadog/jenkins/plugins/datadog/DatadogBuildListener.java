@@ -1,8 +1,5 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import com.timgroup.statsd.NonBlockingStatsDClient;
-import com.timgroup.statsd.StatsDClient;
-import com.timgroup.statsd.StatsDClientException;
 import hudson.Extension;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
@@ -21,11 +18,8 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import static hudson.Util.fixEmptyAndTrim;
 
@@ -49,7 +43,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      * numbers.
      */
     static final String DISPLAY_NAME = "Datadog Plugin";
-
     private static final Logger logger = Logger.getLogger(DatadogBuildListener.class.getName());
 
     /**
@@ -67,54 +60,60 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     @Override
     public final void onStarted(final Run run, final TaskListener listener) {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
-
-        // Process only if job is NOT in blacklist and is in whitelist
-        if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
-            return;
-        }
-
-        logger.fine("Started build!");
-
-        // Instantiate the Datadog Client
-        DatadogClient client = getDescriptor().leaseDatadogClient();
-
-        // Collect Build Data
-        BuildData buildData;
         try {
-            buildData = new BuildData(run, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
-            return;
-        }
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
+            }
 
-        // Get the list of global tags to apply
-        Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+            // Process only if job is NOT in blacklist and is in whitelist
+            if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
+                return;
+            }
 
-        // Send an event
-        BuildStartedEventImpl event = new BuildStartedEventImpl(buildData, extraTags);
-        client.sendEvent(event.createPayload());
+            logger.fine("Started build!");
 
-        // Send an metric
-        // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
-        // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
-        // queue times if the plugin is spinning up an instance/container for one/first job.
-        Queue queue = Queue.getInstance();
-        Queue.Item item = queue.getItem(run.getQueueId());
-        try {
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
+
+            // Collect Build Data
+            BuildData buildData;
+            try {
+                buildData = new BuildData(run, listener);
+            } catch (IOException | InterruptedException e) {
+                logger.severe(e.getMessage());
+                return;
+            }
+
+            // Get the list of global tags to apply
+            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+            String hostname = buildData.getHostname("null");
+
+            // Send an event
+            BuildStartedEventImpl event = new BuildStartedEventImpl(buildData, extraTags);
+            client.sendEvent(event.createPayload());
+
+            // Send an metric
+            // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
+            // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
+            // queue times if the plugin is spinning up an instance/container for one/first job.
+            Queue queue = Queue.getInstance();
+            Queue.Item item = queue.getItem(run.getQueueId());
+            try {
+                long waiting = (currentTimeMillis() - item.getInQueueSince()) / 1000;
+                JSONArray tags = buildData.getAssembledTags(extraTags);
+                client.gauge("jenkins.job.waiting", waiting, hostname, tags);
+            } catch (NullPointerException e) {
+                logger.warning("Unable to compute 'waiting' metric. " +
+                        "item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
+            }
+
+            // Submit counter
             JSONArray tags = buildData.getAssembledTags(extraTags);
-            client.gauge("jenkins.job.waiting",
-                    (System.currentTimeMillis() - item.getInQueueSince()) / 1000,
-                    buildData.getHostname("null"),
-                    tags);
-        } catch (NullPointerException e) {
-            logger.warning("Unable to compute 'waiting' metric. " +
-                    "item.getInQueueSince() unavailable, possibly due to worker instance provisioning");
+            client.incrementCounter("jenkins.job.started", hostname, tags);
+            logger.fine("Finished onStarted()");
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-
-        logger.fine("Finished onStarted()");
     }
 
     /**
@@ -127,161 +126,95 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
     @Override
     public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
-
-        // Process only if job in NOT in blacklist and is in whitelist
-        if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
-            return;
-        }
-
-        logger.fine("Completed build!");
-
-        // Instantiate the Datadog Client
-        DatadogClient client = getDescriptor().leaseDatadogClient();
-
-        // Collect Build Data
-        BuildData buildData;
         try {
-            buildData = new BuildData(run, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
-            return;
-        }
-
-        // Get the list of global tags to apply
-        Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
-
-        // Send an event
-        DatadogEvent event = new BuildFinishedEventImpl(buildData, extraTags);
-        client.sendEvent(event.createPayload());
-
-        // Send a metric
-        JSONArray tags = buildData.getAssembledTags(extraTags);
-        client.gauge("jenkins.job.duration",
-                buildData.getDuration(0L),
-                buildData.getHostname("null"),
-                tags);
-
-        // Send a service check
-        String hostname = buildData.getHostname("null");
-        String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
-        int statusCode = DatadogClient.UNKNOWN;
-        if (Result.SUCCESS.toString().equals(buildResult)) {
-            statusCode = DatadogClient.OK;
-        } else if (Result.UNSTABLE.toString().equals(buildResult) ||
-                Result.ABORTED.toString().equals(buildResult) ||
-                Result.NOT_BUILT.toString().equals(buildResult)) {
-            statusCode = DatadogClient.WARNING;
-        } else if (Result.FAILURE.toString().equals(buildResult)) {
-            statusCode = DatadogClient.CRITICAL;
-        }
-        client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
-
-        // Report to StatsDClient
-        if (isValidDaemon(getDescriptor().getDaemonHost())) {
-            // Setup tags for StatsDClient reporting
-            String[] statsdTags = new String[tags.size()];
-            for (int i = 0; i < tags.size(); i++) {
-                statsdTags[i] = tags.getString(i);
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
             }
 
-            logger.fine(String.format("Sending 'completed' counter to %s ", getDescriptor().getDaemonHost()));
-            StatsDClient statsd = null;
+            // Process only if job in NOT in blacklist and is in whitelist
+            if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
+                return;
+            }
+
+            logger.fine("Completed build!");
+
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
+
+            // Collect Build Data
+            BuildData buildData;
             try {
-                // The client is a thread pool so instead of creating a new instance of the pool
-                // we lease the exiting one registered with Jenkins.
-                statsd = getDescriptor().leaseStatDClient();
-                statsd.incrementCounter("completed", statsdTags);
-                logger.fine(String.format("Attempted to send 'completed' counter with tags: %s",
-                        Arrays.toString(statsdTags)));
+                buildData = new BuildData(run, listener);
+            } catch (IOException | InterruptedException e) {
+                logger.severe(e.getMessage());
+                return;
+            }
+            String hostname = buildData.getHostname("null");
 
-                logger.fine("Computing KPI metrics");
-                // Send KPIs
-                if (run.getResult() == Result.SUCCESS) {
-                    long mttr = getMeanTimeToRecovery(run);
-                    long cycleTime = getCycleTime(run);
-                    long leadTime = run.getDuration() + mttr;
+            // Get the list of global tags to apply
+            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
 
-                    statsd.gauge("leadtime", leadTime / 1000.0, statsdTags);
-                    if (cycleTime > 0) {
-                        statsd.gauge("cycletime", cycleTime / 1000.0, statsdTags);
-                    }
-                    if (mttr > 0) {
-                        statsd.gauge("mttr", mttr / 1000.0, statsdTags);
-                    }
-                } else {
-                    long feedbackTime = run.getDuration();
-                    long mtbf = getMeanTimeBetweenFailure(run);
+            // Send an event
+            DatadogEvent event = new BuildFinishedEventImpl(buildData, extraTags);
+            client.sendEvent(event.createPayload());
 
-                    statsd.gauge("feedbacktime", feedbackTime / 1000.0, statsdTags);
+            // Send a metric
+            JSONArray tags = buildData.getAssembledTags(extraTags);
+            client.gauge("jenkins.job.duration", buildData.getDuration(0L), hostname, tags);
 
-                    if (mtbf > 0) {
-                        statsd.gauge("mtbf", mtbf / 1000.0, statsdTags);
-                    }
+            // Submit counter
+            client.incrementCounter("jenkins.job.completed", hostname, tags);
+
+            // Send a service check
+            String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
+            int statusCode = DatadogClient.UNKNOWN;
+            if (Result.SUCCESS.toString().equals(buildResult)) {
+                statusCode = DatadogClient.OK;
+            } else if (Result.UNSTABLE.toString().equals(buildResult) ||
+                    Result.ABORTED.toString().equals(buildResult) ||
+                    Result.NOT_BUILT.toString().equals(buildResult)) {
+                statusCode = DatadogClient.WARNING;
+            } else if (Result.FAILURE.toString().equals(buildResult)) {
+                statusCode = DatadogClient.CRITICAL;
+            }
+            client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
+
+            if (run.getResult() == Result.SUCCESS) {
+                long mttr = getMeanTimeToRecovery(run);
+                long cycleTime = getCycleTime(run);
+                long leadTime = run.getDuration() + mttr;
+
+                client.gauge("jenkins.job.leadtime", leadTime / 1000, hostname, tags);
+                if (cycleTime > 0) {
+                    client.gauge("jenkins.job.cycletime", cycleTime / 1000, hostname, tags);
                 }
+                if (mttr > 0) {
+                    client.gauge("jenkins.job.mttr", mttr / 1000, hostname, tags);
+                }
+            } else {
+                long feedbackTime = run.getDuration();
+                long mtbf = getMeanTimeBetweenFailure(run);
 
-            } catch (StatsDClientException e) {
-                logger.severe(String.format("Runtime exception thrown using the StatsDClient. Exception: %s",
-                        e.getMessage()));
-            } finally {
-                if (statsd != null) {
-                    try {
-                        // StatsDClient needs time to do its thing.
-                        // UDP messages fail to send at all without this sleep
-                        TimeUnit.MILLISECONDS.sleep(100);
-                    } catch (InterruptedException ex) {
-                        logger.severe(ex.getMessage());
-                    }
-                    statsd.stop();
+                client.gauge("jenkins.job.feedbacktime", feedbackTime / 1000, hostname, tags);
+                if (mtbf > 0) {
+                    client.gauge("jenkins.job.mtbf", mtbf / 1000, hostname, tags);
                 }
             }
-        } else {
-            logger.warning("Invalid dogstats daemon host specified");
+            logger.fine("Finished onCompleted()");
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-        logger.fine("Finished onCompleted()");
     }
 
-    /**
-     * @param daemonHost - The host to check
-     * @return - A boolean that checks if the daemonHost is valid
-     */
-    private boolean isValidDaemon(String daemonHost) {
-        if (daemonHost == null) {
-            logger.info("Daemon host is not set");
-            return false;
-        }
-        if (!daemonHost.contains(":")) {
-            logger.info("Daemon host does not contain the port seperator ':'");
-            return false;
-        }
-
-        String hn = daemonHost.split(":")[0];
-        String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
-
-        if (StringUtils.isBlank(hn)) {
-            logger.info("Daemon host part is empty");
-            return false;
-        }
-
-        //Match ports [1024-65535]
-        Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
-                + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
-
-        boolean match = p.matcher(pn).find();
-
-        if (!match) {
-            logger.info("Port number is invalid must be in the range [1024-65535]");
-        }
-
-        return match;
+    public long currentTimeMillis(){
+        // This method exist so we can mock System.currentTimeMillis in unit tests
+        return System.currentTimeMillis();
     }
 
     private long getMeanTimeBetweenFailure(Run<?, ?> run) {
         Run<?, ?> lastGreenRun = run.getPreviousNotFailedBuild();
         if (lastGreenRun != null) {
-            return run.getStartTimeInMillis() - lastGreenRun.getStartTimeInMillis();
+            return getStartTimeInMillis(run) - getStartTimeInMillis(lastGreenRun);
         }
         return 0;
     }
@@ -289,27 +222,32 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     private long getCycleTime(Run<?, ?> run) {
         Run<?, ?> previousSuccessfulBuild = run.getPreviousSuccessfulBuild();
         if (previousSuccessfulBuild != null) {
-            return (run.getStartTimeInMillis() + run.getDuration()) -
-                    (previousSuccessfulBuild.getStartTimeInMillis() + previousSuccessfulBuild.getDuration());
+            return (getStartTimeInMillis(run) + run.getDuration()) -
+                    (getStartTimeInMillis(previousSuccessfulBuild) + previousSuccessfulBuild.getDuration());
         }
         return 0;
     }
 
     private long getMeanTimeToRecovery(Run<?, ?> run) {
-        if (buildFailed(run.getPreviousBuiltBuild())) {
+        if (isFailedBuild(run.getPreviousBuiltBuild())) {
             Run<?, ?> firstFailedRun = run.getPreviousBuiltBuild();
 
-            while (firstFailedRun != null && buildFailed(firstFailedRun.getPreviousBuiltBuild())) {
+            while (firstFailedRun != null && isFailedBuild(firstFailedRun.getPreviousBuiltBuild())) {
                 firstFailedRun = firstFailedRun.getPreviousBuiltBuild();
             }
             if (firstFailedRun != null) {
-                return run.getStartTimeInMillis() - firstFailedRun.getStartTimeInMillis();
+                return getStartTimeInMillis(run) - getStartTimeInMillis(firstFailedRun);
             }
         }
         return 0;
     }
 
-    private boolean buildFailed(Run<?, ?> run) {
+    public long getStartTimeInMillis(Run run) {
+        // getStartTimeInMillis wrapper in order to mock it in unit tests
+        return run.getStartTimeInMillis();
+    }
+
+    private boolean isFailedBuild(Run<?, ?> run) {
         return run != null && run.getResult() != Result.SUCCESS;
     }
 
@@ -320,7 +258,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
      */
     @Override
     public DescriptorImpl getDescriptor() {
-        return new DescriptorImpl();
+        return DatadogUtilities.getDatadogDescriptor();
     }
 
     /**
@@ -342,11 +280,8 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         private String whitelist = null;
         private String globalJobTags = null;
         private Boolean tagNode = false;
-        private String daemonHost = "localhost:8125";
         private String targetMetricURL = "https://api.datadoghq.com/api/";
 
-        //The StatsDClient instance variable. This variable is leased by the RunListener
-        private StatsDClient statsDClient;
         private DatadogClient datadogClient;
 
         /**
@@ -377,8 +312,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 throws IOException, ServletException {
 
             // Instantiate the Datadog Client
-            DatadogClient client = new DatadogHttpClient(
-                    this.getTargetMetricURL(),
+            DatadogClient client = DatadogHttpClient.getInstance(this.getTargetMetricURL(),
                     Secret.fromString(formApiKey));
 
             boolean status = client.validate();
@@ -411,33 +345,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 return FormValidation.error("Your hostname is invalid, likely because"
                         + " it violates the format set in RFC 1123.");
             }
-        }
-
-        /**
-         * @param daemonHost - The hostname for the dogstatsdaemon. Defaults to localhost:8125
-         * @return a FormValidation object used to display a message to the user on the configuration
-         * screen.
-         */
-        public FormValidation doCheckDaemonHost(@QueryParameter("daemonHost") final String daemonHost) {
-            if (!daemonHost.contains(":")) {
-                return FormValidation.error("The field must be configured in the form <hostname>:<port>");
-            }
-
-            String hn = daemonHost.split(":")[0];
-            String pn = daemonHost.split(":").length > 1 ? daemonHost.split(":")[1] : "";
-
-            if (StringUtils.isBlank(hn)) {
-                return FormValidation.error("Empty hostname");
-            }
-
-            //Match ports [1024-65535]
-            Pattern p = Pattern.compile("^(102[4-9]|10[3-9]\\d|1[1-9]\\d{2}|[2-9]\\d{3}|[1-5]\\d{4}|6[0-4]"
-                    + "\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
-            if (!p.matcher(pn).find()) {
-                return FormValidation.error("Invalid port specified. Range must be 1024-65535");
-            }
-
-            return FormValidation.ok("Valid host specification");
         }
 
         /**
@@ -510,27 +417,11 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
                 this.setTagNode(false);
             }
 
-            daemonHost = formData.getString("daemonHost");
-            //When form is saved...reinitialize the StatsDClient.
-            //We need to stop the old one first. And create a new one with the new data from
-            //The global configuration
-            if (statsDClient != null) {
-                try {
-                    statsDClient.stop();
-                    String hp = daemonHost.split(":")[0];
-                    int pp = Integer.parseInt(daemonHost.split(":")[1]);
-                    statsDClient = new NonBlockingStatsDClient("jenkins.job", hp, pp);
-                    logger.finer(String.format("Created new DogStatsD client (%s:%S)!", hp, pp));
-                } catch (Exception e) {
-                    logger.severe(String.format("Unable to create new StatsDClient. Exception: %s", e.toString()));
-                }
-            }
-
             //When form is saved...reinitialize the DatadogClient.
             //Create a new one with the new data from the global configuration
             if (datadogClient != null) {
                 try {
-                    datadogClient = new DatadogHttpClient(targetMetricURL, apiKey);
+                    datadogClient =  DatadogHttpClient.getInstance(targetMetricURL, apiKey);
                     logger.finer("Created new datadogClient client!");
                 } catch (Exception e) {
                     logger.severe(String.format("Unable to create new datadogClient. Exception: %s", e.toString()));
@@ -663,20 +554,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         }
 
         /**
-         * @return The host definition for the dogstats daemon
-         */
-        public String getDaemonHost() {
-            return daemonHost;
-        }
-
-        /**
-         * @param daemonHost - The host specification for the dogstats daemon
-         */
-        public void setDaemonHost(String daemonHost) {
-            this.daemonHost = daemonHost;
-        }
-
-        /**
          * @return The target API URL
          */
         public String getTargetMetricURL() {
@@ -690,37 +567,5 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             this.targetMetricURL = targetMetricURL;
         }
 
-        /**
-         * @return - A {@link StatsDClient} lease for this registered {@link RunListener}
-         */
-        public StatsDClient leaseStatDClient() {
-            try {
-                if (statsDClient == null) {
-                    statsDClient = new NonBlockingStatsDClient("jenkins.job", daemonHost.split(":")[0],
-                            Integer.parseInt(daemonHost.split(":")[1]));
-                } else {
-                    logger.warning("StatsDClient is already set");
-                }
-            } catch (Exception e) {
-                logger.severe(String.format("Error while configuring StatsDClient. Exception: %s", e.toString()));
-            }
-            return statsDClient;
-        }
-
-        /**
-         * @return - A {@link DatadogClient} lease for this registered {@link RunListener}
-         */
-        public DatadogClient leaseDatadogClient() {
-            try {
-                if (datadogClient == null) {
-                    datadogClient = new DatadogHttpClient(targetMetricURL, apiKey);
-                } else {
-                    logger.warning("datadogClient is already set");
-                }
-            } catch (Exception e) {
-                logger.severe(String.format("Error while configuring DatadogClient. Exception: %s", e.toString()));
-            }
-            return datadogClient;
-        }
     }
 }

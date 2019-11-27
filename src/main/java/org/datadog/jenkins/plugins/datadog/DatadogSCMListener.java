@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.SCMListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.events.CheckoutCompletedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
@@ -39,36 +40,45 @@ public class DatadogSCMListener extends SCMListener {
     @Override
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
                            File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
-        if (DatadogUtilities.isApiKeyNull()) {
-            return;
-        }
-
-        // Process only if job is NOT in blacklist and is in whitelist
-        DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
-        if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
-                && prop != null && prop.isEmitOnCheckout())) {
-            return;
-        }
-        logger.fine("Checkout! in onCheckout()");
-
-        // Instantiate the Datadog Client
-        DatadogClient client = DatadogUtilities.getDatadogDescriptor().leaseDatadogClient();
-
-        // Collect Build Data
-        BuildData buildData;
         try {
-            buildData = new BuildData(build, listener);
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.getMessage());
-            return;
+            if (DatadogUtilities.isApiKeyNull()) {
+                return;
+            }
+
+            // Process only if job is NOT in blacklist and is in whitelist
+            DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
+            if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
+                    && prop != null && prop.isEmitOnCheckout())) {
+                return;
+            }
+            logger.fine("Checkout! in onCheckout()");
+
+            // Get Datadog Client Instance
+            DatadogClient client = DatadogUtilities.getDatadogClient();
+
+            // Collect Build Data
+            BuildData buildData;
+            try {
+                buildData = new BuildData(build, listener);
+            } catch (IOException | InterruptedException e) {
+                logger.severe(e.getMessage());
+                return;
+            }
+
+            // Get the list of global tags to apply
+            HashMap<String, String> extraTags = DatadogUtilities.buildExtraTags(build, listener);
+
+            // Send event
+            DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);
+            client.sendEvent(event.createPayload());
+
+            // Submit counter
+            JSONArray tags = buildData.getAssembledTags(extraTags);
+            String hostname = DatadogUtilities.getHostname("null");
+            client.incrementCounter("jenkins.scm.checkout", hostname, tags);
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
-
-        // Get the list of global tags to apply
-        HashMap<String, String> extraTags = DatadogUtilities.buildExtraTags(build, listener);
-
-        // Send event
-        DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);
-        client.sendEvent(event.createPayload());
     }
 
 }

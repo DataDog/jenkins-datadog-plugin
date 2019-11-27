@@ -16,6 +16,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 /**
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
  */
 public class DatadogHttpClient implements DatadogClient {
 
+    private static DatadogClient instance;
     private static final Logger logger = Logger.getLogger(DatadogHttpClient.class.getName());
 
     private static final String EVENT = "v1/events";
@@ -36,9 +38,40 @@ public class DatadogHttpClient implements DatadogClient {
     private String url;
     private Secret apiKey;
 
+    public static DatadogClient getInstance(String url, Secret apiKey){
+        if(instance == null){
+            synchronized (DatadogHttpClient.class) {
+                if(instance == null){
+                    instance = new DatadogHttpClient(url, apiKey);
+                }
+            }
+        }
+        // We reset param just in case we change values
+        instance.setApiKey(apiKey);
+        instance.setUrl(url);
+        return instance;
+    }
 
-    public DatadogHttpClient(String url, Secret apiKey) {
+    private DatadogHttpClient(String url, Secret apiKey) {
         this.url = url;
+        this.apiKey = apiKey;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    @Override
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Secret getApiKey() {
+        return apiKey;
+    }
+
+    @Override
+    public void setApiKey(Secret apiKey) {
         this.apiKey = apiKey;
     }
 
@@ -56,7 +89,32 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
+    public void incrementCounter(String name, String hostname, JSONArray tags) {
+        ConcurrentMetricCounters.getInstance().increment(name, hostname, tags);
+    }
+
+    @Override
+    public void flushCounters() {
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
+
+        logger.fine("Run flushCounters method");
+        // Submit all metrics as gauge
+        for (CounterMetric counterMetric: counters.keySet()) {
+            int count = counters.get(counterMetric);
+            logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
+            // Since we submit a rate we need to divide the submitted value by the interval (10)
+            this.postMetric(counterMetric.getMetricName(), count / 10, counterMetric.getHostname(),
+                    counterMetric.getTags(), "rate");
+
+        }
+    }
+
+    @Override
     public boolean gauge(String name, long value, String hostname, JSONArray tags) {
+        return postMetric(name, value, hostname, tags, "gauge");
+    }
+
+    private boolean postMetric(String name, long value, String hostname, JSONArray tags, String type) {
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
 
         // Setup data point, of type [<unix_timestamp>, <value>]
@@ -70,8 +128,11 @@ public class DatadogHttpClient implements DatadogClient {
         JSONObject metric = new JSONObject();
         metric.put("metric", name);
         metric.put("points", points);
-        metric.put("type", "gauge");
+        metric.put("type", type);
         metric.put("host", hostname);
+        if(type.equals("rate")){
+            metric.put("interval", 10);
+        }
         if (tags != null) {
             logger.fine(tags.toString());
             metric.put("tags", tags);
