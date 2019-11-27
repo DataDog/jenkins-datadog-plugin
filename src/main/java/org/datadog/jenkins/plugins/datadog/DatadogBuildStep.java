@@ -43,7 +43,7 @@ public class DatadogBuildStep extends Builder implements SimpleBuildStep {
         }
 
         public String getDisplayName() {
-            return "DataDog Tagging";
+            return "Datadog Tags";
         }
     }
 }

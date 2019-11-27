@@ -58,7 +58,10 @@ From a job specific configuration page
 
 ```
 node {
-   step([$class: 'DatadogBuildStep', tags: 'tag1=value1 tag2=value2 tag3=value3'])
+    step([$class: 'DatadogBuildStep', tags: 'tag1=value1 tag2=value2 tag3=value3'])
+    stage('Build') {
+        echo "Hello World"; sleep 2
+    }
 }
 ```
 
