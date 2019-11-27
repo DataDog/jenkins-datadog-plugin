@@ -102,8 +102,9 @@ public class DatadogHttpClient implements DatadogClient {
         for (CounterMetric counterMetric: counters.keySet()) {
             int count = counters.get(counterMetric);
             logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
-            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(),
-                    counterMetric.getTags(), "count");
+            // Since we submit a rate we need to divide the submitted value by the interval (10)
+            this.postMetric(counterMetric.getMetricName(), count / 10, counterMetric.getHostname(),
+                    counterMetric.getTags(), "rate");
 
         }
     }
@@ -129,7 +130,7 @@ public class DatadogHttpClient implements DatadogClient {
         metric.put("points", points);
         metric.put("type", type);
         metric.put("host", hostname);
-        if(type.equals("count")){
+        if(type.equals("rate")){
             metric.put("interval", 10);
         }
         if (tags != null) {

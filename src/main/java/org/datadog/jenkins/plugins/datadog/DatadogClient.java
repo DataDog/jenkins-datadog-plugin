@@ -17,7 +17,7 @@ public interface DatadogClient {
     public void setUrl(String url);
 
     public void setApiKey(Secret apiKey);
-    
+
     /**
      * Sends an event to the Datadog API, including the event payload.
      *
@@ -37,7 +37,7 @@ public interface DatadogClient {
     public void incrementCounter(String name, String hostname, JSONArray tags);
 
     /**
-     * Submit all your counters as count with 10 seconds intervals.
+     * Submit all your counters as rate with 10 seconds intervals.
      */
     public void flushCounters();
 
