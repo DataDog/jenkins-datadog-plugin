@@ -24,12 +24,12 @@ public class ConcurrentMetricCounters {
         return instance;
     }
 
-    public static ConcurrentMap<CounterMetric, Integer> get(){
+    private static ConcurrentMap<CounterMetric, Integer> get(){
         ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
         return countersInstance.getCounters();
     }
 
-    public static void reset(){
+    private static void reset(){
         ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
         countersInstance.resetCounters();
     }

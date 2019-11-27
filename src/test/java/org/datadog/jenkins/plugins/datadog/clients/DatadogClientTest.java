@@ -30,11 +30,10 @@ public class DatadogClientTest {
         client.incrementCounter("metric2", "host2", tags2);
 
         // The following code should be the same as in the flushCounters method
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
-        ConcurrentMetricCounters.reset();
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
 
         // Check counter is reset as expected
-        ConcurrentMap<CounterMetric, Integer> countersEmpty = ConcurrentMetricCounters.get();
+        ConcurrentMap<CounterMetric, Integer> countersEmpty = ConcurrentMetricCounters.getInstance().getAndReset();
         Assert.assertTrue("size = " + countersEmpty.size(), countersEmpty.size() == 0);
 
         // Check that metrics to submit are correct
@@ -87,10 +86,9 @@ public class DatadogClientTest {
         stop(executor);
 
         // Check counter is reset as expected
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
         Assert.assertTrue("size = " + counters.size(), counters.size() == 1);
         Assert.assertTrue("counters.values() = " + counters.values(), counters.values().contains(10000));
-        ConcurrentMetricCounters.reset();
 
     }
 
@@ -121,10 +119,9 @@ public class DatadogClientTest {
             @Override
             public Boolean call() throws Exception {
                 // Check counter is reset as expected
-                ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
+                ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
                 Assert.assertTrue("size = " + counters.size(), counters.size() == 1);
                 Assert.assertTrue("counters.values() = " + counters.values(), counters.values().contains(10000));
-                ConcurrentMetricCounters.reset();
                 return true;
             }
         };
@@ -159,10 +156,9 @@ public class DatadogClientTest {
         stop(executor);
 
         // Check counter is reset as expected
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
         Assert.assertTrue("size = " + counters.size(), counters.size() == 1);
         Assert.assertTrue("counters.values() = " + counters.values(), counters.values().contains(10000));
-        ConcurrentMetricCounters.reset();
 
     }
 
