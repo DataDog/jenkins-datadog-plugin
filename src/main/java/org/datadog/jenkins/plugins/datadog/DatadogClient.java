@@ -17,6 +17,7 @@ public interface DatadogClient {
     public void setUrl(String url);
 
     public void setApiKey(Secret apiKey);
+    
     /**
      * Sends an event to the Datadog API, including the event payload.
      *

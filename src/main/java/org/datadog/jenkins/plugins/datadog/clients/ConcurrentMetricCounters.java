@@ -6,8 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ConcurrentMetricCounters {
     private static ConcurrentMetricCounters instance;
-    private static ConcurrentMap<CounterMetric, Integer> metrics = new ConcurrentHashMap<>();
-    public static ReentrantLock lock = new ReentrantLock();
+    private static ConcurrentMap<CounterMetric, Integer> counters = new ConcurrentHashMap<>();
 
     private ConcurrentMetricCounters(){}
 
@@ -22,11 +21,21 @@ public class ConcurrentMetricCounters {
         return instance;
     }
 
-    public void reset(){
-        metrics = new ConcurrentHashMap<>();
+    public static ConcurrentMap<CounterMetric, Integer> get(){
+        ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
+        return countersInstance.getCounters();
     }
 
-    public ConcurrentMap<CounterMetric, Integer> get(){
-        return metrics;
+    public static void reset(){
+        ConcurrentMetricCounters countersInstance = ConcurrentMetricCounters.getInstance();
+        countersInstance.resetCounters();
+    }
+
+    private void resetCounters(){
+        counters = new ConcurrentHashMap<>();
+    }
+
+    private ConcurrentMap<CounterMetric, Integer> getCounters(){
+        return counters;
     }
 }
