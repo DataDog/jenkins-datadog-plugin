@@ -5,8 +5,6 @@ import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.junit.Assert;
 import org.junit.Test;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
 
 public class DatadogClientTest {
