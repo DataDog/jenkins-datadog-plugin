@@ -88,41 +88,14 @@ public class DatadogHttpClient implements DatadogClient {
         return status;
     }
 
-    private synchronized void incrCounter(String name, String hostname, JSONArray tags) {
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
-        CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
-        Integer previousValue = counters.putIfAbsent(counterMetric, 1);
-        if (previousValue != null){
-            boolean ok = counters.replace(counterMetric, previousValue, previousValue + 1);
-            // NOTE:
-            // This while loop below should never be called since we are using a lock when flushing and
-            // incrementing counters.
-            while(!ok) {
-                logger.warning("Couldn't increment counter " + name + " with value " + (previousValue + 1) +
-                        " previousValue = " + previousValue);
-                previousValue = counters.get(counterMetric);
-                ok = counters.replace(counterMetric, previousValue, previousValue + 1);
-            }
-        }
-        previousValue = previousValue == null ? 0 : previousValue;
-        logger.fine("Counter " + name + " updated from previousValue " + previousValue + " to "
-                + (previousValue + 1));
-    }
-
     @Override
     public void incrementCounter(String name, String hostname, JSONArray tags) {
-        incrCounter(name, hostname, tags);
-    }
-
-    private synchronized ConcurrentMap<CounterMetric, Integer> getAndReset(){
-        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
-        ConcurrentMetricCounters.reset();
-        return counters;
+        ConcurrentMetricCounters.getInstance().increment(name, hostname, tags);
     }
 
     @Override
     public void flushCounters() {
-        ConcurrentMap<CounterMetric, Integer> counters = getAndReset();
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
 
         logger.fine("Run flushCounters method");
         // Submit all metrics as gauge
