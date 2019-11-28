@@ -5,6 +5,7 @@ import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class that implements the {@link DatadogEvent}. This event produces an event payload with a
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 public class CheckoutCompletedEventImpl extends AbstractDatadogEvent {
 
-    public CheckoutCompletedEventImpl(BuildData buildData, Map<String, String> buildTags) {
+    public CheckoutCompletedEventImpl(BuildData buildData, Map<String, Set<String>> buildTags) {
         super(buildData, buildTags);
     }
 

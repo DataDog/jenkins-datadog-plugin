@@ -14,10 +14,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -31,7 +28,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("");
@@ -71,7 +67,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet_parentFullName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -100,7 +95,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet_parentFullName_2() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parent»Full  Name");
@@ -129,7 +123,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet_jobName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -158,7 +151,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet_result_failure() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -190,7 +182,6 @@ public class BuildFinishedEventTest {
     public void testWithNothingSet_result_unstable() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("parentFullName");
@@ -222,7 +213,6 @@ public class BuildFinishedEventTest {
     public void testWithEverythingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");
@@ -271,7 +261,6 @@ public class BuildFinishedEventTest {
     public void testWithEverythingSet_envVarsAndTags() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");
@@ -295,9 +284,13 @@ public class BuildFinishedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        Map<String, String> tags = new HashMap<>();
-        tags.put("tag1", "value1");
-        tags.put("tag2", "value2");
+        Map<String, Set<String>> tags = new HashMap<>();
+        Set<String> v1 = new HashSet<>();
+        v1.add("value1");
+        tags.put("tag1", v1);
+        Set<String> v2 = new HashSet<>();
+        v2.add("value2");
+        tags.put("tag2", v2);
         BuildFinishedEventImpl event = new BuildFinishedEventImpl(bd, tags);
         JSONObject o = event.createPayload();
 

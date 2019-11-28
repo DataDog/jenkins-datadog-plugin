@@ -5,6 +5,7 @@ import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This event should contain all the data to construct a build started event. With
@@ -12,7 +13,7 @@ import java.util.Map;
  */
 public class BuildStartedEventImpl extends AbstractDatadogEvent {
 
-    public BuildStartedEventImpl(BuildData buildData, Map<String, String> buildTags) {
+    public BuildStartedEventImpl(BuildData buildData, Map<String, Set<String>> buildTags) {
         super(buildData, buildTags);
     }
 

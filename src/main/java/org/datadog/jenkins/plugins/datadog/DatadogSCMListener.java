@@ -13,7 +13,8 @@ import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -41,12 +42,9 @@ public class DatadogSCMListener extends SCMListener {
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
                            File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
         try {
-            if (DatadogUtilities.isApiKeyNull()) {
-                return;
-            }
 
             // Process only if job is NOT in blacklist and is in whitelist
-            DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
+            DatadogJobProperty prop = DatadogJobProperty.retrieveProperty(build);
             if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
                     && prop != null && prop.isEmitOnCheckout())) {
                 return;
@@ -66,7 +64,7 @@ public class DatadogSCMListener extends SCMListener {
             }
 
             // Get the list of global tags to apply
-            HashMap<String, String> extraTags = DatadogUtilities.buildExtraTags(build, listener);
+            Map<String, Set<String>> extraTags = DatadogUtilities.buildExtraTags(build, listener);
 
             // Send event
             DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);

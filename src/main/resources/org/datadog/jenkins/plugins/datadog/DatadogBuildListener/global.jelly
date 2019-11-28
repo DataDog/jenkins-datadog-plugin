@@ -33,10 +33,6 @@
               description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
       <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
     </f:entry>
-    <f:entry title="Optional Tags"
-             description="Name of node the current build is running on (i.e. 'master' for master node)." >
-      <f:checkbox title="node" field="tagNode" optional="true" />
-    </f:entry>
     <f:advanced>
         <f:entry title="Target API URL" field="targetMetricURL" description="URL which the plugin reports to." >
           <f:textbox field="targetMetricURL" default="${targetMetricURL}" />

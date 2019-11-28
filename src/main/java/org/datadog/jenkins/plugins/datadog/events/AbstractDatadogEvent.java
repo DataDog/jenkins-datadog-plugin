@@ -5,16 +5,17 @@ import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractDatadogEvent implements DatadogEvent {
 
     protected BuildData builddata;
-    protected Map<String, String> tags;
+    protected Map<String, Set<String>> tags;
 
     private static final float MINUTE = 60;
     private static final float HOUR = 3600;
 
-    public AbstractDatadogEvent(BuildData buildData, Map<String, String> buildTags) {
+    public AbstractDatadogEvent(BuildData buildData, Map<String, Set<String>> buildTags) {
         this.builddata = buildData;
         this.tags = buildTags;
     }
