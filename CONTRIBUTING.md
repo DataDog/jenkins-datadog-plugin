@@ -18,8 +18,7 @@ Push to your fork and [submit a pull request][pr].
 
 [pr]: https://github.com/your-username/jenkins-datadog-plugin/compare/DataDog:master...master
 
-At this point you're waiting on us. We may suggest some changes or
-improvements or alternatives.
+At this point you're waiting on us. We may suggest some changes, improvements or alternatives.
 
 ## Manual Testing
 
