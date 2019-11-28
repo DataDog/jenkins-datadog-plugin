@@ -1,6 +1,28 @@
-# Testing
+# Contributing
 
-## Setup
+We love pull requests. Here's a quick guide.
+
+Fork, then clone the repo:
+
+    git clone git@github.com:DataDog/jenkins-datadog-plugin.git
+
+Make sure the tests pass:
+
+    mvn test
+
+Make your change. Add tests for your change. Make the tests pass again.
+It is strongly recommended to perform manual testing as well, see section below.
+
+
+Push to your fork and [submit a pull request][pr].
+
+[pr]: https://github.com/your-username/jenkins-datadog-plugin/compare/DataDog:master...master
+
+At this point you're waiting on us. We may suggest some changes, improvements or alternatives.
+
+## Manual Testing
+
+### Setup
 
 To spin up a development environment for the *jenkins-datadog-plugin* repository. The requirements are:
 
@@ -20,14 +42,6 @@ To spin up a development environment for the *jenkins-datadog-plugin* repository
           - 8080:8080
         volumes:
           - $JENKINS_PLUGIN/target/:/var/jenkins_home/plugins
-      
-      dogstatsd:    
-        image: datadog/dogstatsd:latest 
-        environment:
-          - DD_API_KEY=<API_KEY>
-          - DD_LOG_LEVEL=debug
-        ports:
-          - 8125:8125/udp  
                
     ```
 
@@ -63,10 +77,8 @@ To spin up a development environment for the *jenkins-datadog-plugin* repository
   - Click on the "Test Key" to make sure your key is valid.
   - You can set your machine `hostname`.
   - You can set Global Tag. For example `.*, owner:$1, release_env:$2, optional:Tag3`.
-  - You can add the optional `node` tag to the collected metrics by clicking on the `node` checkbox.
-  - Click on `Advanced...` and set `DogStatsD Host` to `datadog:8125`. This is in order to submit metrics to the dogStatsD Server.
-
-## Create your first job
+  
+### Create your first job
 
 1. On jenkins Home page, click on "Create a new Job" 
 2. Give it a name and select "freestyle project".
@@ -78,7 +90,7 @@ To spin up a development environment for the *jenkins-datadog-plugin* repository
     sleep 5s
     ```
 
-## Create Logger
+### Create Logger
 1. Go to http://localhost:8080/log/
 2. Give a name to your logger - For example `datadog`
 3. Add entries for all `org.datadog.jenkins.plugins.datadog.*` packages with log Level `ALL`.
