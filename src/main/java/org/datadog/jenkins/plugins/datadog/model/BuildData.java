@@ -63,6 +63,8 @@ public class BuildData {
                 setBranch(envVars.get("GIT_BRANCH"));
             } else if (envVars.get("CVS_BRANCH") != null) {
                 setBranch(envVars.get("CVS_BRANCH"));
+            } else if (envVars.get("SVN_REVISION") != null) {
+                setBranch(envVars.get("SVN_REVISION"));
             }
         }
     }
