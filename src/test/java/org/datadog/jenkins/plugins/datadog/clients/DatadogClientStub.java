@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
+import hudson.Util;
 import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;

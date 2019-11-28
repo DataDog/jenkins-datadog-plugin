@@ -35,8 +35,6 @@ public class DatadogBuildListenerTest {
 
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.isJobTracked(anyString())).thenReturn(true);
-        when(DatadogUtilities.isApiKeyNull()).thenReturn(false);
-        when(DatadogUtilities.isTagNodeEnable()).thenReturn(true);
 
         PowerMockito.mockStatic(Queue.class);
         PowerMockito.when(Queue.getInstance()).thenReturn(queue);

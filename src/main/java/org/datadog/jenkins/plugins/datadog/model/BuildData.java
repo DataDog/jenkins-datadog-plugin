@@ -11,6 +11,7 @@ import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 
 public class BuildData {
@@ -57,8 +58,7 @@ public class BuildData {
         setHostname(DatadogUtilities.getHostname(envVars == null ? null : envVars.get("HOSTNAME")));
         if (envVars != null) {
             setBuildUrl(envVars.get("BUILD_URL"));
-            boolean test = DatadogUtilities.isTagNodeEnable();
-            setNode(test ? envVars.get("NODE_NAME") : null);
+            setNode(envVars.get("NODE_NAME"));
             if (envVars.get("GIT_BRANCH") != null) {
                 setBranch(envVars.get("GIT_BRANCH"));
             } else if (envVars.get("CVS_BRANCH") != null) {
@@ -75,7 +75,7 @@ public class BuildData {
      * @param extra - A list of tags.
      * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
      */
-    public JSONArray getAssembledTags(Map<String, String> extra) {
+    public JSONArray getAssembledTags(Map<String, Set<String>> extra) {
         JSONArray tags = new JSONArray();
         if (extra == null) {
             extra = new HashMap<>();
@@ -94,8 +94,11 @@ public class BuildData {
         }
 
         //Add the extra tags here
-        for (Map.Entry entry : extra.entrySet()) {
-            tags.add(String.format("%s:%s", entry.getKey(), entry.getValue()));
+        for (String name : extra.keySet()) {
+            Set<String> values = extra.get(name);
+            for (String value : values){
+                tags.add(String.format("%s:%s", name, value));
+            }
         }
 
         return tags;

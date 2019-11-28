@@ -19,6 +19,7 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static hudson.Util.fixEmptyAndTrim;
@@ -61,10 +62,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     @Override
     public final void onStarted(final Run run, final TaskListener listener) {
         try {
-            if (DatadogUtilities.isApiKeyNull()) {
-                return;
-            }
-
             // Process only if job is NOT in blacklist and is in whitelist
             if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
                 return;
@@ -85,7 +82,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             }
 
             // Get the list of global tags to apply
-            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+            Map<String, Set<String>> extraTags = DatadogUtilities.buildExtraTags(run, listener);
             String hostname = buildData.getHostname("null");
 
             // Send an event
@@ -127,10 +124,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
     @Override
     public final void onCompleted(final Run run, @Nonnull final TaskListener listener) {
         try {
-            if (DatadogUtilities.isApiKeyNull()) {
-                return;
-            }
-
             // Process only if job in NOT in blacklist and is in whitelist
             if (!DatadogUtilities.isJobTracked(run.getParent().getFullName())) {
                 return;
@@ -152,7 +145,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
             String hostname = buildData.getHostname("null");
 
             // Get the list of global tags to apply
-            Map<String, String> extraTags = DatadogUtilities.buildExtraTags(run, listener);
+            Map<String, Set<String>> extraTags = DatadogUtilities.buildExtraTags(run, listener);
 
             // Send an event
             DatadogEvent event = new BuildFinishedEventImpl(buildData, extraTags);
@@ -279,10 +272,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
         private String blacklist = null;
         private String whitelist = null;
         private String globalJobTags = null;
-        private Boolean tagNode = false;
         private String targetMetricURL = "https://api.datadoghq.com/api/";
-
-        private DatadogClient datadogClient;
 
         /**
          * Runs when the {@link DescriptorImpl} class is created.
@@ -310,18 +300,21 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
          */
         public FormValidation doTestConnection(@QueryParameter("apiKey") final String formApiKey)
                 throws IOException, ServletException {
+            try {
+                // Instantiate the Datadog Client
+                DatadogClient client = DatadogHttpClient.getInstance(this.getTargetMetricURL(),
+                        Secret.fromString(formApiKey));
+                boolean status = client.validate();
 
-            // Instantiate the Datadog Client
-            DatadogClient client = DatadogHttpClient.getInstance(this.getTargetMetricURL(),
-                    Secret.fromString(formApiKey));
-
-            boolean status = client.validate();
-
-            if (status) {
-                return FormValidation.ok("Great! Your API key is valid.");
-            } else {
+                if (status) {
+                    return FormValidation.ok("Great! Your API key is valid.");
+                } else {
+                    return FormValidation.error("Hmmm, your API key seems to be invalid.");
+                }
+            } catch (RuntimeException e){
                 return FormValidation.error("Hmmm, your API key seems to be invalid.");
             }
+
         }
 
         /**
@@ -397,42 +390,24 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
          */
         @Override
         public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
-            // Grab apiKey and hostname
-            this.setApiKey(formData.getString("apiKey"));
-            this.setHostname(formData.getString("hostname"));
+            try {
+                // Grab apiKey and hostname
+                this.setApiKey(formData.getString("apiKey"));
+                this.setHostname(formData.getString("hostname"));
+                this.setBlacklist(formData.getString("blacklist"));
+                this.setWhitelist(formData.getString("whitelist"));
+                this.setGlobalJobTags(formData.getString("globalJobTags"));
+                this.setTargetMetricURL(formData.getString("targetMetricURL"));
 
-            // Grab blacklist
-            this.setBlacklist(formData.getString("blacklist"));
+                //When form is saved...reinitialize the DatadogClient.
+                DatadogHttpClient.getInstance(this.getTargetMetricURL(), this.getApiKey());
 
-            // Grab whitelist
-            this.setWhitelist(formData.getString("whitelist"));
-
-            // Grab the Global Job Tags
-            this.setGlobalJobTags(formData.getString("globalJobTags"));
-
-            // Grab tagNode and coerse to a boolean
-            if (formData.getString("tagNode").equals("true")) {
-                this.setTagNode(true);
-            } else {
-                this.setTagNode(false);
+                // Persist global configuration information
+                save();
+                return super.configure(req, formData);
+            } catch(Exception e){
+                logger.warning("Unexpected exception occurred - " + e.getMessage());
             }
-
-            //When form is saved...reinitialize the DatadogClient.
-            //Create a new one with the new data from the global configuration
-            if (datadogClient != null) {
-                try {
-                    datadogClient =  DatadogHttpClient.getInstance(targetMetricURL, apiKey);
-                    logger.finer("Created new datadogClient client!");
-                } catch (Exception e) {
-                    logger.severe(String.format("Unable to create new datadogClient. Exception: %s", e.toString()));
-                }
-            }
-
-            // Grab API URL
-            targetMetricURL = formData.getString("targetMetricURL");
-
-            // Persist global configuration information
-            save();
             return super.configure(req, formData);
         }
 
@@ -531,26 +506,6 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
          */
         public void setGlobalJobTags(String globalJobTags) {
             this.globalJobTags = globalJobTags;
-        }
-
-        /**
-         * Getter function for the optional tag tagNode global configuration.
-         *
-         * @return a Boolean containing optional tag value for the tagNode
-         * global configuration.
-         */
-        public Boolean getTagNode() {
-            return tagNode;
-        }
-
-        /**
-         * Setter function for the optional tag tagNode global configuration.
-         *
-         * @param willTag - A Boolean expressing whether the tagNode tag will
-         *                be included.
-         */
-        public void setTagNode(final Boolean willTag) {
-            this.tagNode = willTag;
         }
 
         /**

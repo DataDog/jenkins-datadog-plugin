@@ -66,11 +66,6 @@
       <artifactId>httpclient</artifactId>
       <version>4.5.6</version>
     </dependency>
-    <dependency>
-        <groupId>com.datadoghq</groupId>
-        <artifactId>java-dogstatsd-client</artifactId>
-        <version>2.1.1</version>
-    </dependency>
 
     <dependency>
       <groupId>org.mockito</groupId>

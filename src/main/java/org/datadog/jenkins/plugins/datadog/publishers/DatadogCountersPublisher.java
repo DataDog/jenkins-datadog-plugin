@@ -26,9 +26,6 @@ public class DatadogCountersPublisher extends AsyncPeriodicWork {
     @Override
     protected void execute(TaskListener taskListener) throws IOException, InterruptedException {
         try {
-            if (DatadogUtilities.isApiKeyNull()) {
-                return;
-            }
             logger.fine("Execute called: Publishing counters");
 
             // Get Datadog Client Instance

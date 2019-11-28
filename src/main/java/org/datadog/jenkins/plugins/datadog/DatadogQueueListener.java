@@ -26,9 +26,6 @@ public class DatadogQueueListener extends PeriodicWork {
     @Override
     protected void doRun() throws Exception {
         try {
-            if (DatadogUtilities.isApiKeyNull()) {
-                return;
-            }
             logger.fine("doRun called: Computing queue metrics");
 
             // Get Datadog Client Instance

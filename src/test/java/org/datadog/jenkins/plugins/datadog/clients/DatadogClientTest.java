@@ -1,9 +1,11 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
+import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.junit.Assert;
 import org.junit.Test;
+
 import java.io.IOException;
 import java.util.concurrent.*;
 
@@ -11,7 +13,8 @@ public class DatadogClientTest {
 
     @Test
     public void testIncrementCountAndFlush() throws IOException, InterruptedException {
-        DatadogClient client = DatadogHttpClient.getInstance(null, null);
+        DatadogHttpClient.enableValidations = false;
+        DatadogClient client = DatadogHttpClient.getInstance("test", null);
         JSONArray tags1 = new JSONArray();
         tags1.add("tag1");
         tags1.add("tag2");
@@ -71,7 +74,8 @@ public class DatadogClientTest {
             @Override
             public void run() {
                 // We use a new instance of a client on every run.
-                DatadogClient client = DatadogHttpClient.getInstance(null, null);
+                DatadogHttpClient.enableValidations = false;
+                DatadogClient client = DatadogHttpClient.getInstance("test", null);
                 JSONArray tags = new JSONArray();
                 tags.add("tag1");
                 tags.add("tag2");
@@ -99,7 +103,8 @@ public class DatadogClientTest {
             @Override
             public void run() {
                 // We use a new instance of a client on every run.
-                DatadogClient client = DatadogHttpClient.getInstance(null, null);
+                DatadogHttpClient.enableValidations = false;
+                DatadogClient client = DatadogHttpClient.getInstance("test", null);
                 JSONArray tags = new JSONArray();
                 tags.add("tag1");
                 tags.add("tag2");
@@ -138,7 +143,8 @@ public class DatadogClientTest {
     public void testIncrementCountAndFlushThreadedEnvOneClient() throws IOException, InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         // We only have one instance of the client used by all threads
-        final DatadogClient client = DatadogHttpClient.getInstance(null, null);
+        DatadogHttpClient.enableValidations = false;
+        final DatadogClient client = DatadogHttpClient.getInstance("test", null);
         Runnable increment = new Runnable() {
             @Override
             public void run() {

@@ -35,10 +35,30 @@ public class DatadogHttpClient implements DatadogClient {
 
     private static final Integer HTTP_FORBIDDEN = 403;
 
+    public static boolean enableValidations = true;
+
     private String url;
     private Secret apiKey;
 
+    /**
+     * NOTE: Use DatadogUtilities.getDatadogClient method to instanciate the client in the Jenkins Plugin
+     * This method is not recommended to be used because it misses some validations.
+     * @param url - target url
+     * @param apiKey - Secret api Key
+     * @return an singleton instance of the DatadogClient.
+     */
     public static DatadogClient getInstance(String url, Secret apiKey){
+        if(enableValidations){
+            if (url == null || url.isEmpty()) {
+                logger.severe("Datadog Target URL is not set properly");
+                throw new RuntimeException("Datadog Target URL is not set properly");
+            }
+            if (apiKey == null || Secret.toString(apiKey).isEmpty()){
+                logger.severe("Datadog API Key is not set properly");
+                throw new RuntimeException("Datadog API Key is not set properly");
+            }
+        }
+
         if(instance == null){
             synchronized (DatadogHttpClient.class) {
                 if(instance == null){
@@ -46,6 +66,7 @@ public class DatadogHttpClient implements DatadogClient {
                 }
             }
         }
+
         // We reset param just in case we change values
         instance.setApiKey(apiKey);
         instance.setUrl(url);

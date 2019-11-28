@@ -9,6 +9,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -24,6 +25,15 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     private String tagProperties = null;
     private String tagFile = null;
     private boolean emitOnCheckout = false;
+
+    /**
+     * @param r - Current build.
+     * @return - The configured {@link DatadogJobProperty}. Null if not there
+     */
+    @CheckForNull
+    public static DatadogJobProperty retrieveProperty(Run r) {
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+    }
 
     /**
      * Runs when the {@link DatadogJobProperty} class is created.
