@@ -312,6 +312,14 @@ public class DatadogHttpClient implements DatadogClient {
             logger.fine("Using HttpURLConnection, without proxy");
         }
 
+        /* Timeout of 1 minutes for connecting and reading.
+        * this prevents this plugin from causing jobs to hang in case of
+        * flaky network or Datadog being down. Left intentionally long.
+        */
+        int timeoutMS = 1 * 60 * 1000;
+        conn.setConnectTimeout(timeoutMS);
+        conn.setReadTimeout(timeoutMS);
+
         return conn;
     }
 
