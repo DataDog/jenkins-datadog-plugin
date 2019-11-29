@@ -1,11 +1,12 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
+import hudson.ExtensionList;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,20 +27,20 @@ public class DatadogUtilities {
     /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
-    public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
+    public static DatadogGlobalConfiguration getDatadogDescriptor() {
         Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             return null;
         }
-        return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
+        return ExtensionList.lookup(DatadogGlobalConfiguration.class).get(DatadogGlobalConfiguration.class);
     }
 
     /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
     public static DatadogClient getDatadogClient() {
-        DatadogBuildListener.DescriptorImpl descriptor = getDatadogDescriptor();
-       return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
+        DatadogGlobalConfiguration descriptor = getDatadogDescriptor();
+        return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
     }
 
     /**

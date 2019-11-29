@@ -44,8 +44,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedWithNothing() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -71,8 +69,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnSuccessfulRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -168,8 +164,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnFailedRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -232,8 +226,6 @@ public class DatadogBuildListenerTest {
     public void testOnStarted() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
         when(datadogBuildListener.currentTimeMillis()).thenReturn(3000000L);
 
