@@ -23,20 +23,20 @@ public abstract class AbstractDatadogEvent implements DatadogEvent {
     public JSONObject createPayload() {
         JSONObject payload = new JSONObject();
         payload.put("host", builddata.getHostname(null));
-        payload.put("aggregation_key", builddata.getJob(null));
-        payload.put("date_happened", builddata.getTimestamp(System.currentTimeMillis() / 1000));
+        payload.put("aggregation_key", builddata.getJobName(null));
+        payload.put("date_happened", builddata.getEndTime(System.currentTimeMillis()) / 1000);
         payload.put("tags", builddata.getAssembledTags(tags));
         payload.put("source_type_name", "jenkins");
 
         return payload;
     }
 
-    protected String getDuration() {
+    protected String getFormattedDuration() {
         Long duration = builddata.getDuration(null);
         if (duration != null) {
             String output = "(";
             String format = "%.2f";
-            double d = duration.doubleValue();
+            double d = duration.doubleValue() / 1000;
             if (d < MINUTE) {
                 output = output + String.format(format, d) + " secs)";
             } else if (MINUTE <= d && d < HOUR) {
