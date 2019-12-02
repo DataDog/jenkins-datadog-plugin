@@ -21,14 +21,13 @@ public class BuildFinishedEventImpl extends AbstractDatadogEvent {
     @Override
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
-        String number = builddata.getNumber(null) == null ?
-                "unknown" : builddata.getNumber(null).toString();
+        String buildNumber = builddata.getBuildNumber("unknown");
         String buildResult = builddata.getResult("UNKNOWN");
 
         // Build title
-        String title = builddata.getJob("unknown") +
+        String title = builddata.getJobName("unknown") +
                 " build #" +
-                number +
+                buildNumber +
                 " " +
                 buildResult.toLowerCase() +
                 " on " +
@@ -36,11 +35,11 @@ public class BuildFinishedEventImpl extends AbstractDatadogEvent {
         payload.put("title", title);
 
         String message = "%%% \n [See results for build #" +
-                number +
+                buildNumber +
                 "](" +
                 builddata.getBuildUrl("unknown") +
                 ") " +
-                getDuration() +
+                getFormattedDuration() +
                 " \n %%%";
         payload.put("text", message);
 

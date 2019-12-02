@@ -3,7 +3,6 @@ package org.datadog.jenkins.plugins.datadog;
 import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import java.io.BufferedReader;

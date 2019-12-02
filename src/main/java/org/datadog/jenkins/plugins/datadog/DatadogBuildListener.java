@@ -153,7 +153,7 @@ public class DatadogBuildListener extends RunListener<Run> implements Describabl
 
             // Send a metric
             JSONArray tags = buildData.getAssembledTags(extraTags);
-            client.gauge("jenkins.job.duration", buildData.getDuration(0L), hostname, tags);
+            client.gauge("jenkins.job.duration", buildData.getDuration(0L) / 1000, hostname, tags);
 
             // Submit counter
             client.incrementCounter("jenkins.job.completed", hostname, tags);
