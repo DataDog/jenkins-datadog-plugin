@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.model.*;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -59,6 +60,25 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     }
 
     /**
+     * Gets the tagFile set in the job configuration.
+     *
+     * @return a String representing the relative path to a tagFile
+     */
+    public String getTagFile() {
+        return tagFile;
+    }
+
+    /**
+     * Sets the tagFile set in the job configration.
+     *
+     * @param tagFile - a String representing the relative path to a tagFile
+     */
+    @DataBoundSetter
+    public void setTagFile(String tagFile) {
+        this.tagFile = tagFile;
+    }
+
+    /**
      * This method is called whenever the Job form is saved. We use the 'on' property
      * to determine if the controls are selected.
      *
@@ -85,25 +105,6 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
 
 
         return prop;
-    }
-
-    /**
-     * Gets the tagFile set in the job configuration.
-     *
-     * @return a String representing the relative path to a tagFile
-     */
-    public String getTagFile() {
-        return tagFile;
-    }
-
-    /**
-     * Sets the tagFile set in the job configration.
-     *
-     * @param tagFile - a String representing the relative path to a tagFile
-     */
-    @DataBoundSetter
-    public void setTagFile(String tagFile) {
-        this.tagFile = tagFile;
     }
 
     /**
@@ -156,7 +157,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
             //invoked, the workspace has not yet been established, so this check is necessary.
             FilePath workspace = r.getExecutor().getCurrentWorkspace();
             if (workspace != null) {
-                FilePath path = new FilePath(workspace, tagFile);
+                FilePath path = new FilePath(workspace, getTagFile());
                 if (path.exists()) {
                     s = path.readToString();
                 }

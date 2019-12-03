@@ -1,9 +1,11 @@
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
+import org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,13 +1,16 @@
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.Extension;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
 import net.sf.json.JSONArray;
+import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
+import org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
