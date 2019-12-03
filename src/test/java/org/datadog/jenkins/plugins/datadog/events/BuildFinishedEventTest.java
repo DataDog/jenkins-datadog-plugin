@@ -242,7 +242,7 @@ public class BuildFinishedEventTest {
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
-        Assert.assertTrue(o.getLong("date_happened") == 0);
+        Assert.assertTrue(o.getLong("date_happened") != 0);
         Object[] sortedTags = o.getJSONArray("tags").toArray();
         Arrays.sort(sortedTags);
         Assert.assertTrue(sortedTags.length == 4);
@@ -252,7 +252,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[3], "result:SUCCESS"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.00 secs)"));
+        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -296,7 +296,7 @@ public class BuildFinishedEventTest {
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
-        Assert.assertTrue(o.getLong("date_happened") == 0);
+        Assert.assertTrue(o.getLong("date_happened") != 0);
         Object[] sortedTags = o.getJSONArray("tags").toArray();
         Arrays.sort(sortedTags);
         Assert.assertTrue(sortedTags.length == 5);
@@ -307,7 +307,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[4], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.00 secs)"));
+        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }

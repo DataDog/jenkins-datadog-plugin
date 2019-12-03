@@ -23,11 +23,10 @@ public class BuildStartedEventImpl extends AbstractDatadogEvent {
     @Override
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
-        String number = builddata.getNumber(null) == null ?
-                "unknown" : builddata.getNumber(null).toString();
+        String number = builddata.getBuildNumber("unknown");
 
         // Build title
-        String title = builddata.getJob("unknown") +
+        String title = builddata.getJobName("unknown") +
                 " build #" +
                 number +
                 " started" +
@@ -41,7 +40,7 @@ public class BuildStartedEventImpl extends AbstractDatadogEvent {
                 " progress](" +
                 builddata.getBuildUrl("unknown") +
                 ") " +
-                getDuration() +
+                getFormattedDuration() +
                 " \n %%%";
         payload.put("text", message);
 
