@@ -16,8 +16,8 @@ List of events:
 
 | Metric Name              | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
-| jenkins.job.completed    | Jobs Completed rate                                           |
-| jenkins.job.started      | Jobs Started rate                                             |
+| jenkins.job.completed    | Rate of completed jobs                                        |
+| jenkins.job.started      | Rate of started jobs                                          |
 | jenkins.job.leadtime     | Lead Time                                                     |
 | jenkins.job.cycletime    | Cycle Time                                                    |
 | jenkins.job.mttr         | MTTR: time between last failed job and current successful job |
@@ -26,7 +26,7 @@ List of events:
 | jenkins.job.duration     | Build duration (in seconds)                                   |
 | jenkins.job.waiting      | Time spent waiting for job to run (in milliseconds)           |
 | jenkins.queue.size       | Queue Size                                                    |
-| jenkins.scm.checkout     | SCM checkout rate                                             |
+| jenkins.scm.checkout     | Rate of SCM checkouts                                         |
 
 
 List of service checks:
@@ -43,11 +43,13 @@ All events, metrics, and service checks include the following tags, if they are 
 ## Customization
 From the global configuration page, at `Manage Jenkins -> Configure System`.
 * Blacklisted Jobs
-	* A regex comma-separated list of job names that should not be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+	* A comma-separated list of regex to match job names that should not be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
 * Whitelisted Jobs
-	* A regex comma-separated list of job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+	* A comma-separated list of regex to match job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
 * Global Tags
-	* A list of jobs and comma-separated list of tags that should be applied for that job (eg: (.*?)_job_(*?)_release, owner:$1, release_env:$2, optional:Tag3).
+	* A regex to match a job, and a list of tags to apply to that job, all separated by a comma. 
+	  * tags can reference match groups in the regex using the $ symbol 
+	  * eg: `(.*?)_job_(*?)_release, owner:$1, release_env:$2, optional:Tag3`
 
 From a job specific configuration page
 * Custom tags
