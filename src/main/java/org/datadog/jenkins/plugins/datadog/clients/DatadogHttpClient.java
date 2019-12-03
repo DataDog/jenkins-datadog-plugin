@@ -137,6 +137,7 @@ public class DatadogHttpClient implements DatadogClient {
 
     private boolean postMetric(String name, float value, String hostname, JSONArray tags, String type) {
         int INTERVAL = 10;
+
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
 
         // Setup data point, of type [<unix_timestamp>, <value>]

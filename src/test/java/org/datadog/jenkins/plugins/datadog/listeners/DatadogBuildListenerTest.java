@@ -1,9 +1,11 @@
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
+import org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,8 +46,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedWithNothing() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -71,8 +71,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnSuccessfulRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -168,8 +166,6 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnFailedRun() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -232,8 +228,6 @@ public class DatadogBuildListenerTest {
     public void testOnStarted() throws Exception {
         client = new DatadogClientStub();
         datadogBuildListener = mock(DatadogBuildListener.class);
-        DatadogBuildListener.DescriptorImpl descriptorMock = mock(DatadogBuildListener.DescriptorImpl.class);
-        when(datadogBuildListener.getDescriptor()).thenReturn(descriptorMock);
         when(DatadogUtilities.getDatadogClient()).thenReturn(client);
         when(datadogBuildListener.currentTimeMillis()).thenReturn(3000000L);
 

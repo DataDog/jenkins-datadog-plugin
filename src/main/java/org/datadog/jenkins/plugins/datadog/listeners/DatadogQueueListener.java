@@ -1,8 +1,10 @@
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.Extension;
 import hudson.model.PeriodicWork;
 import hudson.model.Queue;
+import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;

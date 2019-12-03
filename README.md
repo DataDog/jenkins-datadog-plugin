@@ -11,26 +11,23 @@ Currently, the plugin is tracking the following data.
 List of events:
 * Started build
 * Finished build
+* SCM Checkout
 
-List of metrics sent via the Datadog API:
-
-| Metric Name          | Description                                         |
-|----------------------|-----------------------------------------------------|
-| jenkins.job.duration | Build duration (in seconds)                         |
-| jenkins.job.waiting  | Time spent waiting for job to run (in milliseconds) |
-
-
-List of metrics sent via Dogstatsd:
-Requires the Datadog Agent to be installed on the Jenkins host.
 
 | Metric Name              | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
-| jenkins.job.completed    | Jobs Completed                                                |
+| jenkins.job.completed    | Rate of completed jobs                                        |
+| jenkins.job.started      | Rate of started jobs                                          |
 | jenkins.job.leadtime     | Lead Time                                                     |
 | jenkins.job.cycletime    | Cycle Time                                                    |
 | jenkins.job.mttr         | MTTR: time between last failed job and current successful job |
 | jenkins.job.feedbacktime | Feedback time from code commit to job failure                 |
 | jenkins.job.mtbf         | MTBF, time between last successful job and current failed job |
+| jenkins.job.duration     | Build duration (in seconds)                                   |
+| jenkins.job.waiting      | Time spent waiting for job to run (in milliseconds)           |
+| jenkins.queue.size       | Queue Size                                                    |
+| jenkins.scm.checkout     | Rate of SCM checkouts                                         |
+
 
 List of service checks:
 * Build status (jenkins.job.status)
@@ -38,20 +35,26 @@ List of service checks:
 All events, metrics, and service checks include the following tags, if they are available:
 * `job`
 * `result`
-* (git) `branch` (Available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin))
+* (Git Branch, SVN revision or CVS branch) `branch` 
+  * Git Branch available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin)
+* `node`
 
-Optional tags, included in events, metrics, and service checks. (Toggle from `Manage Jenkins -> Configure System`)
-* `node` (disabled by default)
 
 ## Customization
 From the global configuration page, at `Manage Jenkins -> Configure System`.
 * Blacklisted Jobs
-	* A comma-separated list of job names that should not monitored. (eg: susans-job,johns-job,prod_folder/prod_release).
+	* A comma-separated list of regex to match job names that should not be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+* Whitelisted Jobs
+	* A comma-separated list of regex to match job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+* Global Tags
+	* A regex to match a job, and a list of tags to apply to that job, all separated by a comma. 
+	  * tags can reference match groups in the regex using the $ symbol 
+	  * eg: `(.*?)_job_(*?)_release, owner:$1, release_env:$2, optional:Tag3`
 
 From a job specific configuration page
 * Custom tags
-	* Added from a file in the job workspace (not compatible with Pipeline jobs), or
-	* Added as text directly from the configuration page
+	* From a file in the job workspace (not compatible with Pipeline jobs).
+	* As text properties directly from the configuration page.
 
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
@@ -67,12 +70,11 @@ Alternatively, you have the option of configuring your Datadog plugin using a Gr
 
 ```groovy
 import jenkins.model.*
-import org.datadog.jenkins.plugins.datadog.DatadogBuildListener
+import org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration
 
 def j = Jenkins.getInstance()
-def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.DatadogBuildListener")
+def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration")
 d.setHostname('https://your-jenkins.com:8080')
-d.setTagNode(true)
 d.setApiKey('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
 d.setBlacklist('job1,job2')
 d.save()
@@ -81,7 +83,7 @@ d.save()
 Configuring the plugin this way might be useful if you're running your Jenkins Master in a Docker container using the [Official Jenkins Docker Image](https://github.com/jenkinsci/docker) or any derivative that supports plugins.txt and Groovy init scripts.
 
 ### Logging
-Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.DatadogBuildListener`.
+Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener`.
 
 ## Release Process
 ### Overview

@@ -1,10 +1,12 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
+import hudson.ExtensionList;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,20 +27,20 @@ public class DatadogUtilities {
     /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
-    public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
+    public static DatadogGlobalConfiguration getDatadogGlobalDescriptor() {
         Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             return null;
         }
-        return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
+        return ExtensionList.lookup(DatadogGlobalConfiguration.class).get(DatadogGlobalConfiguration.class);
     }
 
     /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
     public static DatadogClient getDatadogClient() {
-        DatadogBuildListener.DescriptorImpl descriptor = getDatadogDescriptor();
-       return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
+        DatadogGlobalConfiguration descriptor = getDatadogGlobalDescriptor();
+        return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
     }
 
     /**
@@ -51,7 +53,7 @@ public class DatadogUtilities {
     public static Map<String, Set<String>> buildExtraTags(Run run, TaskListener listener) {
         Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
-        final String globalJobTags = getDatadogDescriptor().getGlobalJobTags();
+        final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
         final DatadogJobProperty property = DatadogJobProperty.retrieveProperty(run);
         final String workspaceTagFile = property.readTagFile(run);
         try {
@@ -148,7 +150,7 @@ public class DatadogUtilities {
      * @return a boolean to signify if the jobName is or is not blacklisted.
      */
     private static boolean isJobBlacklisted(final String jobName) {
-        final String blacklistProp = getDatadogDescriptor().getBlacklist();
+        final String blacklistProp = getDatadogGlobalDescriptor().getBlacklist();
         List<String> blacklist = cstrToList(blacklistProp);
         for (String blacklistedJob : blacklist){
             Pattern blacklistedJobPattern = Pattern.compile(blacklistedJob);
@@ -168,7 +170,7 @@ public class DatadogUtilities {
      * @return a boolean to signify if the jobName is or is not whitelisted.
      */
     private static boolean isJobWhitelisted(final String jobName) {
-        final String whitelistProp = getDatadogDescriptor().getWhitelist();
+        final String whitelistProp = getDatadogGlobalDescriptor().getWhitelist();
         final List<String> whitelist = cstrToList(whitelistProp);
         for (String whitelistedJob : whitelist){
             Pattern whitelistedJobPattern = Pattern.compile(whitelistedJob);
@@ -220,9 +222,20 @@ public class DatadogUtilities {
     }
 
     public static Map<String, Set<String>> merge(Map<String, Set<String>> dest, Map<String, Set<String>> orig) {
+        if (dest == null) {
+            dest = new HashMap<>();
+        }
+        if (orig == null) {
+            orig = new HashMap<>();
+        }
         for (String o: orig.keySet()){
             Set<String> values = dest.containsKey(o) ? dest.get(o) : new HashSet<String>();
-            values.addAll(orig.get(o));
+            if (values == null) {
+                values = new HashSet<>();
+            }
+            if (orig.get(o) != null) {
+                values.addAll(orig.get(o));
+            }
             dest.put(o, values);
         }
         return dest;
@@ -267,7 +280,7 @@ public class DatadogUtilities {
         // Check hostname configuration from Jenkins
         String hostname = null;
         try {
-            hostname = getDatadogDescriptor().getHostname();
+            hostname = getDatadogGlobalDescriptor().getHostname();
         } catch (NullPointerException e){
             // noop
         }
