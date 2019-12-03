@@ -124,7 +124,7 @@ public class DatadogHttpClient implements DatadogClient {
             int count = counters.get(counterMetric);
             logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
             // Since we submit a rate we need to divide the submitted value by the interval (10)
-            this.postMetric(counterMetric.getMetricName(), count / 10, counterMetric.getHostname(),
+            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(),
                     counterMetric.getTags(), "rate");
 
         }
@@ -135,7 +135,8 @@ public class DatadogHttpClient implements DatadogClient {
         return postMetric(name, value, hostname, tags, "gauge");
     }
 
-    private boolean postMetric(String name, long value, String hostname, JSONArray tags, String type) {
+    private boolean postMetric(String name, float value, String hostname, JSONArray tags, String type) {
+        int INTERVAL = 10;
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
 
         // Setup data point, of type [<unix_timestamp>, <value>]
@@ -143,7 +144,11 @@ public class DatadogHttpClient implements DatadogClient {
         JSONArray point = new JSONArray();
 
         point.add(System.currentTimeMillis() / 1000); // current time, s
-        point.add(value);
+        if(type.equals("rate")){
+            point.add(value / (float)INTERVAL);
+        } else {
+            point.add(value);
+        }
         points.add(point); // api expects a list of points
 
         JSONObject metric = new JSONObject();
@@ -152,7 +157,7 @@ public class DatadogHttpClient implements DatadogClient {
         metric.put("type", type);
         metric.put("host", hostname);
         if(type.equals("rate")){
-            metric.put("interval", 10);
+            metric.put("interval", INTERVAL);
         }
         if (tags != null) {
             logger.fine(tags.toString());
