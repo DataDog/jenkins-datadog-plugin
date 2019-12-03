@@ -68,12 +68,11 @@ Alternatively, you have the option of configuring your Datadog plugin using a Gr
 
 ```groovy
 import jenkins.model.*
-import org.datadog.jenkins.plugins.datadog.DatadogBuildListener
+import org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration
 
 def j = Jenkins.getInstance()
-def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener")
+def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration")
 d.setHostname('https://your-jenkins.com:8080')
-d.setTagNode(true)
 d.setApiKey('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
 d.setBlacklist('job1,job2')
 d.save()
