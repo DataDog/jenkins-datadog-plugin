@@ -16,16 +16,28 @@ List of events:
 
 | Metric Name              | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
+| jenkins.executor.count   | Executor count                                                |
+| jenkins.executor.free    | Number of unused executor                                     |
+| jenkins.executor.in_use  | Number of idle executor                                       |
 | jenkins.job.completed    | Rate of completed jobs                                        |
-| jenkins.job.started      | Rate of started jobs                                          |
-| jenkins.job.leadtime     | Lead Time                                                     |
-| jenkins.job.cycletime    | Cycle Time                                                    |
-| jenkins.job.mttr         | MTTR: time between last failed job and current successful job |
-| jenkins.job.feedbacktime | Feedback time from code commit to job failure                 |
-| jenkins.job.mtbf         | MTBF, time between last successful job and current failed job |
+| jenkins.job.cycletime    | Build Cycle Time                                              |
 | jenkins.job.duration     | Build duration (in seconds)                                   |
+| jenkins.job.feedbacktime | Feedback time from code commit to job failure                 |
+| jenkins.job.leadtime     | Build Lead Time                                               |
+| jenkins.job.mtbf         | MTBF, time between last successful job and current failed job |
+| jenkins.job.mttr         | MTTR: time between last failed job and current successful job |
+| jenkins.job.started      | Rate of started jobs                                          |
 | jenkins.job.waiting      | Time spent waiting for job to run (in milliseconds)           |
+| jenkins.node.count       | Total number of node                                          |
+| jenkins.node.offline     | Offline nodes count                                           |
+| jenkins.node.online      | Online nodes count                                            |
+| jenkins.plugin.count     | Plugins count                                                 |
+| jenkins.project.count    | Project count                                                 |
 | jenkins.queue.size       | Queue Size                                                    |
+| jenkins.queue.buildable  | Number of Buildable item in Queue                             |
+| jenkins.queue.pending    | Number of Pending item in Queue                               |
+| jenkins.queue.stuck      | Number of Stuck item in Queue                                 |
+| jenkins.queue.blocked    | Number of Blocked item in Queue                               |
 | jenkins.scm.checkout     | Rate of SCM checkouts                                         |
 
 
@@ -38,6 +50,11 @@ All events, metrics, and service checks include the following tags, if they are 
 * (Git Branch, SVN revision or CVS branch) `branch` 
   * Git Branch available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin)
 * `node`
+
+`jenkins.executor.*` metrics have the following additional tags:
+* `node_hostname`
+* `node_name`
+* `node_label`
 
 
 ## Customization

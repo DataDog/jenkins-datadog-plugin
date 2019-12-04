@@ -1,4 +1,4 @@
-package org.datadog.jenkins.plugins.datadog.listeners;
+package org.datadog.jenkins.plugins.datadog.publishers;
 
 import hudson.Extension;
 import hudson.model.PeriodicWork;
@@ -11,11 +11,12 @@ import java.util.logging.Logger;
 
 /**
  * This class registers a {@link PeriodicWork} with Jenkins to run periodically in order to enable
- * us to compute metrics related to the size of the queue.
+ * us to compute metrics related to the Jenkins queue.
  */
 @Extension
-public class DatadogQueueListener extends PeriodicWork {
-    private static final Logger logger = Logger.getLogger(DatadogQueueListener.class.getName());
+public class DatadogQueuePublisher extends PeriodicWork {
+
+    private static final Logger logger = Logger.getLogger(DatadogQueuePublisher.class.getName());
 
     private static final long RECURRENCE_PERIOD = TimeUnit.MINUTES.toMillis(1);
     private static final Queue queue = Queue.getInstance();
@@ -33,9 +34,27 @@ public class DatadogQueueListener extends PeriodicWork {
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
-            long size = queue.getApproximateItemsQuickly().size();
+            long size = 0;
+            long buildable = queue.countBuildableItems();
+            long pending = queue.getPendingItems().size();
+            long stuck = 0;
+            long blocked = 0;
+            final Queue.Item[] items = queue.getItems();
+            for (Queue.Item item : items) {
+                size++;
+                if(item.isStuck()){
+                    stuck++;
+                }
+                if(item.isBlocked()){
+                    blocked++;
+                }
+            }
             String hostname = DatadogUtilities.getHostname("null");
             client.gauge("jenkins.queue.size", size, hostname, null);
+            client.gauge("jenkins.queue.buildable", buildable, hostname, null);
+            client.gauge("jenkins.queue.pending", pending, hostname, null);
+            client.gauge("jenkins.queue.stuck", stuck, hostname, null);
+            client.gauge("jenkins.queue.blocked", blocked, hostname, null);
 
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());
