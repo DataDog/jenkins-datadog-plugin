@@ -68,17 +68,17 @@ public class DatadogNodePublisher extends PeriodicWork {
                     nodeName = computer.getName();
                 }
                 JSONArray tags = new JSONArray();
-                tags.add("node-name:" + nodeName);
+                tags.add("node_name:" + nodeName);
                 if(nodeHostname != null){
-                    tags.add("node-hostname:" + nodeHostname);
+                    tags.add("node_hostname:" + nodeHostname);
                 }
                 if(labels != null){
                     for (LabelAtom label: labels){
-                        tags.add("node-label:" + label.getName());
+                        tags.add("node_label:" + label.getName());
                     }
                 }
                 client.gauge("jenkins.executor.count", executorCount, hostname, tags);
-                client.gauge("jenkins.executor.in-use", inUse, hostname, tags);
+                client.gauge("jenkins.executor.in_use", inUse, hostname, tags);
                 client.gauge("jenkins.executor.free", free, hostname, tags);
             }
 

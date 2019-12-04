@@ -29,7 +29,7 @@ public class DatadogJenkinsPublisher extends PeriodicWork {
     @Override
     protected void doRun() throws Exception {
         try {
-            logger.fine("doRun called: Computing Node metrics");
+            logger.fine("doRun called: Computing Jenkins metrics");
 
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();

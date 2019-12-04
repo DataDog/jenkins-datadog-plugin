@@ -18,7 +18,7 @@ List of events:
 |--------------------------|---------------------------------------------------------------|
 | jenkins.executor.count   | Executor count                                                |
 | jenkins.executor.free    | Number of unused executor                                     |
-| jenkins.executor.in-use  | Number of idle executor                                       |
+| jenkins.executor.in_use  | Number of idle executor                                       |
 | jenkins.job.completed    | Rate of completed jobs                                        |
 | jenkins.job.cycletime    | Build Cycle Time                                              |
 | jenkins.job.duration     | Build duration (in seconds)                                   |
@@ -52,9 +52,9 @@ All events, metrics, and service checks include the following tags, if they are 
 * `node`
 
 `jenkins.executor.*` metrics have the following additional tags:
-* `node-hostname`
-* `node-name`
-* `node-label`
+* `node_hostname`
+* `node_name`
+* `node_label`
 
 
 ## Customization
