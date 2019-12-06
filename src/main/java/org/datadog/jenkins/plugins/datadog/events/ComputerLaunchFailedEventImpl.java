@@ -2,7 +2,6 @@ package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.model.Computer;
 import hudson.model.TaskListener;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
@@ -28,12 +27,11 @@ public class ComputerLaunchFailedEventImpl implements DatadogEvent {
         String hostname = DatadogUtilities.getHostname(null);
         String nodeName = DatadogUtilities.getNodeName(computer);
 
-        JSONArray tagsAsJson = TagsUtil.convertTagsToJSONArray(tags);
         JSONObject payload = new JSONObject();
         payload.put("host", hostname);
         payload.put("aggregation_key", nodeName);
         payload.put("date_happened", System.currentTimeMillis() / 1000);
-        payload.put("tags", tagsAsJson);
+        payload.put("tags", TagsUtil.convertTagsToJSONArray(tags));
         payload.put("source_type_name", "jenkins");
 
         String title = "Jenkins node " + nodeName + " failed to launch";

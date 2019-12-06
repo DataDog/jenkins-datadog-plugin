@@ -2,9 +2,7 @@ package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.Extension;
 import hudson.model.Item;
-import hudson.model.User;
 import hudson.model.listeners.ItemListener;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
@@ -12,7 +10,6 @@ import org.datadog.jenkins.plugins.datadog.events.ItemCRUDEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.ItemCopiedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.ItemLocationChangedEventImpl;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -32,17 +29,17 @@ public class DatadogItemListener extends ItemListener {
 
     @Override
     public void onCreated(Item item) {
-        onCRUD(item, "Created");
+        onCRUD(item, ItemCRUDEventImpl.CREATED);
     }
 
     @Override
     public void onDeleted(Item item) {
-        onCRUD(item, "Deleted");
+        onCRUD(item, ItemCRUDEventImpl.DELETED);
     }
 
     @Override
     public void onUpdated(Item item) {
-        onCRUD(item, "Updated");
+        onCRUD(item, ItemCRUDEventImpl.UPDATED);
     }
 
     private void onCRUD(Item item, String action) {

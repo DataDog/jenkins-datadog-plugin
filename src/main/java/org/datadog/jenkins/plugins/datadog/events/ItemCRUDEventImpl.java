@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class ItemCRUDEventImpl implements DatadogEvent {
+    public final static String CREATED = "Created";
+    public final static String UPDATED = "Updated";
+    public final static String DELETED = "Deleted";
 
     private Item item;
     private String action;

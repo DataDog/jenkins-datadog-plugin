@@ -36,10 +36,10 @@ public class ComputerOnlineEventImpl implements DatadogEvent {
         payload.put("tags", TagsUtil.convertTagsToJSONArray(tags));
         payload.put("source_type_name", "jenkins");
 
-        String title = "Jenkins node " + nodeName + " is" + (isTemporarily? " temporarily ": " ") + "Online";
+        String title = "Jenkins node " + nodeName + " is" + (isTemporarily ? " temporarily " : " ") + "Online";
         payload.put("title", title);
 
-        String message = "%%% \n Jenkins node " + nodeName + " is" + (isTemporarily? " temporarily ": " ") +
+        String message = "%%% \n Jenkins node " + nodeName + " is" + (isTemporarily ? " temporarily " : " ") +
                 "Online \n %%%";
         payload.put("text", message);
 
