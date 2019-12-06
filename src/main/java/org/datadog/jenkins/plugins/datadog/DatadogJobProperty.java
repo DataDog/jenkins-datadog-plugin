@@ -24,7 +24,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
 
     private String tagProperties = null;
     private String tagFile = null;
-    private boolean emitOnCheckout = false;
+    private boolean emitSCMEvents = true;
 
     /**
      * @param r - Current build.
@@ -97,12 +97,10 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
 
         if (!isEnableFile) {
             prop.tagFile = null;
-            prop.emitOnCheckout = false;
         }
         if (!isEnableTagProperties) {
             prop.tagProperties = null;
         }
-
 
         return prop;
     }
@@ -126,21 +124,20 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     }
 
     /**
-     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit the
-     * - an event after checkout.
+     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit SCM related events.
      */
-    public boolean isEmitOnCheckout() {
-        return emitOnCheckout;
+    public boolean isEmitSCMEvents() {
+        return emitSCMEvents;
     }
 
     /**
-     * Set the checkbox in the UI, used for Jenkins databbinding
+     * Set the checkbox in the UI, used for Jenkins data binding
      *
-     * @param emitOnCheckout - The checkbox status (checked/unchecked)
+     * @param emitSCMEvents - The checkbox status (checked/unchecked)
      */
     @DataBoundSetter
-    public void setEmitOnCheckout(boolean emitOnCheckout) {
-        this.emitOnCheckout = emitOnCheckout;
+    public void setEmitSCMEvents(boolean emitSCMEvents) {
+        this.emitSCMEvents = emitSCMEvents;
     }
 
     /**

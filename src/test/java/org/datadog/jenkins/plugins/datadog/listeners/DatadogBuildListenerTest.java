@@ -5,7 +5,6 @@ import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
-import org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -263,7 +262,7 @@ public class DatadogBuildListenerTest {
         expectedTags[1] = "node:test-node";
         expectedTags[2] = "result:SUCCESS";
         expectedTags[3] = "branch:test-branch";
-        client.assertMetric("jenkins.job.waiting", 1000, "null", expectedTags);
+        client.assertMetric("jenkins.job.waiting", 1000.0, "null", expectedTags);
         client.assertMetric("jenkins.job.started", 1, "null", expectedTags);
         client.assertedAllMetricsAndServiceChecks();
     }

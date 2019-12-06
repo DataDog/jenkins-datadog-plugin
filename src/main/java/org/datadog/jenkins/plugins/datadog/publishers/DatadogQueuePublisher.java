@@ -6,6 +6,8 @@ import hudson.model.Queue;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -33,6 +35,7 @@ public class DatadogQueuePublisher extends PeriodicWork {
 
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
+            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
 
             long size = 0;
             long buildable = queue.countBuildableItems();
@@ -50,11 +53,11 @@ public class DatadogQueuePublisher extends PeriodicWork {
                 }
             }
             String hostname = DatadogUtilities.getHostname("null");
-            client.gauge("jenkins.queue.size", size, hostname, null);
-            client.gauge("jenkins.queue.buildable", buildable, hostname, null);
-            client.gauge("jenkins.queue.pending", pending, hostname, null);
-            client.gauge("jenkins.queue.stuck", stuck, hostname, null);
-            client.gauge("jenkins.queue.blocked", blocked, hostname, null);
+            client.gauge("jenkins.queue.size", size, hostname, tags);
+            client.gauge("jenkins.queue.buildable", buildable, hostname, tags);
+            client.gauge("jenkins.queue.pending", pending, hostname, tags);
+            client.gauge("jenkins.queue.stuck", stuck, hostname, tags);
+            client.gauge("jenkins.queue.blocked", blocked, hostname, tags);
 
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());

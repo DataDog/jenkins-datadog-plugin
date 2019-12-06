@@ -2,13 +2,8 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:section title="Datadog Tagging">
         <f:optionalBlock name="enableFile" checked="${!instance.isTagFileEmpty()}" title="Add tags from file in workspace" inline="true">
-            <f:entry title="File" field="tagFile">
+            <f:entry title="File" field="tagFile" description="Note: Tags set this way, in the workspace, won't appear in started events. To provide visibility of a jobs lifespan, this option will send an extra event, in addition to the started and completed events.">
                 <f:textbox/>
-            </f:entry>
-            <f:entry title="Send extra event after each successful checkout" field="emitOnCheckout"
-description="Note: Tags set this way, in the workspace, won't appear in started events.
-To provide visibility of a jobs lifespan, this option will send an extra event, in addition to the started and completed events." >
-                <f:checkbox/>
             </f:entry>
         </f:optionalBlock>
         <f:optionalBlock name="enableProperty" checked="${!instance.isTagPropertiesEmpty()}" title="Add tags from list of properties" inline="true">
@@ -16,6 +11,12 @@ To provide visibility of a jobs lifespan, this option will send an extra event, 
                 <f:textarea/>
             </f:entry>
         </f:optionalBlock>
+
+        <f:advanced>
+            <f:entry title="Send Source Control Management events" field="emitSCMEvents" description="Send an event after each successful checkout.">
+                <f:checkbox/>
+            </f:entry>
+        </f:advanced>
     </f:section>
     <tr>
         <td colspan="4">

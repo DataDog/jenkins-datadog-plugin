@@ -5,6 +5,7 @@ import hudson.model.*;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         try {
@@ -83,7 +84,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/null"));
@@ -111,7 +112,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parent/FullName/null"));
@@ -139,7 +140,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/jobName"));
@@ -167,7 +168,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Object[] sortedTags = o.getJSONArray("tags").toArray();
@@ -206,7 +207,7 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
@@ -252,13 +253,10 @@ public class BuildStartedEventTest {
 
         BuildData bd = new BuildData(run, listener);
         Map<String, Set<String>> tags = new HashMap<>();
-        Set<String> v1 = new HashSet<>();
-        v1.add("value1");
-        tags.put("tag1", v1);
-        Set<String> v2 = new HashSet<>();
-        v2.add("value2");
-        tags.put("tag2", v2);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, tags);
+        tags = DatadogClientStub.addTagToMap(tags, "tag1", "value1");
+        tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
+        bd.setTags(tags);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));

@@ -1,14 +1,14 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
-import net.sf.json.JSONArray;
+import java.util.List;
 
 public class DatadogMetric {
     private String name = null;
     private double value;
     private String hostname = null;
-    private JSONArray tags = null;
+    private List<String> tags = null;
 
-    DatadogMetric(String name, double value, String hostname, JSONArray tags) {
+    DatadogMetric(String name, double value, String hostname, List<String> tags) {
         this.name = name;
         this.value = value;
         this.hostname = hostname;
@@ -62,7 +62,7 @@ public class DatadogMetric {
         return hostname;
     }
 
-    public JSONArray getTags() {
+    public List<String> getTags() {
         return tags;
     }
 }

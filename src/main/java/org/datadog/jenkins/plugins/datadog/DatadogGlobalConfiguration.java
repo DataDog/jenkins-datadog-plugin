@@ -15,6 +15,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static hudson.Util.fixEmptyAndTrim;
@@ -28,8 +29,11 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
+    private String globalTags = null;
     private String globalJobTags = null;
     private String targetMetricURL = "https://api.datadoghq.com/api/";
+    private boolean emitSecurityEvents = true;
+    private boolean emitSystemEvents = true;
 
     @DataBoundConstructor
     public DatadogGlobalConfiguration() {
@@ -243,6 +247,48 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     }
 
     /**
+     * Getter function for the globalTags global configuration, containing
+     * a comma-separated list of tags that should be applied everywhere.
+     *
+     * @return a map containing the globalTags global configuration.
+     */
+    public Map<String, Set<String>> getGlobalTags() {
+        Map<String, Set<String>> tags = new HashMap<>();
+        List<String> globalTagsLines = DatadogUtilities.linesToList(globalTags);
+
+        for (String globalTagsLine : globalTagsLines) {
+            List<String> tagList = DatadogUtilities.cstrToList(globalTagsLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+
+            for (int i = 1; i < tagList.size(); i++) {
+                String[] tagItem = tagList.get(i).split(":");
+                if(tagItem.length == 2) {
+                    String tagName = tagItem[0];
+                    String tagValue = tagItem[1];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(tagValue.toLowerCase());
+                    tags.put(tagName, tagValues);
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Setter function for the globalTags global configuration,
+     * accepting a comma-separated string of tags.
+     *
+     * @param globalTags - a comma-separated list of tags.
+     */
+    @DataBoundSetter
+    public void setGlobalTags(String globalTags) {
+        this.globalTags = globalTags;
+    }
+
+    /**
      * Getter function for the globalJobTags global configuration, containing
      * a comma-separated list of jobs and tags that should be applied to them
      *
@@ -276,6 +322,40 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     @DataBoundSetter
     public void setTargetMetricURL(String targetMetricURL) {
         this.targetMetricURL = targetMetricURL;
+    }
+
+    /**
+     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit Security related events.
+     */
+    public boolean isEmitSecurityEvents() {
+        return emitSecurityEvents;
+    }
+
+    /**
+     * Set the checkbox in the UI, used for Jenkins data binding
+     *
+     * @param emitSecurityEvents - The checkbox status (checked/unchecked)
+     */
+    @DataBoundSetter
+    public void setEmitSecurityEvents(boolean emitSecurityEvents) {
+        this.emitSecurityEvents = emitSecurityEvents;
+    }
+
+    /**
+     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit System related events.
+     */
+    public boolean isEmitSystemEvents() {
+        return emitSystemEvents;
+    }
+
+    /**
+     * Set the checkbox in the UI, used for Jenkins data binding
+     *
+     * @param emitSystemEvents - The checkbox status (checked/unchecked)
+     */
+    @DataBoundSetter
+    public void setEmitSystemEvents(boolean emitSystemEvents) {
+        this.emitSystemEvents = emitSystemEvents;
     }
 
 }

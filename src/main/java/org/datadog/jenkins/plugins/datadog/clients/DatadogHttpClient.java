@@ -7,6 +7,8 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
 import java.io.BufferedReader;
@@ -16,6 +18,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
@@ -110,7 +114,7 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public void incrementCounter(String name, String hostname, JSONArray tags) {
+    public void incrementCounter(String name, String hostname, Map<String, Set<String>> tags) {
         ConcurrentMetricCounters.getInstance().increment(name, hostname, tags);
     }
 
@@ -131,11 +135,11 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean gauge(String name, long value, String hostname, JSONArray tags) {
+    public boolean gauge(String name, long value, String hostname, Map<String, Set<String>> tags) {
         return postMetric(name, value, hostname, tags, "gauge");
     }
 
-    private boolean postMetric(String name, float value, String hostname, JSONArray tags, String type) {
+    private boolean postMetric(String name, float value, String hostname, Map<String, Set<String>> tags, String type) {
         int INTERVAL = 10;
 
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
@@ -162,7 +166,7 @@ public class DatadogHttpClient implements DatadogClient {
         }
         if (tags != null) {
             logger.fine(tags.toString());
-            metric.put("tags", tags);
+            metric.put("tags", TagsUtil.convertTagsToJSONArray(tags));
         }
         // Place metric as item of series list
         JSONArray series = new JSONArray();
@@ -185,7 +189,7 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean serviceCheck(String name, int code, String hostname, JSONArray tags) {
+    public boolean serviceCheck(String name, int code, String hostname, Map<String, Set<String>> tags) {
         logger.fine(String.format("Sending service check '%s' with status %s", name, code));
 
         // Build payload
@@ -314,7 +318,7 @@ public class DatadogHttpClient implements DatadogClient {
     private HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
         HttpURLConnection conn = null;
         Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null){
+        if (jenkins == null) {
             return null;
         }
         ProxyConfiguration proxyConfig = jenkins.proxy;

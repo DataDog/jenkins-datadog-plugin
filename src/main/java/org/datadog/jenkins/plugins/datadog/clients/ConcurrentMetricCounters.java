@@ -1,7 +1,7 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
-import net.sf.json.JSONArray;
-
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
@@ -42,7 +42,7 @@ public class ConcurrentMetricCounters {
         return counters;
     }
 
-    public synchronized void increment(String name, String hostname, JSONArray tags) {
+    public synchronized void increment(String name, String hostname, Map<String, Set<String>> tags) {
         ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.get();
         CounterMetric counterMetric = new CounterMetric(tags, name, hostname);
         Integer previousValue = counters.putIfAbsent(counterMetric, 1);

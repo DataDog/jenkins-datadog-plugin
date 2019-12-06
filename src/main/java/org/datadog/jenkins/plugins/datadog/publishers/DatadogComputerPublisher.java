@@ -3,12 +3,12 @@ package org.datadog.jenkins.plugins.datadog.publishers;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.PeriodicWork;
-import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -18,9 +18,9 @@ import java.util.logging.Logger;
  * us to compute metrics related to nodes and executors.
  */
 @Extension
-public class DatadogNodePublisher extends PeriodicWork {
+public class DatadogComputerPublisher extends PeriodicWork {
 
-    private static final Logger logger = Logger.getLogger(DatadogNodePublisher.class.getName());
+    private static final Logger logger = Logger.getLogger(DatadogComputerPublisher.class.getName());
 
     private static final long RECURRENCE_PERIOD = TimeUnit.MINUTES.toMillis(1);
 
@@ -42,6 +42,7 @@ public class DatadogNodePublisher extends PeriodicWork {
             long nodeOffline = 0;
             long nodeOnline = 0;
             Computer[] computers = Jenkins.getInstance().getComputers();
+            final Map<String, Set<String>> globalTags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
             for (Computer computer : computers) {
                 nodeCount++;
                 if (computer.isOffline()) {
@@ -54,37 +55,16 @@ public class DatadogNodePublisher extends PeriodicWork {
                 int executorCount = computer.countExecutors();
                 int inUse = computer.countBusy();
                 int free = computer.countIdle();
-                Set<LabelAtom> labels = null;
-                try {
-                    labels = computer.getNode().getAssignedLabels();
-                } catch (NullPointerException e){
-                    logger.fine("Could not retrieve labels");
-                }
-                String nodeHostname = computer.getHostName();
-                String nodeName;
-                if (computer instanceof Jenkins.MasterComputer) {
-                    nodeName =  "master";
-                } else {
-                    nodeName = computer.getName();
-                }
-                JSONArray tags = new JSONArray();
-                tags.add("node_name:" + nodeName);
-                if(nodeHostname != null){
-                    tags.add("node_hostname:" + nodeHostname);
-                }
-                if(labels != null){
-                    for (LabelAtom label: labels){
-                        tags.add("node_label:" + label.getName());
-                    }
-                }
+
+                Map<String, Set<String>> tags = TagsUtil.merge(
+                        DatadogUtilities.getComputerTags(computer), globalTags);
                 client.gauge("jenkins.executor.count", executorCount, hostname, tags);
                 client.gauge("jenkins.executor.in_use", inUse, hostname, tags);
                 client.gauge("jenkins.executor.free", free, hostname, tags);
             }
-
-            client.gauge("jenkins.node.count", nodeCount, hostname, null);
-            client.gauge("jenkins.node.offline", nodeOffline, hostname, null);
-            client.gauge("jenkins.node.online", nodeOnline, hostname, null);
+            client.gauge("jenkins.node.count", nodeCount, hostname, globalTags);
+            client.gauge("jenkins.node.offline", nodeOffline, hostname, globalTags);
+            client.gauge("jenkins.node.online", nodeOnline, hostname, globalTags);
 
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());

@@ -1,12 +1,14 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
-import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public class DatadogClientTest {
@@ -15,16 +17,16 @@ public class DatadogClientTest {
     public void testIncrementCountAndFlush() throws IOException, InterruptedException {
         DatadogHttpClient.enableValidations = false;
         DatadogClient client = DatadogHttpClient.getInstance("test", null);
-        JSONArray tags1 = new JSONArray();
-        tags1.add("tag1");
-        tags1.add("tag2");
+        Map<String, Set<String>> tags1 = new HashMap<>();
+        tags1 = DatadogClientStub.addTagToMap(tags1, "tag1", "value");
+        tags1 = DatadogClientStub.addTagToMap(tags1, "tag2", "value");
         client.incrementCounter("metric1", "host1", tags1);
         client.incrementCounter("metric1", "host1", tags1);
 
-        JSONArray tags2 = new JSONArray();
-        tags2.add("tag1");
-        tags2.add("tag2");
-        tags2.add("tag3");
+        Map<String, Set<String>> tags2 = new HashMap<>();
+        tags2 = DatadogClientStub.addTagToMap(tags2, "tag1", "value");
+        tags2 = DatadogClientStub.addTagToMap(tags2, "tag2", "value");
+        tags2 = DatadogClientStub.addTagToMap(tags2, "tag3", "value");
         client.incrementCounter("metric1", "host1", tags2);
 
         client.incrementCounter("metric1", "host2", tags2);
@@ -76,9 +78,9 @@ public class DatadogClientTest {
                 // We use a new instance of a client on every run.
                 DatadogHttpClient.enableValidations = false;
                 DatadogClient client = DatadogHttpClient.getInstance("test", null);
-                JSONArray tags = new JSONArray();
-                tags.add("tag1");
-                tags.add("tag2");
+                Map<String, Set<String>> tags = new HashMap<>();
+                tags = DatadogClientStub.addTagToMap(tags, "tag1", "value");
+                tags = DatadogClientStub.addTagToMap(tags, "tag2", "value");
                 client.incrementCounter("metric1", "host1", tags);
             }
         };
@@ -105,9 +107,9 @@ public class DatadogClientTest {
                 // We use a new instance of a client on every run.
                 DatadogHttpClient.enableValidations = false;
                 DatadogClient client = DatadogHttpClient.getInstance("test", null);
-                JSONArray tags = new JSONArray();
-                tags.add("tag1");
-                tags.add("tag2");
+                Map<String, Set<String>> tags = new HashMap<>();
+                tags = DatadogClientStub.addTagToMap(tags, "tag1", "value");
+                tags = DatadogClientStub.addTagToMap(tags, "tag2", "value");
                 client.incrementCounter("metric1", "host1", tags);
             }
         };
@@ -148,9 +150,9 @@ public class DatadogClientTest {
         Runnable increment = new Runnable() {
             @Override
             public void run() {
-                JSONArray tags = new JSONArray();
-                tags.add("tag1");
-                tags.add("tag2");
+                Map<String, Set<String>> tags = new HashMap<>();
+                tags = DatadogClientStub.addTagToMap(tags, "tag1", "value");
+                tags = DatadogClientStub.addTagToMap(tags, "tag2", "value");
                 client.incrementCounter("metric1", "host1", tags);
             }
         };

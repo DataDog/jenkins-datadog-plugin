@@ -1,11 +1,12 @@
 package org.datadog.jenkins.plugins.datadog;
 
 import hudson.util.Secret;
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 public interface DatadogClient {
 
@@ -34,7 +35,7 @@ public interface DatadogClient {
      * @param hostname - metric hostname
      * @param tags - metric tags
      */
-    public void incrementCounter(String name, String hostname, JSONArray tags);
+    public void incrementCounter(String name, String hostname, Map<String, Set<String>> tags);
 
     /**
      * Submit all your counters as rate with 10 seconds intervals.
@@ -47,10 +48,10 @@ public interface DatadogClient {
      * @param name     - A String with the name of the metric to record.
      * @param value    - A long containing the value to submit.
      * @param hostname - A String with the hostname to submit.
-     * @param tags     - A Object containing the tags to submit.
+     * @param tags     - A Map containing the tags to submit.
      * @return a boolean to signify the success or failure of the HTTP POST request.
      */
-    public boolean gauge(String name, long value, String hostname, JSONArray tags);
+    public boolean gauge(String name, long value, String hostname, Map<String, Set<String>> tags);
 
     /**
      * Sends a service check to the Datadog API, including the check name, and status.
@@ -58,10 +59,10 @@ public interface DatadogClient {
      * @param name     - A String with the name of the service check to record.
      * @param code     - An int with the status code to record for this service check.
      * @param hostname - A String with the hostname to submit.
-     * @param tags     - A Object containing the tags to submit.
+     * @param tags     - A Map containing the tags to submit.
      * @return a boolean to signify the success or failure of the HTTP POST request.
      */
-    public boolean serviceCheck(String name, int code, String hostname, JSONArray tags);
+    public boolean serviceCheck(String name, int code, String hostname, Map<String, Set<String>> tags);
 
     /**
      * Tests the apiKey is valid.

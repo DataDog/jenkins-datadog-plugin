@@ -4,17 +4,14 @@ import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-import java.util.Map;
-import java.util.Set;
-
 /**
  * Class that implements the {@link DatadogEvent}. This event produces an event payload with a
  * with a proper description for a completed checkout.
  */
-public class CheckoutCompletedEventImpl extends AbstractDatadogEvent {
+public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
 
-    public CheckoutCompletedEventImpl(BuildData buildData, Map<String, Set<String>> buildTags) {
-        super(buildData, buildTags);
+    public SCMCheckoutCompletedEventImpl(BuildData buildData) {
+        super(buildData);
     }
 
     /**
@@ -23,29 +20,29 @@ public class CheckoutCompletedEventImpl extends AbstractDatadogEvent {
     @Override
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
-        String number = builddata.getBuildNumber("unknown");
+        String number = buildData.getBuildNumber("unknown");
 
         // Build title
-        String title = builddata.getJobName("unknown") +
+        String title = buildData.getJobName("unknown") +
                 " build #" +
                 number +
                 " checkout finished" +
                 " on " +
-                builddata.getHostname("unknown");
+                buildData.getHostname("unknown");
         payload.put("title", title);
 
         // Build Text
         String message = "%%% \n [Follow build #" +
                 number +
                 " progress](" +
-                builddata.getBuildUrl("unknown") +
+                buildData.getBuildUrl("unknown") +
                 ") " +
                 getFormattedDuration() +
                 " \n %%%";
         payload.put("text", message);
 
-        payload.put("alert_type", "info");
         payload.put("priority", "low");
+        payload.put("alert_type", "info");
 
         return payload;
     }
