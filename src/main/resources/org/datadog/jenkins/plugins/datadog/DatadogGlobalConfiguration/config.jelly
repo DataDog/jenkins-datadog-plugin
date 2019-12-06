@@ -40,9 +40,6 @@
         <f:entry title="Target API URL" field="targetMetricURL" description="URL which the plugin reports to." >
           <f:textbox field="targetMetricURL" default="${targetMetricURL}" />
         </f:entry>
-        <f:entry title="Send Source Control Management events" field="emitSCMEvents" description="Send an event after each successful checkout.">
-            <f:checkbox/>
-        </f:entry>
         <f:entry title="Send Security audit events" field="emitSecurityEvents" description="Send security events like login, logout, login failure, configuration changes to jobs or changes to jenkins.">
             <f:checkbox/>
         </f:entry>
