@@ -45,6 +45,10 @@ public class DatadogUtilities {
         return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
     }
 
+    public static Map<String,Set<String>> getGlobalTags() {
+        return getDatadogGlobalDescriptor().getGlobalTags();
+    }
+
     /**
      * Builds extraTags if any are configured in the Job.
      *
@@ -435,5 +439,15 @@ public class DatadogUtilities {
             return "unknown";
         }
         return item.getName();
+    }
+
+    public static Long getRunStartTimeInMillis(Run run) {
+        // getStartTimeInMillis wrapper in order to mock it in unit tests
+        return run.getStartTimeInMillis();
+    }
+
+    public static long currentTimeMillis(){
+        // This method exist so we can mock System.currentTimeMillis in unit tests
+        return System.currentTimeMillis();
     }
 }

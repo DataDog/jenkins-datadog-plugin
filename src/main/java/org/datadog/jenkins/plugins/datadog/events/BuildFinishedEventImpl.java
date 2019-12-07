@@ -31,8 +31,8 @@ public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build Text
         // eg: `[Job <jobName> with build number #<buildNumber>] finished with status <buildResult> (1sec)`
-        String message = "%%% \n [Job " + jobName + " with build number #" + buildNumber + "](" + buildUrl +
-                ") finished with status " + buildResult.toLowerCase() + " " + getFormattedDuration() + " \n %%%";
+        String message = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+                ") finished with status " + buildResult.toLowerCase() + " " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         if (Result.SUCCESS.toString().equals(buildResult)) {

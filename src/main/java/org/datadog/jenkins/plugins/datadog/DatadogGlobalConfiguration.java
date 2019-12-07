@@ -22,8 +22,9 @@ import static hudson.Util.fixEmptyAndTrim;
 
 @Extension
 public class DatadogGlobalConfiguration extends GlobalConfiguration {
-    private static final String DISPLAY_NAME = "Datadog Plugin";
+
     private static final Logger logger = Logger.getLogger(DatadogGlobalConfiguration.class.getName());
+    private static final String DISPLAY_NAME = "Datadog Plugin";
 
     private Secret apiKey = null;
     private String hostname = null;

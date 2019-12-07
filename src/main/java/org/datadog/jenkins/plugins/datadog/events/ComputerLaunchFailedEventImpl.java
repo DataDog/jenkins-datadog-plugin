@@ -3,41 +3,32 @@ package org.datadog.jenkins.plugins.datadog.events;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
 import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import java.util.Map;
 import java.util.Set;
 
-public class ComputerLaunchFailedEventImpl implements DatadogEvent {
+public class ComputerLaunchFailedEventImpl extends AbstractDatadogSimpleEvent {
 
     private Computer computer;
     private TaskListener listener;
-    private Map<String, Set<String>> tags;
 
     public ComputerLaunchFailedEventImpl(Computer computer, TaskListener listener, Map<String, Set<String>> tags) {
+        super(tags);
         this.computer = computer;
         this.listener = listener;
-        this.tags = tags;
     }
 
     @Override
     public JSONObject createPayload() {
-        String hostname = DatadogUtilities.getHostname(null);
         String nodeName = DatadogUtilities.getNodeName(computer);
-
-        JSONObject payload = new JSONObject();
-        payload.put("host", hostname);
-        payload.put("aggregation_key", nodeName);
-        payload.put("date_happened", System.currentTimeMillis() / 1000);
-        payload.put("tags", TagsUtil.convertTagsToJSONArray(tags));
-        payload.put("source_type_name", "jenkins");
+        JSONObject payload = super.createPayload(nodeName);
 
         String title = "Jenkins node " + nodeName + " failed to launch";
         payload.put("title", title);
 
-        String message = "%%% \n Jenkins node " + nodeName + " failed to launch \n %%%";
+        String message = "%%% \nJenkins node " + nodeName + " failed to launch \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "normal");

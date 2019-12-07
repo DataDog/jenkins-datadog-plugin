@@ -31,7 +31,7 @@ public class BuildFinishedEventTest {
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("");
+        when(parent.getFullName()).thenReturn(null);
 
         Job job = mock(Job.class);
         when(job.getParent()).thenReturn(parent);
@@ -53,13 +53,13 @@ public class BuildFinishedEventTest {
         } catch (JSONException e) {
             //continue
         }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), ""));
+        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "unknown"));
         Assert.assertTrue(o.getLong("date_happened") != 0);
         Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:"));
+        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:unknown"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 unknown on unknown"));
-        Assert.assertTrue(o.getString("text").contains("[See results for build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("title"), "unknown build #0 unknown on unknown"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Job unknown build #0](unknown) finished with status unknown (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "warning"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "normal"));
     }
@@ -176,6 +176,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[0], "job:parentFullName/jobName"));
         Assert.assertTrue(Objects.equals(sortedTags[1], "result:FAILURE"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 failure on unknown"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Job parentFullName/jobName build #0](unknown) finished with status failure (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "error"));
     }
 
@@ -207,6 +208,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[0], "job:parentFullName/jobName"));
         Assert.assertTrue(Objects.equals(sortedTags[1], "result:UNSTABLE"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 unstable on unknown"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Job parentFullName/jobName build #0](unknown) finished with status unstable (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "warning"));
     }
 
@@ -253,7 +255,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[3], "result:SUCCESS"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -305,7 +307,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[4], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[See results for build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }

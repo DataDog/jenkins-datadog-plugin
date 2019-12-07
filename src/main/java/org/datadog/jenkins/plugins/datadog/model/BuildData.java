@@ -85,9 +85,15 @@ public class BuildData {
         // Set Hostname
         setHostname(DatadogUtilities.getHostname(envVars == null ? null : envVars.get("HOSTNAME")));
         // Set Job Name
-        String jobName = run.getParent().getFullName();
-        setJobName(jobName == null ?
-                "" : jobName.replaceAll("»", "/").replaceAll(" ", ""));
+        String jobName = null;
+        try {
+            jobName = run.getParent().getFullName();
+        } catch(NullPointerException e){
+            //noop
+        }
+        setJobName(jobName == null ? null : jobName.
+                replaceAll("»", "/").
+                replaceAll(" ", ""));
     }
 
     private void populateEnvVariables(EnvVars envVars){
@@ -132,28 +138,28 @@ public class BuildData {
     public Map<String, Set<String>> getTags() {
         Map<String, Set<String>> mergedTags = new HashMap<>();
         try {
-            mergedTags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            mergedTags = DatadogUtilities.getGlobalTags();
         } catch(NullPointerException e){
             //noop
         }
         mergedTags = TagsUtil.merge(mergedTags, tags);
         Map<String, Set<String>> additionalTags = new HashMap<>();
         Set<String> jobValues = new HashSet<>();
-        jobValues.add(getJobName("null"));
+        jobValues.add(getJobName("unknown"));
         additionalTags.put("job", jobValues);
         if (nodeName != null) {
             Set<String> nodeValues = new HashSet<>();
-            nodeValues.add(getNodeName("null"));
+            nodeValues.add(getNodeName("unknown"));
             additionalTags.put("node", nodeValues);
         }
         if (result != null) {
             Set<String> resultValues = new HashSet<>();
-            resultValues.add(getResult("null"));
+            resultValues.add(getResult("UNKNOWN"));
             additionalTags.put("result", resultValues);
         }
         if (branch != null) {
             Set<String> branchValues = new HashSet<>();
-            branchValues.add(getBranch("null"));
+            branchValues.add(getBranch("unknown"));
             additionalTags.put("branch", branchValues);
         }
         mergedTags = TagsUtil.merge(mergedTags, additionalTags);

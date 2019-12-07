@@ -25,8 +25,8 @@ public class BuildAbortedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build Text
         // eg: `User <userId> aborted the [job with build number #<buildNumber>] (1sec)`
-        String message = "%%% \n User " + userId + " aborted the [job " + jobName + " with build number #" + number +
-                "](" + buildUrl + ") " + getFormattedDuration() + " \n %%%";
+        String message = "%%% \nUser " + userId + " aborted the [job " + jobName + " with build number #" + number +
+                "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "low");

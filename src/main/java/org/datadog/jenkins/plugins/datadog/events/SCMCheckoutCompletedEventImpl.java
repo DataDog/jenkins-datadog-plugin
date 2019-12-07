@@ -20,25 +20,20 @@ public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
     @Override
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
-        String number = buildData.getBuildNumber("unknown");
+        String buildNumber = buildData.getBuildNumber("unknown");
+        String jobName = buildData.getJobName("unknown");
+        String buildUrl = buildData.getBuildUrl("unknown");
+        String hostname = buildData.getHostname("unknown");
 
         // Build title
-        String title = buildData.getJobName("unknown") +
-                " build #" +
-                number +
-                " checkout finished" +
-                " on " +
-                buildData.getHostname("unknown");
+        // eg: `job_name build #1 checkout finished hostname`
+        String title = jobName + " build #" + buildNumber + " checkout finished on " + hostname;
         payload.put("title", title);
 
         // Build Text
-        String message = "%%% \n [Follow build #" +
-                number +
-                " progress](" +
-                buildData.getBuildUrl("unknown") +
-                ") " +
-                getFormattedDuration() +
-                " \n %%%";
+        // eg: `[Job <jobName> with build number #<buildNumber>] checkout successfully (1sec)`
+        String message = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+                ") checkout finished successfully on " + hostname + " " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "low");

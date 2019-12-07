@@ -32,9 +32,9 @@ public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
         payload.put("title", title);
 
         // Build Text
-        // eg: [User <userId> started the [job <jobName> with build number #<buildNumber>] (1sec)"
-        String message = "%%% \n User " + userId + " started the [job " + jobName + " with build number #" +
-                buildNumber + "](" + buildUrl + ") " + getFormattedDuration() + " \n %%%";
+        // eg: User <userId> started the [job <jobName> with build number #<buildNumber>] (1sec)"
+        String message = "%%% \nUser " + userId + " started the [job " + jobName + " build #" +
+                buildNumber + "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "low");

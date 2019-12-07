@@ -19,7 +19,7 @@ public abstract class AbstractDatadogBuildEvent implements DatadogEvent {
     public JSONObject createPayload() {
         JSONObject payload = new JSONObject();
         payload.put("host", buildData.getHostname(null));
-        payload.put("aggregation_key", buildData.getJobName(null));
+        payload.put("aggregation_key", buildData.getJobName("unknown"));
         payload.put("date_happened", buildData.getEndTime(System.currentTimeMillis()) / 1000);
         payload.put("tags", TagsUtil.convertTagsToJSONArray(buildData.getTags()));
         payload.put("source_type_name", "jenkins");

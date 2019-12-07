@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  * Create a job property for use with Datadog plugin.
  */
 public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
+
     private static final Logger LOGGER = Logger.getLogger(DatadogBuildListener.class.getName());
     private static final String DISPLAY_NAME = "Datadog Job Tagging";
 

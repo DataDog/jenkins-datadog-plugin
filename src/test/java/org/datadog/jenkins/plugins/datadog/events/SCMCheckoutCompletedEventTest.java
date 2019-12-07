@@ -32,7 +32,7 @@ public class SCMCheckoutCompletedEventTest {
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("");
+        when(parent.getFullName()).thenReturn(null);
 
         Job job = mock(Job.class);
         when(job.getParent()).thenReturn(parent);
@@ -49,18 +49,17 @@ public class SCMCheckoutCompletedEventTest {
         JSONObject o = event.createPayload();
 
         try {
-            o.getString("host");
             Assert.fail(o.getString("host"));
         } catch (JSONException e) {
             //continue
         }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), ""));
+        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "unknown"));
         Assert.assertTrue(o.getLong("date_happened") != 0);
         Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:"));
+        Assert.assertTrue(o.getJSONArray("tags").toString(), Objects.equals(o.getJSONArray("tags").getString(0), "job:unknown"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 checkout finished on unknown"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #0 progress](unknown) (0.00 secs)"));
+        Assert.assertTrue(o.getString("title"), Objects.equals(o.getString("title"), "unknown build #0 checkout finished on unknown"));
+        Assert.assertTrue(o.getString("text").contains("[Job unknown build #0](unknown) checkout finished successfully on unknown (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -221,7 +220,7 @@ public class SCMCheckoutCompletedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[2], "node:test-node"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 checkout finished on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) checkout finished successfully on test-hostname-1 (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -271,7 +270,7 @@ public class SCMCheckoutCompletedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[3], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 checkout finished on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) checkout finished successfully on test-hostname-1 (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }

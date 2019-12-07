@@ -1,43 +1,35 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
 import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import java.util.Map;
 import java.util.Set;
 
-public class UserAuthenticationEventImpl implements DatadogEvent {
+public class UserAuthenticationEventImpl extends AbstractDatadogSimpleEvent {
+
     public final static String LOGIN = "authenticated";
     public final static String ACCESS_DENIED = "failed to authenticate";
     public final static String LOGOUT = "logout";
 
     private String username;
     private String action;
-    private Map<String, Set<String>> tags;
 
     public UserAuthenticationEventImpl(String username, String action, Map<String, Set<String>> tags) {
+        super(tags);
         this.username = username;
         this.action = action;
-        this.tags = tags;
     }
 
     @Override
     public JSONObject createPayload() {
-        String hostname = DatadogUtilities.getHostname(null);
-
-        JSONObject payload = new JSONObject();
-        payload.put("host", hostname);
-        payload.put("aggregation_key", username);
-        payload.put("date_happened", System.currentTimeMillis() / 1000);
-        payload.put("tags", TagsUtil.convertTagsToJSONArray(tags));
-        payload.put("source_type_name", "jenkins");
+        JSONObject payload = super.createPayload(username);
 
         String title = username + " " + action.toLowerCase();
         payload.put("title", title);
 
-        String message = "%%% \n " + username + " " + action.toLowerCase() +" \n %%%";
+        String message = "%%% \nUser " + username + " " + action.toLowerCase() +" \n%%%";
         payload.put("text", message);
 
         if (LOGIN.equals(action) || LOGOUT.equals(action)){
