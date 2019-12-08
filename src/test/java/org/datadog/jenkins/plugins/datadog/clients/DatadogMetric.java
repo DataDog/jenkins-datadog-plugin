@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
+import java.util.Collections;
 import java.util.List;
 
 public class DatadogMetric {
@@ -23,9 +24,15 @@ public class DatadogMetric {
         DatadogMetric that = (DatadogMetric) o;
 
         if (Double.compare(that.value, value) != 0) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
-        return tags != null ? tags.equals(that.tags) : that.tags == null;
+        return this.same(that);
+    }
+
+    public boolean same(DatadogMetric o) {
+        if (name != null ? !name.equals(o.name) : o.name != null) return false;
+        if (hostname != null ? !hostname.equals(o.hostname) : o.hostname != null) return false;
+        Collections.sort(tags);
+        Collections.sort(o.tags);
+        return tags != null ? tags.toString().equals(o.tags.toString()) : o.tags == null;
     }
 
     @Override

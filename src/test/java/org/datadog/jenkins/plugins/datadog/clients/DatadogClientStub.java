@@ -38,7 +38,7 @@ public class DatadogClientStub implements DatadogClient {
     @Override
     public void incrementCounter(String name, String hostname, Map<String, Set<String>> tags) {
         for (DatadogMetric m : this.metrics) {
-            if(Objects.equals(m.getName(), name) && Objects.equals(m.getHostname(), hostname) && m.getTags().equals(tags)) {
+            if(m.same(new DatadogMetric(name, 0, hostname, convertTagMapToList(tags)))) {
                 double value = m.getValue() + 1;
                 this.metrics.remove(m);
                 this.metrics.add(new DatadogMetric(name, value, hostname, convertTagMapToList(tags)));
