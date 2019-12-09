@@ -1,16 +1,11 @@
 package org.datadog.jenkins.plugins.datadog.listeners;
 
 import hudson.Extension;
-import hudson.XmlFile;
-import hudson.model.Saveable;
-import hudson.model.listeners.SCMListener;
 import jenkins.security.SecurityListener;
-import net.sf.json.JSONArray;
 import org.acegisecurity.userdetails.UserDetails;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
-import org.datadog.jenkins.plugins.datadog.events.ConfigChangedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.UserAuthenticationEventImpl;
 
 import javax.annotation.Nonnull;
@@ -22,7 +17,7 @@ import java.util.logging.Logger;
  * This class registers an {@link SecurityListener} to trigger events and calculate metrics:
  * - When an user authenticates, the {@link #authenticated(UserDetails)} method will be invoked.
  * - When an user fails to authenticate, the {@link #failedToAuthenticate(String)} method will be invoked.
- * - When an user logout, the {@link #loggedOut(username)} method will be invoked.
+ * - When an user logout, the {@link #loggedOut(String)} method will be invoked.
  */
 @Extension
 public class DatadogSecurityListener extends SecurityListener {
