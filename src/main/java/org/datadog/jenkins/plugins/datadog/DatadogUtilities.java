@@ -391,12 +391,7 @@ public class DatadogUtilities {
         } catch (IOException | InterruptedException e) {
             logger.fine("Could not retrieve hostname");
         }
-        String nodeName;
-        if (computer instanceof Jenkins.MasterComputer) {
-            nodeName =  "master";
-        } else {
-            nodeName = computer.getName();
-        }
+        String nodeName = getNodeName(computer);
         Map<String, Set<String>> result = new HashMap<>();
         Set<String> nodeNameValues = new HashSet<>();
         nodeNameValues.add(nodeName);
