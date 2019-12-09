@@ -27,12 +27,20 @@ public class DatadogMetric {
         return this.same(that);
     }
 
-    public boolean same(DatadogMetric o) {
-        if (name != null ? !name.equals(o.name) : o.name != null) return false;
-        if (hostname != null ? !hostname.equals(o.hostname) : o.hostname != null) return false;
+    /**
+     * This method check that this object and the one passed as parameter are equal to the exception of the value field.
+     * @param m DatadogMetric object to compare to.
+     * @return true is both DatadogMetric are the same otherwise false
+     */
+    public boolean same(DatadogMetric m) {
+        if (this == m) return true;
+        if (m == null) return false;
+        if (name != null ? !name.equals(m.name) : m.name != null) return false;
+        if (hostname != null ? !hostname.equals(m.hostname) : m.hostname != null) return false;
+        if (tags != null && m.tags == null) return false;
         Collections.sort(tags);
-        Collections.sort(o.tags);
-        return tags != null ? tags.toString().equals(o.tags.toString()) : o.tags == null;
+        Collections.sort(m.tags);
+        return tags != null ? tags.toString().equals(m.tags.toString()) : m.tags == null;
     }
 
     @Override
