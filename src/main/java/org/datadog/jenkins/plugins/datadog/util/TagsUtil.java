@@ -35,7 +35,11 @@ public class TagsUtil {
         for (String name : tags.keySet()) {
             Set<String> values = tags.get(name);
             for (String value : values){
-                result.add(String.format("%s:%s", name, value));
+                if ("".equals(value)){
+                    result.add(name); // Tag with no value
+                }else{
+                    result.add(String.format("%s:%s", name, value));
+                }
             }
         }
         return result;

@@ -147,6 +147,13 @@ public class DatadogUtilities {
                         Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
                         tagValues.add(tagValue.toLowerCase());
                         tags.put(tagName, tagValues);
+                    } else if(tagItem.length == 1) {
+                        String tagName = tagItem[0];
+                        Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                        tagValues.add(""); // no values
+                        tags.put(tagName, tagValues);
+                    } else {
+                        logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                     }
                 }
             }
@@ -172,7 +179,7 @@ public class DatadogUtilities {
                 continue;
             }
 
-            for (int i = 0; i < tagList.size(); i++) {
+            for(int i = 0; i < tagList.size(); i++) {
                 String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":");
                 if(tagItem.length == 2) {
                     String tagName = tagItem[0];
@@ -180,6 +187,13 @@ public class DatadogUtilities {
                     Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
                     tagValues.add(tagValue.toLowerCase());
                     tags.put(tagName, tagValues);
+                } else if(tagItem.length == 1) {
+                    String tagName = tagItem[0];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(""); // no values
+                    tags.put(tagName, tagValues);
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                 }
             }
         }
@@ -275,14 +289,19 @@ public class DatadogUtilities {
             }
             for (int i = 0; i < tagList.size(); i++) {
                 String tag = tagList.get(i).replaceAll(" ", "");
-                String[]expanded = envVars.expand(tag).split("=");
-                if (expanded.length > 1) {
+                String[] expanded = envVars.expand(tag).split("=");
+                if (expanded.length == 2) {
                     String name = expanded[0];
                     String value = expanded[1];
                     Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
                     values.add(value);
                     result.put(name, values);
-                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                    logger.fine(String.format("Emitted tag %s:%s", name, value));
+                } else if(expanded.length == 1) {
+                    String name = expanded[0];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(""); // no values
+                    result.put(name, values);
                 } else {
                     logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
                 }
