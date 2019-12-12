@@ -5,6 +5,7 @@ import hudson.model.*;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class BuildStartedEventTest {
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("");
+        when(parent.getFullName()).thenReturn(null);
 
         Job job = mock(Job.class);
         when(job.getParent()).thenReturn(parent);
@@ -44,7 +45,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         try {
@@ -53,13 +54,13 @@ public class BuildStartedEventTest {
         } catch (JSONException e) {
             //continue
         }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), ""));
+        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "unknown"));
         Assert.assertTrue(o.getLong("date_happened") != 0);
         Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:"));
+        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:unknown"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 started on unknown"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #0 progress](unknown) (0.00 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("title"), "unknown build #0 started on unknown"));
+        Assert.assertTrue(o.getString("text").contains("User anonymous started the [job unknown build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -83,7 +84,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/null"));
@@ -111,7 +112,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parent/FullName/null"));
@@ -139,7 +140,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/jobName"));
@@ -167,7 +168,7 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Object[] sortedTags = o.getJSONArray("tags").toArray();
@@ -206,7 +207,7 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, null);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
@@ -220,7 +221,7 @@ public class BuildStartedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[2], "node:test-node"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text").contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
@@ -252,13 +253,10 @@ public class BuildStartedEventTest {
 
         BuildData bd = new BuildData(run, listener);
         Map<String, Set<String>> tags = new HashMap<>();
-        Set<String> v1 = new HashSet<>();
-        v1.add("value1");
-        tags.put("tag1", v1);
-        Set<String> v2 = new HashSet<>();
-        v2.add("value2");
-        tags.put("tag2", v2);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd, tags);
+        tags = DatadogClientStub.addTagToMap(tags, "tag1", "value1");
+        tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
+        bd.setTags(tags);
+        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
@@ -273,7 +271,7 @@ public class BuildStartedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[3], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
-        Assert.assertTrue(o.getString("text"), o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(o.getString("text"), o.getString("text").contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }

@@ -5,6 +5,7 @@ import hudson.model.*;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DatadogUtilities.class})
-public class CheckoutCompletedEventTest {
+public class SCMCheckoutCompletedEventTest {
 
     @Test
     public void testWithNothingSet() throws IOException, InterruptedException {
@@ -31,7 +32,7 @@ public class CheckoutCompletedEventTest {
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("");
+        when(parent.getFullName()).thenReturn(null);
 
         Job job = mock(Job.class);
         when(job.getParent()).thenReturn(parent);
@@ -44,23 +45,22 @@ public class CheckoutCompletedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         try {
-            o.getString("host");
             Assert.fail(o.getString("host"));
         } catch (JSONException e) {
             //continue
         }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), ""));
+        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "unknown"));
         Assert.assertTrue(o.getLong("date_happened") != 0);
         Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:"));
+        Assert.assertTrue(o.getJSONArray("tags").toString(), Objects.equals(o.getJSONArray("tags").getString(0), "job:unknown"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), " build #0 checkout finished on unknown"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #0 progress](unknown) (0.00 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
+        Assert.assertTrue(o.getString("title"), Objects.equals(o.getString("title"), "unknown build #0 checkout finished on unknown"));
+        Assert.assertTrue(o.getString("text").contains("[Job unknown build #0](unknown) checkout finished successfully on unknown (0.00 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
 
@@ -83,7 +83,7 @@ public class CheckoutCompletedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/null"));
@@ -111,7 +111,7 @@ public class CheckoutCompletedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parent/FullName/null"));
@@ -139,7 +139,7 @@ public class CheckoutCompletedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/jobName"));
@@ -167,7 +167,7 @@ public class CheckoutCompletedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Object[] sortedTags = o.getJSONArray("tags").toArray();
@@ -176,7 +176,7 @@ public class CheckoutCompletedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[0], "job:parentFullName/jobName"));
         Assert.assertTrue(Objects.equals(sortedTags[1], "result:FAILURE"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 checkout finished on unknown"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
+        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class CheckoutCompletedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, null);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
@@ -220,8 +220,8 @@ public class CheckoutCompletedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[2], "node:test-node"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 checkout finished on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
+        Assert.assertTrue(o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) checkout finished successfully on test-hostname-1 (0.01 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
 
@@ -252,13 +252,10 @@ public class CheckoutCompletedEventTest {
 
         BuildData bd = new BuildData(run, listener);
         Map<String, Set<String>> tags = new HashMap<>();
-        Set<String> v1 = new HashSet<>();
-        v1.add("value1");
-        tags.put("tag1", v1);
-        Set<String> v2 = new HashSet<>();
-        v2.add("value2");
-        tags.put("tag2", v2);
-        CheckoutCompletedEventImpl event = new CheckoutCompletedEventImpl(bd, tags);
+        tags = DatadogClientStub.addTagToMap(tags, "tag1", "value1");
+        tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
+        bd.setTags(tags);
+        SCMCheckoutCompletedEventImpl event = new SCMCheckoutCompletedEventImpl(bd);
         JSONObject o = event.createPayload();
 
         Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
@@ -273,8 +270,8 @@ public class CheckoutCompletedEventTest {
         Assert.assertTrue(Objects.equals(sortedTags[3], "tag2:value2"));
         Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
         Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 checkout finished on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("[Follow build #2 progress](http://build_url.com) (0.01 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
+        Assert.assertTrue(o.getString("text").contains("[Job ParentFullName/JobName build #2](http://build_url.com) checkout finished successfully on test-hostname-1 (0.01 secs)"));
+        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "success"));
         Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
     }
 }

@@ -2,12 +2,14 @@ package org.datadog.jenkins.plugins.datadog.model;
 
 import hudson.EnvVars;
 import hudson.model.*;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import hudson.triggers.SCMTrigger;
+import hudson.triggers.TimerTrigger;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,13 +42,23 @@ public class BuildData {
 
     private String result;
     private String hostname;
+    private String userId;
+    private Map<String, Set<String>> tags;
 
     private Long startTime;
     private Long endTime;
     private Long duration;
 
     public BuildData(Run run, TaskListener listener) throws IOException, InterruptedException {
-        EnvVars envVars = run.getEnvironment(listener);
+        if (run == null) {
+            return;
+        }
+        EnvVars envVars = null;
+        if(listener != null){
+            envVars = run.getEnvironment(listener);
+            setTags(DatadogUtilities.getBuildTags(run, listener));
+        }
+
         // Populate instance using environment variables.
         populateEnvVariables(envVars);
 
@@ -64,6 +76,8 @@ public class BuildData {
             setEndTime(endTimeInMs);
         }
 
+        // Set UserId
+        setUserId(getUserId(run));
         // Set Result
         setResult(run.getResult() == null ? null : run.getResult().toString());
         // Set Build Number
@@ -71,9 +85,15 @@ public class BuildData {
         // Set Hostname
         setHostname(DatadogUtilities.getHostname(envVars == null ? null : envVars.get("HOSTNAME")));
         // Set Job Name
-        String jobName = run.getParent().getFullName();
-        setJobName(jobName == null ?
-                "" : jobName.replaceAll("»", "/").replaceAll(" ", ""));
+        String jobName = null;
+        try {
+            jobName = run.getParent().getFullName();
+        } catch(NullPointerException e){
+            //noop
+        }
+        setJobName(jobName == null ? null : jobName.
+                replaceAll("»", "/").
+                replaceAll(" ", ""));
     }
 
     private void populateEnvVariables(EnvVars envVars){
@@ -108,38 +128,47 @@ public class BuildData {
     }
 
     /**
-     * Assembles a {@link JSONArray} from metadata available in the
-     * {@link JSONObject} builddata. Returns a {@link JSONArray} with the set
-     * of tags.
+     * Assembles a map of tags containing:
+     * - Build Tags
+     * - Global Job Tags set in Job Properties
+     * - Global Tag set in Jenkins Global configuration
      *
-     * @param extra - A list of tags.
-     * @return a JSONArray containing a specific subset of tags retrieved from a builds metadata.
+     * @return a map containing all tags values
      */
-    public JSONArray getAssembledTags(Map<String, Set<String>> extra) {
-        if(extra == null){
-            extra = new HashMap<>();
+    public Map<String, Set<String>> getTags() {
+        Map<String, Set<String>> mergedTags = new HashMap<>();
+        try {
+            mergedTags = DatadogUtilities.getTagsFromGlobalTags();
+        } catch(NullPointerException e){
+            //noop
         }
-        JSONArray tags = new JSONArray();
-        tags.add("job:" + getJobName("null"));
+        mergedTags = TagsUtil.merge(mergedTags, tags);
+        Map<String, Set<String>> additionalTags = new HashMap<>();
+        Set<String> jobValues = new HashSet<>();
+        jobValues.add(getJobName("unknown"));
+        additionalTags.put("job", jobValues);
         if (nodeName != null) {
-            tags.add("node:" + getNodeName("null"));
+            Set<String> nodeValues = new HashSet<>();
+            nodeValues.add(getNodeName("unknown"));
+            additionalTags.put("node", nodeValues);
         }
         if (result != null) {
-            tags.add("result:" + getResult("null"));
+            Set<String> resultValues = new HashSet<>();
+            resultValues.add(getResult("UNKNOWN"));
+            additionalTags.put("result", resultValues);
         }
-        if (branch != null && !extra.containsKey("branch")) {
-            tags.add("branch:" + getBranch("null"));
+        if (branch != null) {
+            Set<String> branchValues = new HashSet<>();
+            branchValues.add(getBranch("unknown"));
+            additionalTags.put("branch", branchValues);
         }
+        mergedTags = TagsUtil.merge(mergedTags, additionalTags);
 
-        //Add the extra tags here
-        for (String name : extra.keySet()) {
-            Set<String> values = extra.get(name);
-            for (String value : values){
-                tags.add(String.format("%s:%s", name, value));
-            }
-        }
+        return mergedTags;
+    }
 
-        return tags;
+    public void setTags(Map<String, Set<String>> tags) {
+        this.tags = tags;
     }
 
     private <A> A defaultIfNull(A value, A defaultValue) {
@@ -357,4 +386,55 @@ public class BuildData {
     public void setPromotedJobFullName(String promotedJobFullName) {
         this.promotedJobFullName = promotedJobFullName;
     }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    private String getUserId(Run run) {
+        if (promotedUserId != null){
+            return promotedUserId;
+        }
+        String userName;
+        for (CauseAction action : run.getActions(CauseAction.class)) {
+            if (action != null && action.getCauses() != null) {
+                for (Cause cause : action.getCauses()) {
+                    userName = getUserId(cause);
+                    if (userName != null) {
+                        return userName;
+                    }
+                }
+            }
+        }
+        if (run.getParent().getClass().getName().equals("hudson.maven.MavenModule")) {
+            return "maven";
+        }
+        return "anonymous";
+    }
+
+    private String getUserId(Cause cause){
+        if (cause instanceof TimerTrigger.TimerTriggerCause) {
+            return "timer";
+        } else if (cause instanceof SCMTrigger.SCMTriggerCause) {
+            return "scm";
+        } else if (cause instanceof Cause.UserIdCause) {
+            String userName = ((Cause.UserIdCause) cause).getUserId();
+            if (userName != null) {
+                return userName;
+            }
+        } else if (cause instanceof Cause.UpstreamCause) {
+            for (Cause upstreamCause : ((Cause.UpstreamCause) cause).getUpstreamCauses()) {
+                String username = getUserId(upstreamCause);
+                if (username != null) {
+                    return username;
+                }
+            }
+        }
+        return null;
+    }
+
 }

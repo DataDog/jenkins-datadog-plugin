@@ -3,36 +3,32 @@ package org.datadog.jenkins.plugins.datadog.events;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
-import java.util.Map;
-import java.util.Set;
+public abstract class AbstractDatadogBuildEvent implements DatadogEvent {
 
-public abstract class AbstractDatadogEvent implements DatadogEvent {
-
-    protected BuildData builddata;
-    protected Map<String, Set<String>> tags;
+    protected BuildData buildData;
 
     private static final float MINUTE = 60;
     private static final float HOUR = 3600;
 
-    public AbstractDatadogEvent(BuildData buildData, Map<String, Set<String>> buildTags) {
-        this.builddata = buildData;
-        this.tags = buildTags;
+    public AbstractDatadogBuildEvent(BuildData buildData) {
+        this.buildData = buildData;
     }
 
     public JSONObject createPayload() {
         JSONObject payload = new JSONObject();
-        payload.put("host", builddata.getHostname(null));
-        payload.put("aggregation_key", builddata.getJobName(null));
-        payload.put("date_happened", builddata.getEndTime(System.currentTimeMillis()) / 1000);
-        payload.put("tags", builddata.getAssembledTags(tags));
+        payload.put("host", buildData.getHostname(null));
+        payload.put("aggregation_key", buildData.getJobName("unknown"));
+        payload.put("date_happened", buildData.getEndTime(System.currentTimeMillis()) / 1000);
+        payload.put("tags", TagsUtil.convertTagsToJSONArray(buildData.getTags()));
         payload.put("source_type_name", "jenkins");
 
         return payload;
     }
 
     protected String getFormattedDuration() {
-        Long duration = builddata.getDuration(null);
+        Long duration = buildData.getDuration(null);
         if (duration != null) {
             String output = "(";
             String format = "%.2f";

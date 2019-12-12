@@ -2,11 +2,13 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
 import hudson.ExtensionList;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
+import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +38,14 @@ public class DatadogUtilities {
     }
 
     /**
+     * @param r - Current build.
+     * @return - The configured {@link DatadogJobProperty}. Null if not there
+     */
+    public static DatadogJobProperty retrieveProperty(@Nonnull Run r) {
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+    }
+
+    /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
     public static DatadogClient getDatadogClient() {
@@ -50,29 +60,25 @@ public class DatadogUtilities {
      * @param listener - Current listener
      * @return A {@link HashMap} containing the key,value pairs of tags if any.
      */
-    public static Map<String, Set<String>> buildExtraTags(Run run, TaskListener listener) {
+    public static Map<String, Set<String>> getBuildTags(Run run, @Nonnull TaskListener listener) {
         Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
         final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
-        final DatadogJobProperty property = DatadogJobProperty.retrieveProperty(run);
+        final DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
         final String workspaceTagFile = property.readTagFile(run);
         try {
             final EnvVars envVars = run.getEnvironment(listener);
-            if (!property.isTagFileEmpty()) {
-                if (workspaceTagFile != null) {
-                    result = merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
-                }
+            if (workspaceTagFile != null) {
+                result = TagsUtil.merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
             }
 
             String prop = property.getTagProperties();
-            if (!property.isTagPropertiesEmpty()) {
-                result = merge(result, computeTagListFromVarList(envVars, prop));
-            }
+            result = TagsUtil.merge(result, computeTagListFromVarList(envVars, prop));
         } catch (IOException | InterruptedException ex) {
             logger.severe(ex.getMessage());
         }
 
-        result = merge(result, getTagsFromGlobalJobTags(jobName, globalJobTags));
+        result = TagsUtil.merge(result, getTagsFromGlobalJobTags(jobName, globalJobTags));
         return result;
     }
 
@@ -119,20 +125,54 @@ public class DatadogUtilities {
             Matcher jobNameMatcher = jobNamePattern.matcher(jobName);
             if (jobNameMatcher.matches()) {
                 for (int i = 1; i < jobInfo.size(); i++) {
-                    String[] tagItem = jobInfo.get(i).split(":");
+                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":");
+                    if (tagItem.length == 2) {
+                        String tagName = tagItem[0];
+                        String tagValue = tagItem[1];
+                        // Fills regex group values from the regex job name to tag values
+                        // eg: (.*?)-job, owner:$1
+                        if (Character.toString(tagValue.charAt(0)).equals("$")) {
+                            try {
+                                tagValue = jobNameMatcher.group(Character.getNumericValue(tagValue.charAt(1)));
+                            } catch (IndexOutOfBoundsException e) {
+                                logger.fine(String.format(
+                                        "Specified a capture group that doesn't exist, not applying tag: %s Exception: %s",
+                                        Arrays.toString(tagItem), e));
+                            }
+                        }
+                        Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                        tagValues.add(tagValue.toLowerCase());
+                        tags.put(tagName, tagValues);
+                    }
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Getter function for the globalTags global configuration, containing
+     * a comma-separated list of tags that should be applied everywhere.
+     *
+     * @return a map containing the globalTags global configuration.
+     */
+    public static Map<String, Set<String>> getTagsFromGlobalTags() {
+        final String globalTags = getDatadogGlobalDescriptor().getGlobalTags();
+        Map<String, Set<String>> tags = new HashMap<>();
+        List<String> globalTagsLines = DatadogUtilities.linesToList(globalTags);
+
+        for (String globalTagsLine : globalTagsLines) {
+            List<String> tagList = DatadogUtilities.cstrToList(globalTagsLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+
+            for (int i = 0; i < tagList.size(); i++) {
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":");
+                if(tagItem.length == 2) {
                     String tagName = tagItem[0];
                     String tagValue = tagItem[1];
-                    // Fills regex group values from the regex job name to tag values
-                    // eg: (.*?)-job, owner:$1
-                    if (Character.toString(tagValue.charAt(0)).equals("$")) {
-                        try {
-                            tagValue = jobNameMatcher.group(Character.getNumericValue(tagValue.charAt(1)));
-                        } catch (IndexOutOfBoundsException e) {
-                            logger.fine(String.format(
-                                    "Specified a capture group that doesn't exist, not applying tag: %s Exception: %s",
-                                    Arrays.toString(tagItem), e));
-                        }
-                    }
                     Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
                     tagValues.add(tagValue.toLowerCase());
                     tags.put(tagName, tagValues);
@@ -189,7 +229,7 @@ public class DatadogUtilities {
      * @return a String List with all items transform with trim and lower case
      */
     public static List<String> cstrToList(final String str) {
-        return convertRegexStringtoList(str, ",");
+        return convertRegexStringToList(str, ",");
     }
 
     /**
@@ -199,7 +239,7 @@ public class DatadogUtilities {
      * @return a String List with all items
      */
     public static List<String> linesToList(final String str) {
-        return convertRegexStringtoList(str, "\\r?\\n");
+        return convertRegexStringToList(str, "\\r?\\n");
     }
 
     /**
@@ -209,7 +249,7 @@ public class DatadogUtilities {
      * @param regex - Regex to use to split the string list
      * @return a String List with all items
      */
-    private static List<String> convertRegexStringtoList(final String str, String regex) {
+    private static List<String> convertRegexStringToList(final String str, String regex) {
         List<String> result = new ArrayList<>();
         if (str != null && str.length() != 0) {
             for (String item : str.trim().split(regex)) {
@@ -221,40 +261,27 @@ public class DatadogUtilities {
         return result;
     }
 
-    public static Map<String, Set<String>> merge(Map<String, Set<String>> dest, Map<String, Set<String>> orig) {
-        if (dest == null) {
-            dest = new HashMap<>();
-        }
-        if (orig == null) {
-            orig = new HashMap<>();
-        }
-        for (String o: orig.keySet()){
-            Set<String> values = dest.containsKey(o) ? dest.get(o) : new HashSet<String>();
-            if (values == null) {
-                values = new HashSet<>();
-            }
-            if (orig.get(o) != null) {
-                values.addAll(orig.get(o));
-            }
-            dest.put(o, values);
-        }
-        return dest;
-    }
-
     public static Map<String, Set<String>> computeTagListFromVarList(EnvVars envVars, final String varList) {
         HashMap<String, Set<String>> result = new HashMap<>();
         List<String> rawTagList = linesToList(varList);
-        for (String tag : rawTagList) {
-            String[] expanded = envVars.expand(tag).split("=");
-            if (expanded.length > 1) {
-                String name = expanded[0];
-                String value = expanded[1];
-                Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
-                values.add(value);
-                result.put(name, values);
-                logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
-            } else {
-                logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+        for (String tagLine : rawTagList) {
+            List<String> tagList = DatadogUtilities.cstrToList(tagLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+            for (int i = 0; i < tagList.size(); i++) {
+                String tag = tagList.get(i).replaceAll(" ", "");
+                String[]expanded = envVars.expand(tag).split("=");
+                if (expanded.length > 1) {
+                    String name = expanded[0];
+                    String value = expanded[1];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(value);
+                    result.put(name, values);
+                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+                }
             }
         }
         return result;
@@ -390,4 +417,71 @@ public class DatadogUtilities {
         return m.find();
     }
 
+    public static Map<String, Set<String>> getComputerTags(Computer computer) {
+        Set<LabelAtom> labels = null;
+        try {
+            labels = computer.getNode().getAssignedLabels();
+        } catch (NullPointerException e){
+            logger.fine("Could not retrieve labels");
+        }
+        String nodeHostname = null;
+        try {
+            nodeHostname = computer.getHostName();
+        } catch (IOException | InterruptedException e) {
+            logger.fine("Could not retrieve hostname");
+        }
+        String nodeName = getNodeName(computer);
+        Map<String, Set<String>> result = new HashMap<>();
+        Set<String> nodeNameValues = new HashSet<>();
+        nodeNameValues.add(nodeName);
+        result.put("node_name", nodeNameValues);
+        if(nodeHostname != null){
+            Set<String> nodeHostnameValues = new HashSet<>();
+            nodeHostnameValues.add(nodeHostname);
+            result.put("node_hostname", nodeHostnameValues);
+        }
+        if(labels != null){
+            Set<String> nodeLabelsValues = new HashSet<>();
+            for (LabelAtom label: labels){
+                nodeLabelsValues.add(label.getName());
+            }
+            result.put("node_label", nodeLabelsValues);
+        }
+
+        return result;
+    }
+
+    public static String getNodeName(Computer computer){
+        if (computer instanceof Jenkins.MasterComputer) {
+            return "master";
+        } else {
+            return computer.getName();
+        }
+    }
+
+    public static String getUserId() {
+        User user = User.current();
+        if (user == null) {
+            return "anonymous";
+        } else {
+            return user.getId();
+        }
+    }
+
+    public static String getItemName(Item item) {
+        if (item == null) {
+            return "unknown";
+        }
+        return item.getName();
+    }
+
+    public static Long getRunStartTimeInMillis(Run run) {
+        // getStartTimeInMillis wrapper in order to mock it in unit tests
+        return run.getStartTimeInMillis();
+    }
+
+    public static long currentTimeMillis(){
+        // This method exist so we can mock System.currentTimeMillis in unit tests
+        return System.currentTimeMillis();
+    }
 }

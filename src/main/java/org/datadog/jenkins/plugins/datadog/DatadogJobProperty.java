@@ -3,15 +3,9 @@ package org.datadog.jenkins.plugins.datadog;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.*;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -19,28 +13,21 @@ import java.util.logging.Logger;
  * Create a job property for use with Datadog plugin.
  */
 public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
-    private static final Logger LOGGER = Logger.getLogger(DatadogBuildListener.class.getName());
+
+    private static final Logger LOGGER = Logger.getLogger(DatadogJobProperty.class.getName());
     private static final String DISPLAY_NAME = "Datadog Job Tagging";
 
-    private String tagProperties = null;
+    private boolean enableFile = false;
     private String tagFile = null;
-    private boolean emitOnCheckout = false;
-
-    /**
-     * @param r - Current build.
-     * @return - The configured {@link DatadogJobProperty}. Null if not there
-     */
-    @CheckForNull
-    public static DatadogJobProperty retrieveProperty(Run r) {
-        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
-    }
+    private boolean enableProperty = false;
+    private String tagProperties = null;
+    private boolean emitSCMEvents = true;
 
     /**
      * Runs when the {@link DatadogJobProperty} class is created.
      */
     @DataBoundConstructor
-    public DatadogJobProperty() {
-    }
+    public DatadogJobProperty() { }
 
     /**
      * Gets a list of tag properties to be submitted with the Build to Datadog.
@@ -48,7 +35,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
      * @return a String representing a list of tag properties.
      */
     public String getTagProperties() {
-        return tagProperties;
+        return isEnableProperty() ? tagProperties : null;
     }
 
     /**
@@ -65,11 +52,11 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
      * @return a String representing the relative path to a tagFile
      */
     public String getTagFile() {
-        return tagFile;
+        return isEnableFile() ? tagFile : null;
     }
 
     /**
-     * Sets the tagFile set in the job configration.
+     * Sets the tagFile set in the job configuration.
      *
      * @param tagFile - a String representing the relative path to a tagFile
      */
@@ -79,68 +66,58 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     }
 
     /**
-     * This method is called whenever the Job form is saved. We use the 'on' property
-     * to determine if the controls are selected.
+     * Gets the enableFile set in the job configuration.
      *
-     * @param req  - The request
-     * @param form - A JSONObject containing the submitted form data from the job configuration
-     * @return a {@link JobProperty} object representing the tagging added to the job
-     * @throws hudson.model.Descriptor.FormException if querying of form throws an error
+     * @return a boolean representing the enableFile checkbox
      */
-    @Override
-    public JobProperty<?> reconfigure(StaplerRequest req, @Nonnull JSONObject form)
-            throws Descriptor.FormException {
-
-        DatadogJobProperty prop = (DatadogJobProperty) super.reconfigure(req, form);
-        boolean isEnableFile = form.getBoolean("enableFile");
-        boolean isEnableTagProperties = form.getBoolean("enableProperty");
-
-        if (!isEnableFile) {
-            prop.tagFile = null;
-            prop.emitOnCheckout = false;
-        }
-        if (!isEnableTagProperties) {
-            prop.tagProperties = null;
-        }
-
-
-        return prop;
+    public boolean isEnableFile() {
+        return enableFile;
     }
 
     /**
-     * Checks if tagFile was set in the job configuration.
+     * Sets the enableFile set in the job configuration.
      *
-     * @return a boolean representing the state of the tagFile job configuration
-     */
-    public boolean isTagFileEmpty() {
-        return StringUtils.isBlank(this.tagFile);
-    }
-
-    /**
-     * Checks if the contents of the properties in the job tagging configuration section is empty
-     *
-     * @return a boolean representing the state of the properties job configuration
-     */
-    public boolean isTagPropertiesEmpty() {
-        return StringUtils.isBlank(this.tagProperties);
-    }
-
-    /**
-     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit the
-     * - an event after checkout.
-     */
-    public boolean isEmitOnCheckout() {
-        return emitOnCheckout;
-    }
-
-    /**
-     * Set the checkbox in the UI, used for Jenkins databbinding
-     *
-     * @param emitOnCheckout - The checkbox status (checked/unchecked)
+     * @param enableFile - a boolean representing the enableFile checkbox
      */
     @DataBoundSetter
-    public void setEmitOnCheckout(boolean emitOnCheckout) {
-        this.emitOnCheckout = emitOnCheckout;
+    public void setEnableFile(boolean enableFile) {
+        this.enableFile = enableFile;
+    }
+
+    /**
+     * Gets the enableProperty set in the job configuration.
+     *
+     * @return a boolean representing the enableProperty checkbox
+     */
+    public boolean isEnableProperty() {
+        return enableProperty;
+    }
+
+    /**
+     * Sets the enableProperty set in the job configuration.
+     *
+     * @param enableProperty - a boolean representing the enableProperty checkbox
+     */
+    @DataBoundSetter
+    public void setEnableProperty(boolean enableProperty) {
+        this.enableProperty = enableProperty;
+    }
+
+    /**
+     * @return - A {@link Boolean} indicating if the user has configured Datadog to emit SCM related events.
+     */
+    public boolean isEmitSCMEvents() {
+        return emitSCMEvents;
+    }
+
+    /**
+     * Set the checkbox in the UI, used for Jenkins data binding
+     *
+     * @param emitSCMEvents - The checkbox status (checked/unchecked)
+     */
+    @DataBoundSetter
+    public void setEmitSCMEvents(boolean emitSCMEvents) {
+        this.emitSCMEvents = emitSCMEvents;
     }
 
     /**
@@ -156,7 +133,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
             //We need to make sure that the workspace has been created. When 'onStarted' is
             //invoked, the workspace has not yet been established, so this check is necessary.
             FilePath workspace = r.getExecutor().getCurrentWorkspace();
-            if (workspace != null) {
+            if (workspace != null && getTagFile() != null) {
                 FilePath path = new FilePath(workspace, getTagFile());
                 if (path.exists()) {
                     s = path.readToString();
@@ -169,7 +146,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
     }
 
     @Extension
-    public static final class DatadogJobPropertyDescriptorImpl extends JobPropertyDescriptor {
+    public static final class DatadogJobPropertyDescriptor extends JobPropertyDescriptor {
 
         /**
          * Getter function for a human readable class display name.

@@ -5,12 +5,12 @@ import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 /**
- * This event should contain all the data to construct a build started event. With
- * the right message for Datadog.
+ * Class that implements the {@link DatadogEvent}. This event produces an event payload with a
+ * with a proper description for a completed checkout.
  */
-public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
+public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
 
-    public BuildStartedEventImpl(BuildData buildData) {
+    public SCMCheckoutCompletedEventImpl(BuildData buildData) {
         super(buildData);
     }
 
@@ -21,24 +21,23 @@ public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
         String buildNumber = buildData.getBuildNumber("unknown");
-        String userId = buildData.getUserId();
         String jobName = buildData.getJobName("unknown");
         String buildUrl = buildData.getBuildUrl("unknown");
         String hostname = buildData.getHostname("unknown");
 
         // Build title
-        // eg: `job_name build #1 started on hostname`
-        String title = jobName + " build #" + buildNumber + " started on " + hostname;
+        // eg: `job_name build #1 checkout finished hostname`
+        String title = jobName + " build #" + buildNumber + " checkout finished on " + hostname;
         payload.put("title", title);
 
         // Build Text
-        // eg: User <userId> started the [job <jobName> with build number #<buildNumber>] (1sec)"
-        String message = "%%% \nUser " + userId + " started the [job " + jobName + " build #" +
-                buildNumber + "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
+        // eg: `[Job <jobName> with build number #<buildNumber>] checkout successfully (1sec)`
+        String message = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+                ") checkout finished successfully on " + hostname + " " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "low");
-        payload.put("alert_type", "info");
+        payload.put("alert_type", "success");
 
         return payload;
     }

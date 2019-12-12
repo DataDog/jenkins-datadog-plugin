@@ -12,7 +12,7 @@ import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogJobProperty;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
-import org.datadog.jenkins.plugins.datadog.events.CheckoutCompletedEventImpl;
+import org.datadog.jenkins.plugins.datadog.events.SCMCheckoutCompletedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 import java.io.File;
@@ -46,14 +46,13 @@ public class DatadogSCMListener extends SCMListener {
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener,
                            File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
         try {
-
             // Process only if job is NOT in blacklist and is in whitelist
-            DatadogJobProperty prop = DatadogJobProperty.retrieveProperty(build);
+            DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
             if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
-                    && prop != null && prop.isEmitOnCheckout())) {
+                    && prop != null && prop.isEmitSCMEvents())) {
                 return;
             }
-            logger.fine("Checkout! in onCheckout()");
+            logger.fine("Start DatadogSCMListener#onCheckout");
 
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
@@ -67,17 +66,16 @@ public class DatadogSCMListener extends SCMListener {
                 return;
             }
 
-            // Get the list of global tags to apply
-            Map<String, Set<String>> extraTags = DatadogUtilities.buildExtraTags(build, listener);
-
             // Send event
-            DatadogEvent event = new CheckoutCompletedEventImpl(buildData, extraTags);
+            DatadogEvent event = new SCMCheckoutCompletedEventImpl(buildData);
             client.sendEvent(event.createPayload());
 
             // Submit counter
-            JSONArray tags = buildData.getAssembledTags(extraTags);
             String hostname = DatadogUtilities.getHostname("null");
+            Map<String, Set<String>> tags = buildData.getTags();
             client.incrementCounter("jenkins.scm.checkout", hostname, tags);
+
+            logger.fine("End DatadogSCMListener#onCheckout");
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());
         }

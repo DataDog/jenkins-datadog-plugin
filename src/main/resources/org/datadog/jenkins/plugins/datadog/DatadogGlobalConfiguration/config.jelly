@@ -13,29 +13,42 @@
     so it should be straightforward to find them.
   -->
   <f:section title="Datadog Plugin">
-    <f:entry title="API Key" field="apiKeyTitle">
+    <f:entry title="API Key" field="apiKeyEntry">
       <f:password field="apiKey" default="${apiKey}" />
     </f:entry>
     <f:validateButton title="${%Test Key}" progress="${%Testing...}" method="testConnection" with="apiKey" />
-    <f:entry title="Hostname" field="hostname">
+
+    <f:entry title="Hostname" field="hostnameEntry">
       <f:textbox field="hostname" default="${hostname}" />
     </f:entry>
     <f:validateButton title="${%Test Hostname}" progress="${%Testing...}" method="testHostname" with="hostname" />
-    <f:entry title="Blacklisted Jobs"
-             description="A comma-separated list of job names that should not monitored." >
+
+    <f:entry title="Blacklisted Jobs" description="A comma-separated list of job names that should not monitored." >
       <f:textarea field="blacklist" optional="true" default="${blacklist}" />
     </f:entry>
-    <f:entry title="Whitelisted Jobs"
-             description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
+
+    <f:entry title="Whitelisted Jobs" description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
       <f:textarea field="whitelist" optional="true" default="${whitelist}" />
     </f:entry>
-    <f:entry title="Global Job Tags" field="globalJobTags"
-              description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
+
+    <f:entry title="Global Tags" field="globalTagsEntry" description="A list of tags to apply globally to all submissions." >
+      <f:textarea field="globalTags" optional="true" default="${globalTags}" />
+    </f:entry>
+
+    <f:entry title="Global Job Tags" field="globalJobTagsEntry" description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
       <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
     </f:entry>
     <f:advanced>
-        <f:entry title="Target API URL" field="targetMetricURL" description="URL which the plugin reports to." >
+        <f:entry title="Target API URL" field="targetMetricURLEntry" description="URL which the plugin reports to." >
           <f:textbox field="targetMetricURL" default="${targetMetricURL}" />
+        </f:entry>
+
+        <f:entry title="Send Security audit events" description="Send security events like login, logout, login failure, configuration changes to jobs or changes to jenkins.">
+            <f:checkbox field="emitSecurityEvents" default="true"/>
+        </f:entry>
+
+        <f:entry title="Send System events" description="Send system events like Node changes of states.">
+            <f:checkbox field="emitSystemEvents" default="true"/>
         </f:entry>
     </f:advanced>
   </f:section>

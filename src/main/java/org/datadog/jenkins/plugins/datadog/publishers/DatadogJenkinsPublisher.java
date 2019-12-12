@@ -7,6 +7,8 @@ import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -34,7 +36,7 @@ public class DatadogJenkinsPublisher extends PeriodicWork {
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
             String hostname = DatadogUtilities.getHostname("null");
-
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
             long projectCount = 0;
             try {
                 projectCount = Jenkins.getInstance().getAllItems(Project.class).size();
@@ -47,8 +49,8 @@ public class DatadogJenkinsPublisher extends PeriodicWork {
             } catch (NullPointerException e){
                 logger.fine("Could not retrieve plugins");
             }
-            client.gauge("jenkins.project.count", projectCount, hostname, null);
-            client.gauge("jenkins.plugin.count", pluginCount, hostname, null);
+            client.gauge("jenkins.project.count", projectCount, hostname, tags);
+            client.gauge("jenkins.plugin.count", pluginCount, hostname, tags);
 
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());

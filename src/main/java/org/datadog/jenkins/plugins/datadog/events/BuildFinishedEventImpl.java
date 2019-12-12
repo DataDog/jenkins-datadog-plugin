@@ -5,42 +5,34 @@ import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-import java.util.Map;
-import java.util.Set;
-
 /**
  * Class that implements the {@link DatadogEvent}. This event produces an event payload
  * with a proper description for a finished build.
  */
-public class BuildFinishedEventImpl extends AbstractDatadogEvent {
+public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
-    public BuildFinishedEventImpl(BuildData buildData, Map<String, Set<String>> buildTags) {
-        super(buildData, buildTags);
+    public BuildFinishedEventImpl(BuildData buildData) {
+        super(buildData);
     }
 
     @Override
     public JSONObject createPayload() {
         JSONObject payload = super.createPayload();
-        String buildNumber = builddata.getBuildNumber("unknown");
-        String buildResult = builddata.getResult("UNKNOWN");
+        String buildNumber = buildData.getBuildNumber("unknown");
+        String buildResult = buildData.getResult("UNKNOWN");
+        String jobName = buildData.getJobName("unknown");
+        String buildUrl = buildData.getBuildUrl("unknown");
+        String hostname = buildData.getHostname("unknown");
 
         // Build title
-        String title = builddata.getJobName("unknown") +
-                " build #" +
-                buildNumber +
-                " " +
-                buildResult.toLowerCase() +
-                " on " +
-                builddata.getHostname("unknown");
+        // eg: `job_name build #1 success on hostname`
+        String title = jobName + " build #" + buildNumber + " " + buildResult.toLowerCase() + " on " + hostname;
         payload.put("title", title);
 
-        String message = "%%% \n [See results for build #" +
-                buildNumber +
-                "](" +
-                builddata.getBuildUrl("unknown") +
-                ") " +
-                getFormattedDuration() +
-                " \n %%%";
+        // Build Text
+        // eg: `[Job <jobName> with build number #<buildNumber>] finished with status <buildResult> (1sec)`
+        String message = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+                ") finished with status " + buildResult.toLowerCase() + " " + getFormattedDuration() + " \n%%%";
         payload.put("text", message);
 
         if (Result.SUCCESS.toString().equals(buildResult)) {
