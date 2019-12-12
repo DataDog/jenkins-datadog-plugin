@@ -41,7 +41,7 @@ public class DatadogUtilities {
      * @param r - Current build.
      * @return - The configured {@link DatadogJobProperty}. Null if not there
      */
-    public static DatadogJobProperty retrieveProperty(@Nonnull Run r) {
+    public static DatadogJobProperty getDatadogJobProperties(@Nonnull Run r) {
         return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
     }
 
@@ -64,8 +64,12 @@ public class DatadogUtilities {
         Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
         final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
-        final DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
-        final String workspaceTagFile = property.readTagFile(run);
+        final DatadogJobProperty property = DatadogUtilities.getDatadogJobProperties(run);
+        String workspaceTagFile = property.readTagFile(run);
+        // If job doesn't have a workspace Tag File set we check if one has been defined globally
+        if(workspaceTagFile == null){
+            workspaceTagFile = getDatadogGlobalDescriptor().getGlobalTagFile();
+        }
         try {
             final EnvVars envVars = run.getEnvironment(listener);
             if (workspaceTagFile != null) {
