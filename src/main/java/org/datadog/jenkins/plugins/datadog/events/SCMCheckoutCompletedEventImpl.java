@@ -37,7 +37,7 @@ public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
         payload.put("text", message);
 
         payload.put("priority", "low");
-        payload.put("alert_type", "info");
+        payload.put("alert_type", "success");
 
         return payload;
     }

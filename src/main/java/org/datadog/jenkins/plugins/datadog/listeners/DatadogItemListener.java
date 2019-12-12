@@ -54,7 +54,7 @@ public class DatadogItemListener extends ItemListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemCRUDEventImpl(item, action, tags);
@@ -83,7 +83,7 @@ public class DatadogItemListener extends ItemListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemCopiedEventImpl(src, item, tags);
@@ -112,7 +112,7 @@ public class DatadogItemListener extends ItemListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemLocationChangedEventImpl(item, oldFullName, newFullName, tags);

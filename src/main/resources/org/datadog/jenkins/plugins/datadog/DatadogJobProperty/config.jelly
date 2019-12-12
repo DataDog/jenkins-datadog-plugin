@@ -1,20 +1,21 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:section title="Datadog Tagging">
-        <f:optionalBlock name="enableFile" checked="${!instance.isTagFileEmpty()}" title="Add tags from file in workspace" inline="true">
-            <f:entry title="File" field="tagFile" description="Note: Tags set this way, in the workspace, won't appear in started events. To provide visibility of a jobs lifespan, this option will send an extra event, in addition to the started and completed events.">
-                <f:textbox/>
+        <f:optionalBlock field="enableFile" checked="${enableFile}" title="Add tags from file in workspace" inline="true">
+            <f:entry field="tagFileEntry" title="File"  description="Add tags from file in workspace">
+                <f:textbox field="tagFile" optional="true" default="${tagFile}"/>
             </f:entry>
         </f:optionalBlock>
-        <f:optionalBlock name="enableProperty" checked="${!instance.isTagPropertiesEmpty()}" title="Add tags from list of properties" inline="true">
-            <f:entry title="Properties" field="tagProperties">
-                <f:textarea/>
+
+        <f:optionalBlock field="enableProperty" checked="${enableProperty}" title="Add tags from list of properties" inline="true">
+            <f:entry field="tagPropertiesEntry" title="Properties"  description="Add tags from list of properties">
+                <f:textarea field="tagProperties" optional="true" default="${tagProperties}"/>
             </f:entry>
         </f:optionalBlock>
 
         <f:advanced>
-            <f:entry title="Send Source Control Management events" field="emitSCMEvents" description="Send an event after each successful checkout.">
-                <f:checkbox/>
+            <f:entry title="Send Source Control Management events" description="Send an event after each successful checkout.">
+                <f:checkbox field="emitSCMEvents" default="true"/>
             </f:entry>
         </f:advanced>
     </f:section>

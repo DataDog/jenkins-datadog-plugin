@@ -35,7 +35,7 @@ public class DatadogQueuePublisher extends PeriodicWork {
 
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             long size = 0;
             long buildable = queue.countBuildableItems();

@@ -33,11 +33,12 @@ public class UserAuthenticationEventImpl extends AbstractDatadogSimpleEvent {
         payload.put("text", message);
 
         if (LOGIN.equals(action) || LOGOUT.equals(action)){
-            payload.put("alert_type", "info");
+            payload.put("priority", "low");
+            payload.put("alert_type", "success");
         } else {
+            payload.put("priority", "normal");
             payload.put("alert_type", "error");
         }
-        payload.put("priority", "normal");
 
         return payload;
     }

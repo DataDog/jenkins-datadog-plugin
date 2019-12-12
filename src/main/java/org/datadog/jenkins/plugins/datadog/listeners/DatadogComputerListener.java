@@ -45,7 +45,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
-                    DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags(),
+                    DatadogUtilities.getTagsFromGlobalTags(),
                     DatadogUtilities.getComputerTags(computer));
 
             // Send event
@@ -76,7 +76,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
-                    DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags(),
+                    DatadogUtilities.getTagsFromGlobalTags(),
                     DatadogUtilities.getComputerTags(computer));
 
             // Send event
@@ -107,7 +107,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
-                    DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags(),
+                    DatadogUtilities.getTagsFromGlobalTags(),
                     DatadogUtilities.getComputerTags(computer));
 
             // Send event
@@ -138,7 +138,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
-                    DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags(),
+                    DatadogUtilities.getTagsFromGlobalTags(),
                     DatadogUtilities.getComputerTags(computer));
 
             // Send event
@@ -169,7 +169,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
-                    DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags(),
+                    DatadogUtilities.getTagsFromGlobalTags(),
                     DatadogUtilities.getComputerTags(computer));
 
             // Send event

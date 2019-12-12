@@ -32,7 +32,7 @@ public class ItemCRUDEventImpl extends AbstractDatadogSimpleEvent {
         String title = userId + " " + action.toLowerCase() + " the item " + itemName;
         payload.put("title", title);
 
-        String message = "%%% \nUser" + userId + " " + action.toLowerCase() + " the item " + itemName + " \n%%%";
+        String message = "%%% \nUser " + userId + " " + action.toLowerCase() + " the item " + itemName + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "normal");

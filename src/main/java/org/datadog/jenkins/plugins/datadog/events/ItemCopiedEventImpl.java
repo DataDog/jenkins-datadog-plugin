@@ -29,7 +29,7 @@ public class ItemCopiedEventImpl extends AbstractDatadogSimpleEvent {
         String title = userId + " copied the item " + itemName + " from " + srcName;
         payload.put("title", title);
 
-        String message = "%%% \nUser" + userId + " copied the item " + itemName + " from " + srcName + " \n%%%";
+        String message = "%%% \nUser " + userId + " copied the item " + itemName + " from " + srcName + " \n%%%";
         payload.put("text", message);
 
         payload.put("priority", "normal");

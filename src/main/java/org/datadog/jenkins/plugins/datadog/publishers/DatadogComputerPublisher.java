@@ -42,7 +42,7 @@ public class DatadogComputerPublisher extends PeriodicWork {
             long nodeOffline = 0;
             long nodeOnline = 0;
             Computer[] computers = Jenkins.getInstance().getComputers();
-            final Map<String, Set<String>> globalTags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            final Map<String, Set<String>> globalTags = DatadogUtilities.getTagsFromGlobalTags();
             for (Computer computer : computers) {
                 nodeCount++;
                 if (computer.isOffline()) {

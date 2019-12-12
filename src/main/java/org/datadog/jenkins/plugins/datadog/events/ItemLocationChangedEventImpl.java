@@ -29,7 +29,7 @@ public class ItemLocationChangedEventImpl extends AbstractDatadogSimpleEvent {
         String title = userId + " changed the location of the item " + itemName;
         payload.put("title", title);
 
-        String message = "%%% \nUser" + userId + " changed the location of the item " + itemName + " from " +
+        String message = "%%% \nUser " + userId + " changed the location of the item " + itemName + " from " +
                 oldFullName + " to " + newFullName + " \n%%%";
         payload.put("text", message);
 

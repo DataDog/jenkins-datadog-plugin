@@ -138,7 +138,7 @@ public class BuildData {
     public Map<String, Set<String>> getTags() {
         Map<String, Set<String>> mergedTags = new HashMap<>();
         try {
-            mergedTags = DatadogUtilities.getGlobalTags();
+            mergedTags = DatadogUtilities.getTagsFromGlobalTags();
         } catch(NullPointerException e){
             //noop
         }

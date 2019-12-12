@@ -151,8 +151,11 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
             this.setHostname(formData.getString("hostname"));
             this.setBlacklist(formData.getString("blacklist"));
             this.setWhitelist(formData.getString("whitelist"));
+            this.setGlobalTags(formData.getString("globalTags"));
             this.setGlobalJobTags(formData.getString("globalJobTags"));
             this.setTargetMetricURL(formData.getString("targetMetricURL"));
+            this.setEmitSecurityEvents(formData.getBoolean("emitSecurityEvents"));
+            this.setEmitSystemEvents(formData.getBoolean("emitSystemEvents"));
 
             //When form is saved...reinitialize the DatadogClient.
             DatadogHttpClient.getInstance(this.getTargetMetricURL(), this.getApiKey());
@@ -251,31 +254,10 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
      * Getter function for the globalTags global configuration, containing
      * a comma-separated list of tags that should be applied everywhere.
      *
-     * @return a map containing the globalTags global configuration.
+     * @return a String array containing the globalTags global configuration
      */
-    public Map<String, Set<String>> getGlobalTags() {
-        Map<String, Set<String>> tags = new HashMap<>();
-        List<String> globalTagsLines = DatadogUtilities.linesToList(globalTags);
-
-        for (String globalTagsLine : globalTagsLines) {
-            List<String> tagList = DatadogUtilities.cstrToList(globalTagsLine);
-            if (tagList.isEmpty()) {
-                continue;
-            }
-
-            for (int i = 1; i < tagList.size(); i++) {
-                String[] tagItem = tagList.get(i).split(":");
-                if(tagItem.length == 2) {
-                    String tagName = tagItem[0];
-                    String tagValue = tagItem[1];
-                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
-                    tagValues.add(tagValue.toLowerCase());
-                    tags.put(tagName, tagValues);
-                }
-            }
-        }
-
-        return tags;
+    public String getGlobalTags() {
+        return globalTags;
     }
 
     /**

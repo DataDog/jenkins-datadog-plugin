@@ -37,7 +37,7 @@ public class DatadogSecurityListener extends SecurityListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(details.getUsername(),
@@ -67,7 +67,7 @@ public class DatadogSecurityListener extends SecurityListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.ACCESS_DENIED, tags);
@@ -106,7 +106,7 @@ public class DatadogSecurityListener extends SecurityListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.LOGOUT, tags);

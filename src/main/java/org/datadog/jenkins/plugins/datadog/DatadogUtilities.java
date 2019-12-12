@@ -38,15 +38,19 @@ public class DatadogUtilities {
     }
 
     /**
+     * @param r - Current build.
+     * @return - The configured {@link DatadogJobProperty}. Null if not there
+     */
+    public static DatadogJobProperty retrieveProperty(@Nonnull Run r) {
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+    }
+
+    /**
      * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
     public static DatadogClient getDatadogClient() {
         DatadogGlobalConfiguration descriptor = getDatadogGlobalDescriptor();
         return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
-    }
-
-    public static Map<String,Set<String>> getGlobalTags() {
-        return getDatadogGlobalDescriptor().getGlobalTags();
     }
 
     /**
@@ -60,20 +64,16 @@ public class DatadogUtilities {
         Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
         final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
-        final DatadogJobProperty property = DatadogJobProperty.retrieveProperty(run);
+        final DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
         final String workspaceTagFile = property.readTagFile(run);
         try {
             final EnvVars envVars = run.getEnvironment(listener);
-            if (!property.isTagFileEmpty()) {
-                if (workspaceTagFile != null) {
-                    result = TagsUtil.merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
-                }
+            if (workspaceTagFile != null) {
+                result = TagsUtil.merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
             }
 
             String prop = property.getTagProperties();
-            if (!property.isTagPropertiesEmpty()) {
-                result = TagsUtil.merge(result, computeTagListFromVarList(envVars, prop));
-            }
+            result = TagsUtil.merge(result, computeTagListFromVarList(envVars, prop));
         } catch (IOException | InterruptedException ex) {
             logger.severe(ex.getMessage());
         }
@@ -125,7 +125,7 @@ public class DatadogUtilities {
             Matcher jobNameMatcher = jobNamePattern.matcher(jobName);
             if (jobNameMatcher.matches()) {
                 for (int i = 1; i < jobInfo.size(); i++) {
-                    String[] tagItem = jobInfo.get(i).split(":");
+                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":");
                     if (tagItem.length == 2) {
                         String tagName = tagItem[0];
                         String tagValue = tagItem[1];
@@ -144,6 +144,38 @@ public class DatadogUtilities {
                         tagValues.add(tagValue.toLowerCase());
                         tags.put(tagName, tagValues);
                     }
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Getter function for the globalTags global configuration, containing
+     * a comma-separated list of tags that should be applied everywhere.
+     *
+     * @return a map containing the globalTags global configuration.
+     */
+    public static Map<String, Set<String>> getTagsFromGlobalTags() {
+        final String globalTags = getDatadogGlobalDescriptor().getGlobalTags();
+        Map<String, Set<String>> tags = new HashMap<>();
+        List<String> globalTagsLines = DatadogUtilities.linesToList(globalTags);
+
+        for (String globalTagsLine : globalTagsLines) {
+            List<String> tagList = DatadogUtilities.cstrToList(globalTagsLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+
+            for (int i = 0; i < tagList.size(); i++) {
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":");
+                if(tagItem.length == 2) {
+                    String tagName = tagItem[0];
+                    String tagValue = tagItem[1];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(tagValue.toLowerCase());
+                    tags.put(tagName, tagValues);
                 }
             }
         }
@@ -232,17 +264,24 @@ public class DatadogUtilities {
     public static Map<String, Set<String>> computeTagListFromVarList(EnvVars envVars, final String varList) {
         HashMap<String, Set<String>> result = new HashMap<>();
         List<String> rawTagList = linesToList(varList);
-        for (String tag : rawTagList) {
-            String[] expanded = envVars.expand(tag).split("=");
-            if (expanded.length > 1) {
-                String name = expanded[0];
-                String value = expanded[1];
-                Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
-                values.add(value);
-                result.put(name, values);
-                logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
-            } else {
-                logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+        for (String tagLine : rawTagList) {
+            List<String> tagList = DatadogUtilities.cstrToList(tagLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+            for (int i = 0; i < tagList.size(); i++) {
+                String tag = tagList.get(i).replaceAll(" ", "");
+                String[]expanded = envVars.expand(tag).split("=");
+                if (expanded.length > 1) {
+                    String name = expanded[0];
+                    String value = expanded[1];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(value);
+                    result.put(name, values);
+                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
+                }
             }
         }
         return result;

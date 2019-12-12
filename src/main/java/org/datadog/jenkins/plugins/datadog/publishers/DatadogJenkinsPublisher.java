@@ -36,7 +36,7 @@ public class DatadogJenkinsPublisher extends PeriodicWork {
             // Get Datadog Client Instance
             DatadogClient client = DatadogUtilities.getDatadogClient();
             String hostname = DatadogUtilities.getHostname("null");
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
             long projectCount = 0;
             try {
                 projectCount = Jenkins.getInstance().getAllItems(Project.class).size();

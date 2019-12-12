@@ -32,8 +32,13 @@ public class ConfigChangedEventImpl extends AbstractDatadogSimpleEvent {
         String message = "%%% \nUser " + userId + " changed " + fileName + " \n%%%";
         payload.put("text", message);
 
-        payload.put("priority", "normal");
-        payload.put("alert_type", "warning");
+        if ("system".equals(userId.toLowerCase())){
+            payload.put("priority", "low");
+            payload.put("alert_type", "info");
+        }else{
+            payload.put("priority", "normal");
+            payload.put("alert_type", "warning");
+        }
 
         return payload;
     }

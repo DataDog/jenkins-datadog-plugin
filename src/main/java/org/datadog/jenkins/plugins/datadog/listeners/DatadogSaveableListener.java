@@ -36,7 +36,7 @@ public class DatadogSaveableListener  extends SaveableListener {
             DatadogClient client = DatadogUtilities.getDatadogClient();
 
             // Get the list of global tags to apply
-            Map<String, Set<String>> tags = DatadogUtilities.getDatadogGlobalDescriptor().getGlobalTags();
+            Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ConfigChangedEventImpl(config, file, tags);

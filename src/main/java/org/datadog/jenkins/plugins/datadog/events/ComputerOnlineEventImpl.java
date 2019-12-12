@@ -35,7 +35,7 @@ public class ComputerOnlineEventImpl extends AbstractDatadogSimpleEvent {
         payload.put("text", message);
 
         payload.put("priority", "low");
-        payload.put("alert_type", "normal");
+        payload.put("alert_type", "success");
 
         return payload;
     }
