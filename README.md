@@ -79,46 +79,46 @@ Currently, the plugin is tracking the following data.
 
 ### Metrics
 
-| Metric Name                          | Description                                                   | Default Tags                               |
-|--------------------------------------|---------------------------------------------------------------|--------------------------------------------|
-| jenkins.computer.launch_failure      | Rate of computer launch failures                              |                                            |
-| jenkins.computer.offline             | Rate of computer going offline                                |                                            |
-| jenkins.computer.online              | Rate of computer going online                                 |                                            |
-| jenkins.computer.temporarily_offline | Rate of computer going temporarily offline                    |                                            |
-| jenkins.computer.temporarily_online  | Rate of computer going temporarily online                     |                                            |
-| jenkins.config.changed               | Rate of configs being changed                                 |                                            |
-| jenkins.executor.count               | Executor count                                                | `node_hostname`, `node_name`, `node_label` |
-| jenkins.executor.free                | Number of unused executor                                     | `node_hostname`, `node_name`, `node_label` |
-| jenkins.executor.in_use              | Number of idle executor                                       | `node_hostname`, `node_name`, `node_label` |
-| jenkins.item.copied                  | Rate of items being copied                                    |                                            |
-| jenkins.item.created                 | Rate of items being created                                   |                                            |
-| jenkins.item.deleted                 | Rate of items being deleted                                   |                                            |
-| jenkins.item.location_changed        | Rate of items being moved                                     |                                            |
-| jenkins.item.updated                 | Rate of items being updated                                   |                                            |
-| jenkins.job.aborted                  | Rate of aborted jobs                                          | `branch`, `job`, `node`                    |
-| jenkins.job.completed                | Rate of completed jobs                                        | `branch`, `job`, `node`, `result`          |
-| jenkins.job.cycletime                | Build Cycle Time                                              | `branch`, `job`, `node`, `result`          |
-| jenkins.job.duration                 | Build duration (in seconds)                                   | `branch`, `job`, `node`, `result`          |
-| jenkins.job.feedbacktime             | Feedback time from code commit to job failure                 | `branch`, `job`, `node`, `result`          |
-| jenkins.job.leadtime                 | Build Lead Time                                               | `branch`, `job`, `node`, `result`          |
-| jenkins.job.mtbf                     | MTBF, time between last successful job and current failed job | `branch`, `job`, `node`, `result`          |
-| jenkins.job.mttr                     | MTTR: time between last failed job and current successful job | `branch`, `job`, `node`, `result`          |
-| jenkins.job.started                  | Rate of started jobs                                          | `branch`, `job`, `node`                    |
-| jenkins.job.waiting                  | Time spent waiting for job to run (in milliseconds)           | `branch`, `job`, `node`                    |
-| jenkins.node.count                   | Total number of node                                          |                                            |
-| jenkins.node.offline                 | Offline nodes count                                           |                                            | 
-| jenkins.node.online                  | Online nodes count                                            |                                            |
-| jenkins.plugin.count                 | Plugins count                                                 |                                            |
-| jenkins.project.count                | Project count                                                 |                                            |
-| jenkins.queue.size                   | Queue Size                                                    |                                            |
-| jenkins.queue.buildable              | Number of Buildable item in Queue                             |                                            |
-| jenkins.queue.pending                | Number of Pending item in Queue                               |                                            |
-| jenkins.queue.stuck                  | Number of Stuck item in Queue                                 |                                            |
-| jenkins.queue.blocked                | Number of Blocked item in Queue                               |                                            |
-| jenkins.scm.checkout                 | Rate of SCM checkouts                                         | `branch`, `job`, `node`                    |
-| jenkins.user.access_denied           | Rate of users failing to authenticate                         |                                            |
-| jenkins.user.authenticated           | Rate of users authenticating                                  |                                            |
-| jenkins.user.logout                  | Rate of users logging out                                     |                                            |
+| Metric Name                            | Description                                                    | Default Tags                               |
+|----------------------------------------|----------------------------------------------------------------|--------------------------------------------|
+| `jenkins.computer.launch_failure`      | Rate of computer launch failures.                              |                                            |
+| `jenkins.computer.offline`             | Rate of computer going offline.                                |                                            |
+| `jenkins.computer.online`              | Rate of computer going online.                                 |                                            |
+| `jenkins.computer.temporarily_offline` | Rate of computer going temporarily offline.                    |                                            |
+| `jenkins.computer.temporarily_online`  | Rate of computer going temporarily online.                     |                                            |
+| `jenkins.config.changed`               | Rate of configs being changed.                                 |                                            |
+| `jenkins.executor.count`               | Executor count.                                                | `node_hostname`, `node_name`, `node_label` |
+| `jenkins.executor.free`                | Number of unused executor.                                     | `node_hostname`, `node_name`, `node_label` |
+| `jenkins.executor.in_use`              | Number of idle executor.                                       | `node_hostname`, `node_name`, `node_label` |
+| `jenkins.item.copied`                  | Rate of items being copied.                                    |                                            |
+| `jenkins.item.created`                 | Rate of items being created.                                   |                                            |
+| `jenkins.item.deleted`                 | Rate of items being deleted.                                   |                                            |
+| `jenkins.item.location_changed`        | Rate of items being moved.                                     |                                            |
+| `jenkins.item.updated`                 | Rate of items being updated.                                   |                                            |
+| `jenkins.job.aborted`                  | Rate of aborted jobs.                                          | `branch`, `job`, `node`                    |
+| `jenkins.job.completed`                | Rate of completed jobs.                                        | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.cycletime`                | Build Cycle Time.                                              | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.duration`                 | Build duration (in seconds).                                   | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.feedbacktime`             | Feedback time from code commit to job failure.                 | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.leadtime`                 | Build Lead Time.                                               | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.mtbf`                     | MTBF, time between last successful job and current failed job. | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.mttr`                     | MTTR: time between last failed job and current successful job. | `branch`, `job`, `node`, `result`          |
+| `jenkins.job.started`                  | Rate of started jobs.                                          | `branch`, `job`, `node`                    |
+| `jenkins.job.waiting`                  | Time spent waiting for job to run (in milliseconds).           | `branch`, `job`, `node`                    |
+| `jenkins.node.count`                   | Total number of node.                                          |                                            |
+| `jenkins.node.offline`                 | Offline nodes count.                                           |                                            | 
+| `jenkins.node.online`                  | Online nodes count.                                            |                                            |
+| `jenkins.plugin.count`                 | Plugins count.                                                 |                                            |
+| `jenkins.project.count`                | Project count.                                                 |                                            |
+| `jenkins.queue.size`                   | Queue Size.                                                    |                                            |
+| `jenkins.queue.buildable`              | Number of Buildable item in Queue.                             |                                            |
+| `jenkins.queue.pending`                | Number of Pending item in Queue.                               |                                            |
+| `jenkins.queue.stuck`                  | Number of Stuck item in Queue.                                 |                                            |
+| `jenkins.queue.blocked`                | Number of Blocked item in Queue.                               |                                            |
+| `jenkins.scm.checkout`                 | Rate of SCM checkouts.                                         | `branch`, `job`, `node`                    |
+| `jenkins.user.access_denied`           | Rate of users failing to authenticate.                         |                                            |
+| `jenkins.user.authenticated`           | Rate of users authenticating.                                  |                                            |
+| `jenkins.user.logout`                  | Rate of users logging out.                                     |                                            |
 
 
 ### Service checks
