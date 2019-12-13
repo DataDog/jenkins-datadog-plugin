@@ -135,7 +135,7 @@ From the global configuration page, at `Manage Jenkins -> Configure System`.
 * Whitelisted Jobs
 	* A comma-separated list of regex to match job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
 * Global Tag File
-    * Comma separated list of tags from a default file in the job workspace (not compatible with Pipeline jobs).    	
+    * Path to the workspace file containing a comma separated list of tags (not compatible with Pipeline jobs).   	
 * Global Job Tags
 	* A regex to match a job, and a list of tags to apply to that job, all separated by a comma. 
 	  * tags can reference match groups in the regex using the $ symbol 

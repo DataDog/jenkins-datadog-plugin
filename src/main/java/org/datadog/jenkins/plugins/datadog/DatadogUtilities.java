@@ -180,7 +180,7 @@ public class DatadogUtilities {
             }
 
             for (int i = 0; i < tagList.size(); i++) {
-                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":". 2);
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":", 2);
                 if(tagItem.length == 2) {
                     String tagName = tagItem[0];
                     String tagValue = tagItem[1];
