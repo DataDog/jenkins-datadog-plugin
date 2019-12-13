@@ -2,7 +2,6 @@ package org.datadog.jenkins.plugins.datadog.clients;
 
 import com.timgroup.statsd.*;
 import hudson.util.Secret;
-import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
@@ -30,11 +29,11 @@ public class DogStatsDClient implements DatadogClient {
     private boolean isStopped = true;
 
     /**
-     * NOTE: Use DatadogUtilities.getDatadogClient method to instantiate the client in the Jenkins Plugin
+     * NOTE: Use ClientFactory.getClient method to instantiate the client in the Jenkins Plugin
      * This method is not recommended to be used because it misses some validations.
      * @param hostname - target hostname
      * @param port - target port
-     * @return an singleton instance of the DatadogClient.
+     * @return an singleton instance of the DogStatsDClient.
      */
     public static DatadogClient getInstance(String hostname, int port){
         if(enableValidations){

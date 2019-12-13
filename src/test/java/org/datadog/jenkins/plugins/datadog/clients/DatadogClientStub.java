@@ -1,7 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
 import hudson.util.Secret;
-import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.junit.Assert;

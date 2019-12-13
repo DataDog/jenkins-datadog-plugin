@@ -6,6 +6,7 @@ import hudson.model.listeners.RunListener;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.BuildAbortedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildFinishedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.BuildStartedEventImpl;
@@ -45,7 +46,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("End DatadogBuildListener#onStarted");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -103,7 +104,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("Start DatadogBuildListener#onCompleted");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -178,7 +179,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("Start DatadogBuildListener#onDeleted");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Collect Build Data
             BuildData buildData;

@@ -6,6 +6,7 @@ import hudson.model.PeriodicWork;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import java.util.Map;
@@ -35,7 +36,7 @@ public class DatadogComputerPublisher extends PeriodicWork {
             logger.fine("doRun called: Computing Node metrics");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
             String hostname = DatadogUtilities.getHostname("null");
 
             long nodeCount = 0;

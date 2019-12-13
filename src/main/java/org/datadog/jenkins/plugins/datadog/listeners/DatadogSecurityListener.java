@@ -6,6 +6,7 @@ import org.acegisecurity.userdetails.UserDetails;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.UserAuthenticationEventImpl;
 
 import javax.annotation.Nonnull;
@@ -34,7 +35,7 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#authenticated");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
@@ -64,7 +65,7 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#failedToAuthenticate");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
@@ -103,7 +104,7 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#loggedOut");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();

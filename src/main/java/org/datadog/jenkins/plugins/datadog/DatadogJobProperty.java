@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  */
 public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
 
-    private static final Logger LOGGER = Logger.getLogger(DatadogJobProperty.class.getName());
+    private static final Logger logger = Logger.getLogger(DatadogJobProperty.class.getName());
     private static final String DISPLAY_NAME = "Datadog Job Tagging";
 
     private boolean enableFile = false;
@@ -140,7 +140,7 @@ public class DatadogJobProperty<T extends Job<?, ?>> extends JobProperty<T> {
                 }
             }
         } catch (IOException | InterruptedException | NullPointerException ex) {
-            LOGGER.severe(ex.getMessage());
+            logger.severe(ex.getMessage());
         }
         return s;
     }

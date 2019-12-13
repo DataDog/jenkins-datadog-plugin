@@ -4,10 +4,10 @@ import hudson.Extension;
 import hudson.XmlFile;
 import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.ConfigChangedEventImpl;
 
 import java.util.Map;
@@ -33,7 +33,7 @@ public class DatadogSaveableListener  extends SaveableListener {
             logger.fine("Start DatadogSaveableListener#onChange");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();

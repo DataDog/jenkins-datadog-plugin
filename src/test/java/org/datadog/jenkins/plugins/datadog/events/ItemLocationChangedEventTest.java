@@ -17,7 +17,6 @@ import java.util.Set;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DatadogUtilities.class})
 public class ItemLocationChangedEventTest {

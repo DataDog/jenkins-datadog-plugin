@@ -1,12 +1,7 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-/**
- * Class that implements the {@link DatadogEvent}. This event produces an event payload with a
- * with a proper description for a completed checkout.
- */
 public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
 
     public SCMCheckoutCompletedEventImpl(BuildData buildData) {

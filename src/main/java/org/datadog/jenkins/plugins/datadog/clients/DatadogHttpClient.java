@@ -45,11 +45,11 @@ public class DatadogHttpClient implements DatadogClient {
     private Secret apiKey;
 
     /**
-     * NOTE: Use DatadogUtilities.getDatadogClient method to instantiate the client in the Jenkins Plugin
+     * NOTE: Use ClientFactory.getClient method to instantiate the client in the Jenkins Plugin
      * This method is not recommended to be used because it misses some validations.
      * @param url - target url
      * @param apiKey - Secret api Key
-     * @return an singleton instance of the DatadogClient.
+     * @return an singleton instance of the DatadogHttpClient.
      */
     public static DatadogClient getInstance(String url, Secret apiKey){
         if(enableValidations){
@@ -122,6 +122,8 @@ public class DatadogHttpClient implements DatadogClient {
             payload.put("date_happened", event.getDate());
             payload.put("tags", TagsUtil.convertTagsToJSONArray(event.getTags()));
             payload.put("source_type_name", "jenkins");
+            payload.put("priority", event.getPriority().name().toLowerCase());
+            payload.put("alert_type", event.getAlertType().name().toLowerCase());
             status = post(payload, EVENT);
         } catch (Exception e) {
             logger.severe(e.toString());

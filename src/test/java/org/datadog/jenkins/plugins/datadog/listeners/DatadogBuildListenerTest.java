@@ -4,6 +4,7 @@ import hudson.EnvVars;
 import hudson.model.*;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +21,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DatadogUtilities.class, Jenkins.class, Queue.class})
+@PrepareForTest({DatadogUtilities.class, Jenkins.class, Queue.class, ClientFactory.class})
 public class DatadogBuildListenerTest {
     @Mock
     private Jenkins jenkins;
@@ -38,13 +39,15 @@ public class DatadogBuildListenerTest {
 
         PowerMockito.mockStatic(Queue.class);
         PowerMockito.when(Queue.getInstance()).thenReturn(queue);
+
+        PowerMockito.mockStatic(ClientFactory.class);
     }
 
     @Test
     public void testOnCompletedWithNothing() throws Exception {
         DatadogClientStub client = new DatadogClientStub();
         DatadogBuildListener datadogBuildListener = new DatadogBuildListener();
-        when(DatadogUtilities.getDatadogClient()).thenReturn(client);
+        when(ClientFactory.getClient()).thenReturn(client);
         when(DatadogUtilities.getBuildTags(any(Run.class), any(TaskListener.class))).
                 thenReturn(new HashMap<String, Set<String>>());
         when(DatadogUtilities.getTagsFromGlobalTags()).thenReturn(new HashMap<String, Set<String>>());
@@ -72,7 +75,7 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnSuccessfulRun() throws Exception {
         DatadogClientStub client = new DatadogClientStub();
         DatadogBuildListener datadogBuildListener = new DatadogBuildListener();
-        when(DatadogUtilities.getDatadogClient()).thenReturn(client);
+        when(ClientFactory.getClient()).thenReturn(client);
         when(DatadogUtilities.getBuildTags(any(Run.class), any(TaskListener.class))).
                 thenReturn(new HashMap<String, Set<String>>());
         when(DatadogUtilities.getTagsFromGlobalTags()).thenReturn(new HashMap<String, Set<String>>());
@@ -173,7 +176,7 @@ public class DatadogBuildListenerTest {
     public void testOnCompletedOnFailedRun() throws Exception {
         DatadogClientStub client = new DatadogClientStub();
         DatadogBuildListener datadogBuildListener = new DatadogBuildListener();
-        when(DatadogUtilities.getDatadogClient()).thenReturn(client);
+        when(ClientFactory.getClient()).thenReturn(client);
 
         ItemGroup parent = mock(ItemGroup.class);
         when(parent.getFullName()).thenReturn("ParentFullName");
@@ -235,7 +238,7 @@ public class DatadogBuildListenerTest {
     public void testOnStarted() throws Exception {
         DatadogClientStub client = new DatadogClientStub();
         DatadogBuildListener datadogBuildListener = new DatadogBuildListener();
-        when(DatadogUtilities.getDatadogClient()).thenReturn(client);
+        when(ClientFactory.getClient()).thenReturn(client);
         when(DatadogUtilities.currentTimeMillis()).thenReturn(3000000L);
 
         ItemGroup parent = mock(ItemGroup.class);

@@ -1,13 +1,8 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.model.Result;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-/**
- * Class that implements the {@link DatadogEvent}. This event produces an event payload
- * with a proper description for a finished build.
- */
 public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
     public BuildFinishedEventImpl(BuildData buildData) {

@@ -5,6 +5,7 @@ import hudson.model.PeriodicWork;
 import hudson.model.Queue;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +35,7 @@ public class DatadogQueuePublisher extends PeriodicWork {
             logger.fine("doRun called: Computing queue metrics");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             long size = 0;
