@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog.util;
 
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.junit.Assert;
 import org.junit.Test;

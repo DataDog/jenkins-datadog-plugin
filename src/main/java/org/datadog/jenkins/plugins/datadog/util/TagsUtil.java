@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog.util;
 
-import javafx.collections.transformation.SortedList;
 import net.sf.json.JSONArray;
 
 import java.util.*;
