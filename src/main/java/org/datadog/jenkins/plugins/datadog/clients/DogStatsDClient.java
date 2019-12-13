@@ -32,13 +32,13 @@ public class DogStatsDClient implements DatadogClient {
     /**
      * NOTE: Use DatadogUtilities.getDatadogClient method to instantiate the client in the Jenkins Plugin
      * This method is not recommended to be used because it misses some validations.
-     * @param url - target url
+     * @param hostname - target hostname
      * @param port - target port
      * @return an singleton instance of the DatadogClient.
      */
-    public static DatadogClient getInstance(String url, Integer port){
+    public static DatadogClient getInstance(String hostname, int port){
         if(enableValidations){
-            if (url == null || url.isEmpty()) {
+            if (hostname == null || hostname.isEmpty()) {
                 logger.severe("Datadog Target URL is not set properly");
                 throw new RuntimeException("Datadog Target URL is not set properly");
             }
@@ -47,14 +47,14 @@ public class DogStatsDClient implements DatadogClient {
         if(instance == null){
             synchronized (DatadogHttpClient.class) {
                 if(instance == null){
-                    instance = new DogStatsDClient( url, port);
+                    instance = new DogStatsDClient( hostname, port);
                 }
             }
         }
 
         // We reset param just in case we change values
-        instance.setApiKey(null);
-        instance.setUrl(url);
+        instance.setHostname(hostname);
+        instance.setPort(port);
         return instance;
     }
 
