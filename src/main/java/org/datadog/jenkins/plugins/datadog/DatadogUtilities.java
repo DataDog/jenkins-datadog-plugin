@@ -129,7 +129,7 @@ public class DatadogUtilities {
             Matcher jobNameMatcher = jobNamePattern.matcher(jobName);
             if (jobNameMatcher.matches()) {
                 for (int i = 1; i < jobInfo.size(); i++) {
-                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":");
+                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":", 2);
                     if (tagItem.length == 2) {
                         String tagName = tagItem[0];
                         String tagValue = tagItem[1];
@@ -179,8 +179,8 @@ public class DatadogUtilities {
                 continue;
             }
 
-            for(int i = 0; i < tagList.size(); i++) {
-                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":");
+            for (int i = 0; i < tagList.size(); i++) {
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":". 2);
                 if(tagItem.length == 2) {
                     String tagName = tagItem[0];
                     String tagValue = tagItem[1];
@@ -289,7 +289,7 @@ public class DatadogUtilities {
             }
             for (int i = 0; i < tagList.size(); i++) {
                 String tag = tagList.get(i).replaceAll(" ", "");
-                String[] expanded = envVars.expand(tag).split("=");
+                String[] expanded = envVars.expand(tag).split("=", 2);
                 if (expanded.length == 2) {
                     String name = expanded[0];
                     String value = expanded[1];
