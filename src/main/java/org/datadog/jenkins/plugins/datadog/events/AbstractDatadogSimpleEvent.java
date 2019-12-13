@@ -9,7 +9,7 @@ public abstract class AbstractDatadogSimpleEvent extends AbstractDatadogEvent {
 
     public AbstractDatadogSimpleEvent(Map<String, Set<String>> tags) {
         setHost(DatadogUtilities.getHostname(null));
-        setDate(System.currentTimeMillis() / 1000);
+        setDate(DatadogUtilities.currentTimeMillis() / 1000);
         setTags(tags);
     }
 

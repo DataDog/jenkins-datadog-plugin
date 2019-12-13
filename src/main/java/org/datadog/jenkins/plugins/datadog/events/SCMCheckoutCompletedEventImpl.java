@@ -19,7 +19,7 @@ public class SCMCheckoutCompletedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build title
         // eg: `job_name build #1 checkout finished hostname`
-        String title = jobName + " build #" + buildNumber + " checkout finished on " + hostname;
+        String title = "Job " + jobName + " build #" + buildNumber + " checkout finished on " + hostname;
         setTitle(title);
 
         // Build Text

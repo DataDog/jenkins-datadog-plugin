@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 public abstract class AbstractDatadogBuildEvent extends AbstractDatadogEvent {
@@ -13,7 +14,7 @@ public abstract class AbstractDatadogBuildEvent extends AbstractDatadogEvent {
         this.buildData = buildData;
         setHost(buildData.getHostname(null));
         setAggregationKey(buildData.getJobName("unknown"));
-        setDate(buildData.getEndTime(System.currentTimeMillis()) / 1000);
+        setDate(buildData.getEndTime(DatadogUtilities.currentTimeMillis()) / 1000);
         setTags(buildData.getTags());
     }
 

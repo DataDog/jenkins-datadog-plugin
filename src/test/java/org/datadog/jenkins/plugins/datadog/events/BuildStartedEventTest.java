@@ -2,8 +2,6 @@ package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.EnvVars;
 import hudson.model.*;
-import net.sf.json.JSONException;
-import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
@@ -30,6 +28,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithNothingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -46,14 +45,14 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("unknown"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("unknown"));
-        Assert.assertTrue(event.getTitle().equals("unknown build #0 started on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job unknown build #0 started on unknown"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job unknown build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -62,6 +61,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithNothingSet_parentFullName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -78,14 +78,14 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/null"));
-        Assert.assertTrue(event.getTitle().equals("parentFullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/null build #0 started on unknown"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/null build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -94,6 +94,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithNothingSet_parentFullName_2() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -110,14 +111,14 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parent/FullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parent/FullName/null"));
-        Assert.assertTrue(event.getTitle().equals("parent/FullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parent/FullName/null build #0 started on unknown"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job parent/FullName/null build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -126,6 +127,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithNothingSet_jobName() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -142,14 +144,14 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
-        Assert.assertTrue(event.getTitle().equals("parentFullName/jobName build #0 started on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 started on unknown"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -158,6 +160,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithNothingSet_result() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -174,15 +177,15 @@ public class BuildStartedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 2);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().get("result").contains("FAILURE"));
-        Assert.assertTrue(event.getTitle().equals("parentFullName/jobName build #0 started on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 started on unknown"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -191,6 +194,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithEverythingSet() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(System.currentTimeMillis());
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -215,7 +219,7 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost().equals("test-hostname-1"));
         Assert.assertTrue(event.getDate() != 0);
@@ -224,7 +228,7 @@ public class BuildStartedEventTest {
         Assert.assertTrue(event.getTags().get("job").contains("ParentFullName/JobName"));
         Assert.assertTrue(event.getTags().get("node").contains("test-node"));
         Assert.assertTrue(event.getTags().get("branch").contains("test-branch"));
-        Assert.assertTrue(event.getTitle().equals("ParentFullName/JobName build #2 started on test-hostname-1"));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 started on test-hostname-1"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
@@ -233,6 +237,7 @@ public class BuildStartedEventTest {
     @Test
     public void testWithEverythingSet_envVarsAndTags() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
+        when(DatadogUtilities.currentTimeMillis()).thenReturn(System.currentTimeMillis());
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
 
         ItemGroup parent = mock(ItemGroup.class);
@@ -260,7 +265,7 @@ public class BuildStartedEventTest {
         tags = DatadogClientStub.addTagToMap(tags, "tag1", "value1");
         tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
         bd.setTags(tags);
-        BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
+        DatadogEvent event = new BuildStartedEventImpl(bd);
 
         Assert.assertTrue(event.getHost().equals("test-hostname-1"));
         Assert.assertTrue(event.getDate() != 0);
@@ -270,10 +275,9 @@ public class BuildStartedEventTest {
         Assert.assertTrue(event.getTags().get("tag1").contains("value1"));
         Assert.assertTrue(event.getTags().get("tag2").contains("value2"));
         Assert.assertTrue(event.getTags().get("branch").contains("csv-branch"));
-        Assert.assertTrue(event.getTitle().equals("ParentFullName/JobName build #2 started on test-hostname-1"));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 started on test-hostname-1"));
         Assert.assertTrue(event.getText().contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 }
-

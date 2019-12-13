@@ -12,8 +12,11 @@ public class UserAuthenticationEventImpl extends AbstractDatadogSimpleEvent {
     public UserAuthenticationEventImpl(String username, String action, Map<String, Set<String>> tags) {
         super(tags);
 
+        if(action == null){
+            action = "did something";
+        }
         setAggregationKey(username);
-        String title = username + " " + action.toLowerCase();
+        String title = "User " + username + " " + action.toLowerCase();
         setTitle(title);
 
         String text = "%%% \nUser " + username + " " + action.toLowerCase() +" \n%%%";

@@ -15,7 +15,7 @@ public class ItemLocationChangedEventImpl extends AbstractDatadogSimpleEvent {
         String userId = DatadogUtilities.getUserId();
         setAggregationKey(itemName);
 
-        String title = userId + " changed the location of the item " + itemName;
+        String title = "User " + userId + " changed the location of the item " + itemName;
         setTitle(title);
 
         String text = "%%% \nUser " + userId + " changed the location of the item " + itemName + " from " +

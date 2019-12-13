@@ -15,12 +15,12 @@ public class BuildAbortedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build title
         // eg: `job_name build #1 aborted on hostname`
-        String title = jobName + " build #" + number + " aborted on " + hostname;
+        String title = "Job " + jobName + " build #" + number + " aborted on " + hostname;
         setTitle(title);
 
         // Build Text
         // eg: `User <userId> aborted the [job with build number #<buildNumber>] (1sec)`
-        String text = "%%% \nUser " + userId + " aborted the [job " + jobName + " with build number #" + number +
+        String text = "%%% \nUser " + userId + " aborted the [job " + jobName + " build #" + number +
                 "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
         setText(text);
 

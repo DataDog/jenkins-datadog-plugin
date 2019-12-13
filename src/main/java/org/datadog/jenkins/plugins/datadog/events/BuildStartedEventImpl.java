@@ -19,7 +19,7 @@ public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build title
         // eg: `job_name build #1 started on hostname`
-        String title = jobName + " build #" + buildNumber + " started on " + hostname;
+        String title = "Job " + jobName + " build #" + buildNumber + " started on " + hostname;
         setTitle(title);
 
         // Build Text

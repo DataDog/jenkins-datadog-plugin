@@ -14,15 +14,18 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DatadogUtilities.class})
-public class BuildFinishedEventTest {
+public class BuildAbortedEventTest {
 
     @Test
     public void testWithNothingSet() throws IOException, InterruptedException {
@@ -44,17 +47,17 @@ public class BuildFinishedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() == 0l);
         Assert.assertTrue(event.getAggregationKey().equals("unknown"));
-        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("unknown"));
-        Assert.assertTrue(event.getTitle().equals("Job unknown build #0 unknown on unknown"));
-        Assert.assertTrue(event.getText().contains("[Job unknown build #0](unknown) finished with status unknown (0.00 secs)"));
-        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.WARNING));
-        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
+        Assert.assertTrue(event.getTitle().equals("Job unknown build #0 aborted on unknown"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job unknown build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -77,12 +80,17 @@ public class BuildFinishedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() == 0l);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/null"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/null build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/null build #0 aborted on unknown"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job parentFullName/null build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -105,12 +113,17 @@ public class BuildFinishedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parent/FullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parent/FullName/null"));
-        Assert.assertTrue(event.getTitle().equals("Job parent/FullName/null build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parent/FullName/null build #0 aborted on unknown"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job parent/FullName/null build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -133,18 +146,21 @@ public class BuildFinishedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
         Assert.assertTrue(event.getDate() == 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 aborted on unknown"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
-    public void testWithNothingSet_result_failure() throws IOException, InterruptedException {
+    public void testWithNothingSet_result() throws IOException, InterruptedException {
         PowerMockito.mockStatic(DatadogUtilities.class);
         when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
         when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
@@ -163,7 +179,7 @@ public class BuildFinishedEventTest {
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
         Assert.assertTrue(event.getHost() == null);
         Assert.assertTrue(event.getDate() == 0);
@@ -171,44 +187,10 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(event.getTags().size() == 2);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().get("result").contains("FAILURE"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 failure on unknown"));
-        Assert.assertTrue(event.getText().contains("[Job parentFullName/jobName build #0](unknown) finished with status failure (0.00 secs)"));
-        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.ERROR));
-        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
-    }
-
-    @Test
-    public void testWithNothingSet_result_unstable() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
-
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parentFullName");
-
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("jobName");
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.UNSTABLE);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
-
-        TaskListener listener = mock(TaskListener.class);
-        BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
-
-        Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() == 0);
-        Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
-        Assert.assertTrue(event.getTags().size() == 2);
-        Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
-        Assert.assertTrue(event.getTags().get("result").contains("UNSTABLE"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unstable on unknown"));
-        Assert.assertTrue(event.getText().contains("[Job parentFullName/jobName build #0](unknown) finished with status unstable (0.00 secs)"));
-        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.WARNING));
-        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 aborted on unknown"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -231,7 +213,6 @@ public class BuildFinishedEventTest {
         envVars.put("GIT_BRANCH", "test-branch");
 
         Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
         when(run.getDuration()).thenReturn(10L);
         when(run.getNumber()).thenReturn(2);
@@ -240,21 +221,19 @@ public class BuildFinishedEventTest {
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
         Assert.assertTrue(event.getHost().equals("test-hostname-1"));
-        Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
         Assert.assertTrue(event.getDate() != 0);
-        Assert.assertTrue(event.getTags().size() == 4);
+        Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
+        Assert.assertTrue(event.getTags().size() == 3);
         Assert.assertTrue(event.getTags().get("job").contains("ParentFullName/JobName"));
-        Assert.assertTrue(event.getTags().get("result").contains("SUCCESS"));
-        Assert.assertTrue(event.getTags().get("branch").contains("test-branch"));
         Assert.assertTrue(event.getTags().get("node").contains("test-node"));
-        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(event.getText().contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
-        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.SUCCESS));
+        Assert.assertTrue(event.getTags().get("branch").contains("test-branch"));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 aborted on test-hostname-1"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
-
     }
 
     @Test
@@ -276,7 +255,6 @@ public class BuildFinishedEventTest {
         envVars.put("SVN_BRANCH", "svn-branch");
 
         Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
         when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
         when(run.getDuration()).thenReturn(10L);
         when(run.getNumber()).thenReturn(2);
@@ -289,20 +267,19 @@ public class BuildFinishedEventTest {
         tags = DatadogClientStub.addTagToMap(tags, "tag1", "value1");
         tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
         bd.setTags(tags);
-        DatadogEvent event = new BuildFinishedEventImpl(bd);
+        DatadogEvent event = new BuildAbortedEventImpl(bd);
 
         Assert.assertTrue(event.getHost().equals("test-hostname-1"));
         Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
-        Assert.assertTrue(event.getTags().size() == 5);
+        Assert.assertTrue(event.getTags().size() == 4);
         Assert.assertTrue(event.getTags().get("job").contains("ParentFullName/JobName"));
-        Assert.assertTrue(event.getTags().get("result").contains("SUCCESS"));
         Assert.assertTrue(event.getTags().get("tag1").contains("value1"));
         Assert.assertTrue(event.getTags().get("tag2").contains("value2"));
         Assert.assertTrue(event.getTags().get("branch").contains("csv-branch"));
-        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on test-hostname-1"));
-        Assert.assertTrue(event.getText().contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
-        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.SUCCESS));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 aborted on test-hostname-1"));
+        Assert.assertTrue(event.getText(), event.getText().contains("User anonymous aborted the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 }

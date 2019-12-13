@@ -15,12 +15,12 @@ public class ComputerOfflineEventImpl extends AbstractDatadogSimpleEvent {
         String nodeName = DatadogUtilities.getNodeName(computer);
         setAggregationKey(nodeName);
 
-        String title = "Jenkins node " + nodeName + " is" + (isTemporarily? " temporarily ": " ") + "Offline";
+        String title = "Jenkins node " + nodeName + " is" + (isTemporarily? " temporarily ": " ") + "offline";
         setTitle(title);
 
         // TODO: Add more info about the case in the event in message.
         String text = "%%% \nJenkins node " + nodeName + " is" + (isTemporarily? " temporarily ": " ") +
-                "Offline \n%%%";
+                "offline \n%%%";
         setText(text);
 
         setPriority(Priority.NORMAL);

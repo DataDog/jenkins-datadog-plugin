@@ -12,17 +12,17 @@ public class ConfigChangedEventImpl extends AbstractDatadogSimpleEvent {
     public ConfigChangedEventImpl(Saveable config, XmlFile file, Map<String, Set<String>> tags) {
         super(tags);
 
-        String fileName = file.getFile().getName();
+        String fileName = DatadogUtilities.getFileName(file);
         String userId = DatadogUtilities.getUserId();
         setAggregationKey(fileName);
 
-        String title = userId + " changed file " + fileName;
+        String title = "User " + userId + " changed file " + fileName;
         setTitle(title);
 
-        String text = "%%% \nUser " + userId + " changed " + fileName + " \n%%%";
+        String text = "%%% \nUser " + userId + " changed file " + fileName + " \n%%%";
         setText(text);
 
-        if ("system".equals(userId.toLowerCase())){
+        if (userId != null && "system".equals(userId.toLowerCase())){
             setPriority(Priority.LOW);
             setAlertType(AlertType.INFO);
         }else{

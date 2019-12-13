@@ -2,6 +2,7 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
 import hudson.ExtensionList;
+import hudson.XmlFile;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
@@ -483,5 +484,13 @@ public class DatadogUtilities {
     public static long currentTimeMillis(){
         // This method exist so we can mock System.currentTimeMillis in unit tests
         return System.currentTimeMillis();
+    }
+
+    public static String getFileName(XmlFile file) {
+        if(file == null || file.getFile() == null || file.getFile().getName().isEmpty()){
+            return "unknown";
+        } else {
+            return file.getFile().getName();
+        }
     }
 }

@@ -21,7 +21,7 @@ public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build title
         // eg: `job_name build #1 success on hostname`
-        String title = jobName + " build #" + buildNumber + " " + buildResult.toLowerCase() + " on " + hostname;
+        String title = "Job " + jobName + " build #" + buildNumber + " " + buildResult.toLowerCase() + " on " + hostname;
         setTitle(title);
 
         // Build Text

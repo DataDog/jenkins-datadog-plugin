@@ -16,7 +16,7 @@ public class ItemCopiedEventImpl extends AbstractDatadogSimpleEvent {
         String userId = DatadogUtilities.getUserId();
         setAggregationKey(itemName);
 
-        String title = userId + " copied the item " + itemName + " from " + srcName;
+        String title = "User " + userId + " copied the item " + itemName + " from " + srcName;
         setTitle(title);
 
         String text = "%%% \nUser " + userId + " copied the item " + itemName + " from " + srcName + " \n%%%";
