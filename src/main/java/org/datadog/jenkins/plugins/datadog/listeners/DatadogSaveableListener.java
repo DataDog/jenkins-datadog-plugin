@@ -40,7 +40,7 @@ public class DatadogSaveableListener  extends SaveableListener {
 
             // Send event
             DatadogEvent event = new ConfigChangedEventImpl(config, file, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

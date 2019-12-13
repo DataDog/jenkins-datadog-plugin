@@ -1,7 +1,6 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.model.Result;
-import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
@@ -13,11 +12,7 @@ public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
     public BuildFinishedEventImpl(BuildData buildData) {
         super(buildData);
-    }
 
-    @Override
-    public JSONObject createPayload() {
-        JSONObject payload = super.createPayload();
         String buildNumber = buildData.getBuildNumber("unknown");
         String buildResult = buildData.getResult("UNKNOWN");
         String jobName = buildData.getJobName("unknown");
@@ -27,25 +22,23 @@ public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
         // Build title
         // eg: `job_name build #1 success on hostname`
         String title = jobName + " build #" + buildNumber + " " + buildResult.toLowerCase() + " on " + hostname;
-        payload.put("title", title);
+        setTitle(title);
 
         // Build Text
         // eg: `[Job <jobName> with build number #<buildNumber>] finished with status <buildResult> (1sec)`
-        String message = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+        String text = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
                 ") finished with status " + buildResult.toLowerCase() + " " + getFormattedDuration() + " \n%%%";
-        payload.put("text", message);
+        setText(text);
 
         if (Result.SUCCESS.toString().equals(buildResult)) {
-            payload.put("priority", "low");
-            payload.put("alert_type", "success");
+            setPriority(Priority.LOW);
+            setAlertType(AlertType.SUCCESS);
         } else if (Result.FAILURE.toString().equals(buildResult)) {
-            payload.put("priority", "normal");
-            payload.put("alert_type", "error");
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.ERROR);
         } else {
-            payload.put("priority", "normal");
-            payload.put("alert_type", "warning");
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.WARNING);
         }
-
-        return payload;
     }
 }

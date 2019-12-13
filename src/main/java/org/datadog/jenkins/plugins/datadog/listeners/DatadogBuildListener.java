@@ -58,7 +58,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
 
             // Send an event
             DatadogEvent event = new BuildStartedEventImpl(buildData);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Send an metric
             // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
@@ -116,7 +116,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
 
             // Send an event
             DatadogEvent event = new BuildFinishedEventImpl(buildData);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Send a metric
             Map<String, Set<String>> tags = buildData.getTags();
@@ -128,17 +128,17 @@ public class DatadogBuildListener extends RunListener<Run>  {
 
             // Send a service check
             String buildResult = buildData.getResult(Result.NOT_BUILT.toString());
-            int statusCode = DatadogClient.UNKNOWN;
+            DatadogClient.Status status = DatadogClient.Status.UNKNOWN;
             if (Result.SUCCESS.toString().equals(buildResult)) {
-                statusCode = DatadogClient.OK;
+                status = DatadogClient.Status.OK;
             } else if (Result.UNSTABLE.toString().equals(buildResult) ||
                     Result.ABORTED.toString().equals(buildResult) ||
                     Result.NOT_BUILT.toString().equals(buildResult)) {
-                statusCode = DatadogClient.WARNING;
+                status = DatadogClient.Status.WARNING;
             } else if (Result.FAILURE.toString().equals(buildResult)) {
-                statusCode = DatadogClient.CRITICAL;
+                status = DatadogClient.Status.CRITICAL;
             }
-            client.serviceCheck("jenkins.job.status", statusCode, hostname, tags);
+            client.serviceCheck("jenkins.job.status", status, hostname, tags);
 
             if (run.getResult() == Result.SUCCESS) {
                 long mttr = getMeanTimeToRecovery(run);
@@ -194,7 +194,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
 
             // Send an event
             DatadogEvent event = new BuildAbortedEventImpl(buildData);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             Map<String, Set<String>> tags = buildData.getTags();

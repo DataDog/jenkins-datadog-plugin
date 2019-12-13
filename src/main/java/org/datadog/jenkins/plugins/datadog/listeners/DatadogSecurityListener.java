@@ -42,7 +42,7 @@ public class DatadogSecurityListener extends SecurityListener {
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(details.getUsername(),
                     UserAuthenticationEventImpl.LOGIN, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -71,7 +71,7 @@ public class DatadogSecurityListener extends SecurityListener {
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.ACCESS_DENIED, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -110,7 +110,7 @@ public class DatadogSecurityListener extends SecurityListener {
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.LOGOUT, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

@@ -1,11 +1,8 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
-import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
-public abstract class AbstractDatadogBuildEvent implements DatadogEvent {
+public abstract class AbstractDatadogBuildEvent extends AbstractDatadogEvent {
 
     protected BuildData buildData;
 
@@ -14,17 +11,10 @@ public abstract class AbstractDatadogBuildEvent implements DatadogEvent {
 
     public AbstractDatadogBuildEvent(BuildData buildData) {
         this.buildData = buildData;
-    }
-
-    public JSONObject createPayload() {
-        JSONObject payload = new JSONObject();
-        payload.put("host", buildData.getHostname(null));
-        payload.put("aggregation_key", buildData.getJobName("unknown"));
-        payload.put("date_happened", buildData.getEndTime(System.currentTimeMillis()) / 1000);
-        payload.put("tags", TagsUtil.convertTagsToJSONArray(buildData.getTags()));
-        payload.put("source_type_name", "jenkins");
-
-        return payload;
+        setHost(buildData.getHostname(null));
+        setAggregationKey(buildData.getJobName("unknown"));
+        setDate(buildData.getEndTime(System.currentTimeMillis()) / 1000);
+        setTags(buildData.getTags());
     }
 
     protected String getFormattedDuration() {

@@ -3,6 +3,7 @@ package org.datadog.jenkins.plugins.datadog.clients;
 import hudson.util.Secret;
 import net.sf.json.JSONObject;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.junit.Assert;
 
 import javax.servlet.ServletException;
@@ -30,7 +31,17 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     @Override
-    public boolean sendEvent(JSONObject payload) {
+    public void setHostname(String hostname) {
+        // noop
+    }
+
+    @Override
+    public void setPort(int port) {
+        // noop
+    }
+
+    @Override
+    public boolean event(DatadogEvent event) {
         //NO-OP
         return true;
     }
@@ -60,8 +71,8 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     @Override
-    public boolean serviceCheck(String name, int code, String hostname, Map<String, Set<String>> tags) {
-        this.serviceChecks.add(new DatadogMetric(name, code, hostname, convertTagMapToList(tags)));
+    public boolean serviceCheck(String name, Status status, String hostname, Map<String, Set<String>> tags) {
+        this.serviceChecks.add(new DatadogMetric(name, status.toValue(), hostname, convertTagMapToList(tags)));
         return true;
     }
 

@@ -58,7 +58,7 @@ public class DatadogItemListener extends ItemListener {
 
             // Send event
             DatadogEvent event = new ItemCRUDEventImpl(item, action, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -87,7 +87,7 @@ public class DatadogItemListener extends ItemListener {
 
             // Send event
             DatadogEvent event = new ItemCopiedEventImpl(src, item, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -116,7 +116,7 @@ public class DatadogItemListener extends ItemListener {
 
             // Send event
             DatadogEvent event = new ItemLocationChangedEventImpl(item, oldFullName, newFullName, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

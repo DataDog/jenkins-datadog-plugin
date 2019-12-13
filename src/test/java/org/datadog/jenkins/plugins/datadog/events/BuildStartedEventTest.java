@@ -4,6 +4,7 @@ import hudson.EnvVars;
 import hudson.model.*;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
@@ -46,23 +47,16 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        try {
-            o.getString("host");
-            Assert.fail(o.getString("host"));
-        } catch (JSONException e) {
-            //continue
-        }
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "unknown"));
-        Assert.assertTrue(o.getLong("date_happened") != 0);
-        Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:unknown"));
-        Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "unknown build #0 started on unknown"));
-        Assert.assertTrue(o.getString("text").contains("User anonymous started the [job unknown build #0](unknown) (0.00 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
-        Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("unknown"));
+        Assert.assertTrue(event.getTags().size() == 1);
+        Assert.assertTrue(event.getTags().get("job").contains("unknown"));
+        Assert.assertTrue(event.getTitle().equals("unknown build #0 started on unknown"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job unknown build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -85,12 +79,16 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/null"));
-        Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:parentFullName/null"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("parentFullName/null"));
+        Assert.assertTrue(event.getTags().size() == 1);
+        Assert.assertTrue(event.getTags().get("job").contains("parentFullName/null"));
+        Assert.assertTrue(event.getTitle().equals("parentFullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/null build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -113,12 +111,16 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parent/FullName/null"));
-        Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:parent/FullName/null"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "parent/FullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("parent/FullName/null"));
+        Assert.assertTrue(event.getTags().size() == 1);
+        Assert.assertTrue(event.getTags().get("job").contains("parent/FullName/null"));
+        Assert.assertTrue(event.getTitle().equals("parent/FullName/null build #0 started on unknown"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job parent/FullName/null build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -141,12 +143,16 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "parentFullName/jobName"));
-        Assert.assertTrue(o.getJSONArray("tags").size() == 1);
-        Assert.assertTrue(Objects.equals(o.getJSONArray("tags").getString(0), "job:parentFullName/jobName"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 started on unknown"));
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
+        Assert.assertTrue(event.getTags().size() == 1);
+        Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
+        Assert.assertTrue(event.getTitle().equals("parentFullName/jobName build #0 started on unknown"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -169,15 +175,17 @@ public class BuildStartedEventTest {
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Object[] sortedTags = o.getJSONArray("tags").toArray();
-        Arrays.sort(sortedTags);
-        Assert.assertTrue(sortedTags.length == 2);
-        Assert.assertTrue(Objects.equals(sortedTags[0], "job:parentFullName/jobName"));
-        Assert.assertTrue(Objects.equals(sortedTags[1], "result:FAILURE"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "parentFullName/jobName build #0 started on unknown"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
+        Assert.assertTrue(event.getHost() == null);
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
+        Assert.assertTrue(event.getTags().size() == 2);
+        Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
+        Assert.assertTrue(event.getTags().get("result").contains("FAILURE"));
+        Assert.assertTrue(event.getTitle().equals("parentFullName/jobName build #0 started on unknown"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job parentFullName/jobName build #0](unknown) (0.00 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -208,22 +216,18 @@ public class BuildStartedEventTest {
 
         BuildData bd = new BuildData(run, listener);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
-        Assert.assertTrue(o.getLong("date_happened") != 0);
-        Object[] sortedTags = o.getJSONArray("tags").toArray();
-        Arrays.sort(sortedTags);
-        Assert.assertTrue(sortedTags.length == 3);
-        Assert.assertTrue(Objects.equals(sortedTags[0], "branch:test-branch"));
-        Assert.assertTrue(Objects.equals(sortedTags[1], "job:ParentFullName/JobName"));
-        Assert.assertTrue(Objects.equals(sortedTags[2], "node:test-node"));
-        Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
-        Assert.assertTrue(o.getString("text").contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
-        Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
+        Assert.assertTrue(event.getHost().equals("test-hostname-1"));
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
+        Assert.assertTrue(event.getTags().size() == 3);
+        Assert.assertTrue(event.getTags().get("job").contains("ParentFullName/JobName"));
+        Assert.assertTrue(event.getTags().get("node").contains("test-node"));
+        Assert.assertTrue(event.getTags().get("branch").contains("test-branch"));
+        Assert.assertTrue(event.getTitle().equals("ParentFullName/JobName build #2 started on test-hostname-1"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 
     @Test
@@ -257,23 +261,19 @@ public class BuildStartedEventTest {
         tags = DatadogClientStub.addTagToMap(tags, "tag2", "value2");
         bd.setTags(tags);
         BuildStartedEventImpl event = new BuildStartedEventImpl(bd);
-        JSONObject o = event.createPayload();
 
-        Assert.assertTrue(Objects.equals(o.getString("host"), "test-hostname-1"));
-        Assert.assertTrue(Objects.equals(o.getString("aggregation_key"), "ParentFullName/JobName"));
-        Assert.assertTrue(o.getLong("date_happened") != 0);
-        Object[] sortedTags = o.getJSONArray("tags").toArray();
-        Arrays.sort(sortedTags);
-        Assert.assertTrue(sortedTags.length == 4);
-        Assert.assertTrue(Objects.equals(sortedTags[0], "branch:csv-branch"));
-        Assert.assertTrue(Objects.equals(sortedTags[1], "job:ParentFullName/JobName"));
-        Assert.assertTrue(Objects.equals(sortedTags[2], "tag1:value1"));
-        Assert.assertTrue(Objects.equals(sortedTags[3], "tag2:value2"));
-        Assert.assertTrue(Objects.equals(o.getString("source_type_name"), "jenkins"));
-        Assert.assertTrue(Objects.equals(o.getString("title"), "ParentFullName/JobName build #2 started on test-hostname-1"));
-        Assert.assertTrue(o.getString("text"), o.getString("text").contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
-        Assert.assertTrue(Objects.equals(o.getString("alert_type"), "info"));
-        Assert.assertTrue(Objects.equals(o.getString("priority"), "low"));
+        Assert.assertTrue(event.getHost().equals("test-hostname-1"));
+        Assert.assertTrue(event.getDate() != 0);
+        Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
+        Assert.assertTrue(event.getTags().size() == 4);
+        Assert.assertTrue(event.getTags().get("job").contains("ParentFullName/JobName"));
+        Assert.assertTrue(event.getTags().get("tag1").contains("value1"));
+        Assert.assertTrue(event.getTags().get("tag2").contains("value2"));
+        Assert.assertTrue(event.getTags().get("branch").contains("csv-branch"));
+        Assert.assertTrue(event.getTitle().equals("ParentFullName/JobName build #2 started on test-hostname-1"));
+        Assert.assertTrue(event.getText().contains("User anonymous started the [job ParentFullName/JobName build #2](http://build_url.com) (0.01 secs)"));
+        Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.INFO));
+        Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
     }
 }
 

@@ -1,11 +1,9 @@
 package org.datadog.jenkins.plugins.datadog.util;
 
+import javafx.collections.transformation.SortedList;
 import net.sf.json.JSONArray;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class TagsUtil {
 
@@ -39,5 +37,21 @@ public class TagsUtil {
             }
         }
         return result;
+    }
+
+    public static String[] convertTagsToArray(Map<String, Set<String>> tags){
+        List<String> result = new ArrayList<>();
+        for (String name : tags.keySet()) {
+            Set<String> values = tags.get(name);
+            for (String value : values){
+                if("".equals(value)){
+                    result.add(name);
+                }else{
+                    result.add(String.format("%s:%s", name, value));
+                }
+            }
+        }
+        Collections.sort(result);
+        return result.toArray(new String[0]);
     }
 }

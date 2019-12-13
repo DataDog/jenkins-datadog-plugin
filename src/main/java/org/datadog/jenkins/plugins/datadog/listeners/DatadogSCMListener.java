@@ -68,7 +68,7 @@ public class DatadogSCMListener extends SCMListener {
 
             // Send event
             DatadogEvent event = new SCMCheckoutCompletedEventImpl(buildData);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

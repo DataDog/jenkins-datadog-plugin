@@ -50,7 +50,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOnlineEventImpl(computer, listener, tags, false);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -81,7 +81,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOfflineEventImpl(computer, cause, tags, false);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -112,7 +112,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOnlineEventImpl(computer, null, tags, true);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -143,7 +143,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOfflineEventImpl(computer, cause, tags, true);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -174,7 +174,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerLaunchFailedEventImpl(computer, taskListener, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
