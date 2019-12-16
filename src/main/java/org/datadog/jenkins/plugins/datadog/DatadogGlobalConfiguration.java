@@ -29,8 +29,8 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     private String reportWith = DatadogClient.ClientType.HTTP.name();
     private String targetApiURL = "https://api.datadoghq.com/api/";
     private Secret targetApiKey = null;
-    private String targetHost = null;
-    private Integer targetPort = null;
+    private String targetHost = "localhost";
+    private Integer targetPort = 8125;
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;

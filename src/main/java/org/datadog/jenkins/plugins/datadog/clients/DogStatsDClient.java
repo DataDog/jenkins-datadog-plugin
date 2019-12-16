@@ -52,8 +52,12 @@ public class DogStatsDClient implements DatadogClient {
         }
 
         // We reset param just in case we change values
-        instance.setHostname(hostname);
-        instance.setPort(port);
+        if(!hostname.equals(((DogStatsDClient)instance).getHostname()) ||
+                ((DogStatsDClient)instance).getPort() != port) {
+            instance.setHostname(hostname);
+            instance.setPort(port);
+            ((DogStatsDClient)instance).reinitialize(true);
+        }
         return instance;
     }
 
@@ -71,11 +75,11 @@ public class DogStatsDClient implements DatadogClient {
      */
     private boolean reinitialize(boolean force) {
         try {
-            if((!this.isStopped && this.statsd != null) || !force){
+            if(!this.isStopped && this.statsd != null && !force){
                 return true;
             }
             this.stop();
-            logger.severe("Re/Initialize DogStatsD Client");
+            logger.severe("Re/Initialize DogStatsD Client: hostname: " + this.hostname + " port = " + this.port);
             this.statsd = new NonBlockingStatsDClient(null, this.hostname, this.port);
             this.isStopped = false;
         } catch (Exception e){
