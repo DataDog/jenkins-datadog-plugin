@@ -153,12 +153,29 @@ From a job specific configuration page
 ## Installation
 _This plugin requires [Jenkins 1.580.1](http://updates.jenkins-ci.org/download/war/1.580.1/jenkins.war) or newer._
 
-This plugin can be installed from the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) (found at `Manage Jenkins -> Manage Plugins`) in your Jenkins installation. Select the `Available` tab, search for `Datadog` and look for `Datadog Plugin`. Once you find it, check the checkbox next to it, and install via your preference by using one of the two install buttons at the bottom of the screen. Check to see that the plugin has been successfully installed by searching for `Datadog Plugin` on the `Installed` tab. If the plugin has been successfully installed, then continue on to the configuration step, described below.
+This plugin can be installed from the [Update Center](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Howtoinstallplugins) 
+(found at `Manage Jenkins -> Manage Plugins`) in your Jenkins installation. 
+Select the `Available` tab, search for `Datadog` and look for `Datadog Plugin`. 
+Once you find it, check the checkbox next to it, and install via your preference by using one of the two install buttons at the bottom of the screen. 
+Check to see that the plugin has been successfully installed by searching for `Datadog Plugin` on the `Installed` tab. 
+If the plugin has been successfully installed, then continue on to the configuration step, described below.
 
 Note: If you do not see the version of `Datadog Plugin` that you are expecting, make sure you have run `Check Now` from the `Manage Jenkins -> Manage Plugins` screen.
 
 ## Configuration
-To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. Once there, scroll down to find the `Datadog Plugin` section. Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen. You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox. Once your configuration changes are finished, simply save them, and you're good to go!
+To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. 
+Once there, scroll down to find the `Datadog Plugin` section.
+
+You can use two ways to configure your plugin to submit data to Datadog.
+- By using a Datadog API Key.
+  - Click the "Use Datadog API URL and Key to report to Datadog" radio button (selected by default)
+  - Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account, and copy/paste it into the `API Key` textbox on the Jenkins configuration screen.
+  - You can test that your API Key works by pressing the `Test Key` button, on the Jenkins configuration screen, directly below the API Key textbox.
+- By using a DogStatsD server.
+  - Click the "Use a DogStatsD Server to report to Datadog" radio button.
+  - Specify both your DogStatD server hostname and port
+   
+Once your configuration changes are finished, simply save them, and you're good to go!
 
 Alternatively, you have the option of configuring your Datadog plugin using a Groovy script like this one:
 
@@ -168,9 +185,20 @@ import org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration
 
 def j = Jenkins.getInstance()
 def d = j.getDescriptor("org.datadog.jenkins.plugins.datadog.DatadogGlobalConfiguration")
-d.setHostname('https://your-jenkins.com:8080')
-d.setApiKey('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+
+// If you want to use Datadog API URL and Key to report to Datadog
+d.setReportWith('HTTP')
+d.setTargetApiURL('https://your-jenkins.com:8080')
+d.setTargetApiKey('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+
+// If you want to use a DogStatsD Server to report to Datadog
+// d.setReportWith('DSD')
+// d.setTargetHost('localhost')
+// d.setTargetPort(8125)
+
+// Other configs
 d.setBlacklist('job1,job2')
+// Save config
 d.save()
 ```
 

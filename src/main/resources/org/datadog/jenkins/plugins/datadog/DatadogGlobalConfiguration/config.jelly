@@ -28,7 +28,7 @@
 
     </f:radioBlock>
 
-    <f:radioBlock title="Use DogStatsD Server to report to Datadog" name="reportWith" value="DSD"
+    <f:radioBlock title="Use a DogStatsD Server to report to Datadog" name="reportWith" value="DSD"
         checked="${instance.reportWithEquals('DSD')}" inline="true">
 
         <f:entry title="DogStatsD Host" field="dsdHostEntry">
