@@ -47,7 +47,7 @@ public class DatadogSCMListener extends SCMListener {
                            File changelogFile, SCMRevisionState pollingBaseline) throws Exception {
         try {
             // Process only if job is NOT in blacklist and is in whitelist
-            DatadogJobProperty prop = DatadogUtilities.retrieveProperty(build);
+            DatadogJobProperty prop = DatadogUtilities.getDatadogJobProperties(build);
             if (!(DatadogUtilities.isJobTracked(build.getParent().getFullName())
                     && prop != null && prop.isEmitSCMEvents())) {
                 return;
