@@ -3,13 +3,13 @@
     <f:section title="Datadog Tagging">
 
         <f:optionalBlock field="enableFile" checked="${enableFile}" title="Add tags from file in workspace" inline="true">
-            <f:entry field="tagFileEntry" title="File"  description="Add tags from file in workspace">
+            <f:entry field="tagFileEntry" title="File" description="Add tags from file in workspace">
                 <f:textbox field="tagFile" optional="true" default="${tagFile}"/>
             </f:entry>
         </f:optionalBlock>
 
         <f:optionalBlock field="enableProperty" checked="${enableProperty}" title="Add tags from list of properties" inline="true">
-            <f:entry field="tagPropertiesEntry" title="Properties"  description="Add tags from list of properties">
+            <f:entry field="tagPropertiesEntry" title="Properties" description="Add tags from list of properties">
                 <f:textarea field="tagProperties" optional="true" default="${tagProperties}"/>
             </f:entry>
         </f:optionalBlock>

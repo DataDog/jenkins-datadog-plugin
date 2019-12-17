@@ -6,7 +6,6 @@ import hudson.XmlFile;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
-import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.annotation.Nonnull;
@@ -42,7 +41,7 @@ public class DatadogUtilities {
      * @param r - Current build.
      * @return - The configured {@link DatadogJobProperty}. Null if not there
      */
-    public static DatadogJobProperty retrieveProperty(@Nonnull Run r) {
+    public static DatadogJobProperty getDatadogJobProperties(@Nonnull Run r) {
         return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
     }
 
@@ -57,8 +56,12 @@ public class DatadogUtilities {
         Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
         final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
-        final DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
-        final String workspaceTagFile = property.readTagFile(run);
+        final DatadogJobProperty property = DatadogUtilities.getDatadogJobProperties(run);
+        String workspaceTagFile = property.readTagFile(run);
+        // If job doesn't have a workspace Tag File set we check if one has been defined globally
+        if(workspaceTagFile == null){
+            workspaceTagFile = getDatadogGlobalDescriptor().getGlobalTagFile();
+        }
         try {
             final EnvVars envVars = run.getEnvironment(listener);
             if (workspaceTagFile != null) {
@@ -118,7 +121,7 @@ public class DatadogUtilities {
             Matcher jobNameMatcher = jobNamePattern.matcher(jobName);
             if (jobNameMatcher.matches()) {
                 for (int i = 1; i < jobInfo.size(); i++) {
-                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":");
+                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":", 2);
                     if (tagItem.length == 2) {
                         String tagName = tagItem[0];
                         String tagValue = tagItem[1];
@@ -136,6 +139,13 @@ public class DatadogUtilities {
                         Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
                         tagValues.add(tagValue.toLowerCase());
                         tags.put(tagName, tagValues);
+                    } else if(tagItem.length == 1) {
+                        String tagName = tagItem[0];
+                        Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                        tagValues.add(""); // no values
+                        tags.put(tagName, tagValues);
+                    } else {
+                        logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                     }
                 }
             }
@@ -162,13 +172,20 @@ public class DatadogUtilities {
             }
 
             for (int i = 0; i < tagList.size(); i++) {
-                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":");
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":", 2);
                 if(tagItem.length == 2) {
                     String tagName = tagItem[0];
                     String tagValue = tagItem[1];
                     Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
                     tagValues.add(tagValue.toLowerCase());
                     tags.put(tagName, tagValues);
+                } else if(tagItem.length == 1) {
+                    String tagName = tagItem[0];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(""); // no values
+                    tags.put(tagName, tagValues);
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                 }
             }
         }
@@ -264,14 +281,19 @@ public class DatadogUtilities {
             }
             for (int i = 0; i < tagList.size(); i++) {
                 String tag = tagList.get(i).replaceAll(" ", "");
-                String[]expanded = envVars.expand(tag).split("=");
-                if (expanded.length > 1) {
+                String[] expanded = envVars.expand(tag).split("=", 2);
+                if (expanded.length == 2) {
                     String name = expanded[0];
                     String value = expanded[1];
                     Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
                     values.add(value);
                     result.put(name, values);
-                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+                    logger.fine(String.format("Emitted tag %s:%s", name, value));
+                } else if(expanded.length == 1) {
+                    String name = expanded[0];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(""); // no values
+                    result.put(name, values);
                 } else {
                     logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
                 }

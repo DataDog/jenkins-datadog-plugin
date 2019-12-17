@@ -134,6 +134,8 @@ From the global configuration page, at `Manage Jenkins -> Configure System`.
 	* A comma-separated list of regex to match job names that should not be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
 * Whitelisted Jobs
 	* A comma-separated list of regex to match job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+* Global Tag File
+    * Path to the workspace file containing a comma separated list of tags (not compatible with Pipeline jobs).   	
 * Global Job Tags
 	* A regex to match a job, and a list of tags to apply to that job, all separated by a comma. 
 	  * tags can reference match groups in the regex using the $ symbol 
@@ -145,8 +147,8 @@ From the global configuration page, at `Manage Jenkins -> Configure System`.
 
 From a job specific configuration page
 * Custom tags
-	* From a file in the job workspace (not compatible with Pipeline jobs).
-	* As text properties directly from the configuration page.
+	* From a `File` in the job workspace (not compatible with Pipeline jobs). If set, it will override the `Global Job Tags` configuration. 
+	* As text `Properties` directly from the configuration page.
 * Send Source Control Management events	
     * Enabled by default, it submits `Source Control Management Events Type` of events and metrics.
 

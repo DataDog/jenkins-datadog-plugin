@@ -61,6 +61,10 @@
           <f:textarea field="whitelist" optional="true" default="${whitelist}" />
         </f:entry>
 
+        <f:entry field="globalTagFileEntry" title="Global Tag File" description="Add tags from default file in workspace">
+            <f:textbox field="globalTagFile" optional="true" default="${globalTagFile}"/>
+        </f:entry>
+
         <f:entry title="Global Tags" field="globalTagsEntry" description="A list of tags to apply globally to all submissions." >
           <f:textarea field="globalTags" optional="true" default="${globalTags}" />
         </f:entry>

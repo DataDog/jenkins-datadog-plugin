@@ -34,6 +34,7 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
+    private String globalTagFile = null;
     private String globalTags = null;
     private String globalJobTags = null;
     private boolean emitSecurityEvents = true;
@@ -159,6 +160,7 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
             this.setHostname(formData.getString("hostname"));
             this.setBlacklist(formData.getString("blacklist"));
             this.setWhitelist(formData.getString("whitelist"));
+            this.setGlobalTagFile(formData.getString("globalTagFile"));
             this.setGlobalTags(formData.getString("globalTags"));
             this.setGlobalJobTags(formData.getString("globalJobTags"));
             this.setEmitSecurityEvents(formData.getBoolean("emitSecurityEvents"));
@@ -336,6 +338,26 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     @DataBoundSetter
     public void setWhitelist(final String jobs) {
         this.whitelist = jobs;
+    }
+
+    /**
+     * Gets the globalTagFile set in the job configuration.
+     *
+     * @return a String representing the relative path to a globalTagFile
+     */
+    public String getGlobalTagFile() {
+        return globalTagFile;
+    }
+
+    /**
+     * Setter function for the globalFile global configuration,
+     * accepting a comma-separated string of tags.
+     *
+     * @param globalTagFile - a comma-separated list of tags.
+     */
+    @DataBoundSetter
+    public void setGlobalTagFile(String globalTagFile) {
+        this.globalTagFile = globalTagFile;
     }
 
     /**
