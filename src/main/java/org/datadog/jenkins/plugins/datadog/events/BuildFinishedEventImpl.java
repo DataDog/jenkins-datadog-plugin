@@ -1,59 +1,39 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.model.Result;
-import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-import java.util.Map;
+public class BuildFinishedEventImpl extends AbstractDatadogBuildEvent {
 
-/**
- * Class that implements the {@link DatadogEvent}. This event produces an event payload
- * with a proper description for a finished build.
- */
-public class BuildFinishedEventImpl extends AbstractDatadogEvent {
+    public BuildFinishedEventImpl(BuildData buildData) {
+        super(buildData);
 
-    public BuildFinishedEventImpl(BuildData buildData, Map<String, String> buildTags) {
-        super(buildData, buildTags);
-    }
-
-    @Override
-    public JSONObject createPayload() {
-        JSONObject payload = super.createPayload();
-        String number = builddata.getNumber(null) == null ?
-                "unknown" : builddata.getNumber(null).toString();
-        String buildResult = builddata.getResult("UNKNOWN");
+        String buildNumber = buildData.getBuildNumber("unknown");
+        String buildResult = buildData.getResult("UNKNOWN");
+        String jobName = buildData.getJobName("unknown");
+        String buildUrl = buildData.getBuildUrl("unknown");
+        String hostname = buildData.getHostname("unknown");
 
         // Build title
-        String title = builddata.getJob("unknown") +
-                " build #" +
-                number +
-                " " +
-                buildResult.toLowerCase() +
-                " on " +
-                builddata.getHostname("unknown");
-        payload.put("title", title);
+        // eg: `job_name build #1 success on hostname`
+        String title = "Job " + jobName + " build #" + buildNumber + " " + buildResult.toLowerCase() + " on " + hostname;
+        setTitle(title);
 
-        String message = "%%% \n [See results for build #" +
-                number +
-                "](" +
-                builddata.getBuildUrl("unknown") +
-                ") " +
-                getDuration() +
-                " \n %%%";
-        payload.put("text", message);
+        // Build Text
+        // eg: `[Job <jobName> with build number #<buildNumber>] finished with status <buildResult> (1sec)`
+        String text = "%%% \n[Job " + jobName + " build #" + buildNumber + "](" + buildUrl +
+                ") finished with status " + buildResult.toLowerCase() + " " + getFormattedDuration() + " \n%%%";
+        setText(text);
 
         if (Result.SUCCESS.toString().equals(buildResult)) {
-            payload.put("priority", "low");
-            payload.put("alert_type", "success");
+            setPriority(Priority.LOW);
+            setAlertType(AlertType.SUCCESS);
         } else if (Result.FAILURE.toString().equals(buildResult)) {
-            payload.put("priority", "normal");
-            payload.put("alert_type", "error");
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.ERROR);
         } else {
-            payload.put("priority", "normal");
-            payload.put("alert_type", "warning");
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.WARNING);
         }
-
-        return payload;
     }
 }

@@ -1,11 +1,13 @@
 package org.datadog.jenkins.plugins.datadog;
 
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.util.Secret;
+import hudson.EnvVars;
+import hudson.ExtensionList;
+import hudson.XmlFile;
+import hudson.model.*;
+import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,24 +27,22 @@ public class DatadogUtilities {
     private static final Integer MAX_HOSTNAME_LEN = 255;
 
     /**
-     * @return - The descriptor for the Datadog plugin. In this case the global
-     * - configuration.
+     * @return - The descriptor for the Datadog plugin. In this case the global configuration.
      */
-    public static DatadogBuildListener.DescriptorImpl getDatadogDescriptor() {
+    public static DatadogGlobalConfiguration getDatadogGlobalDescriptor() {
         Jenkins jenkins = Jenkins.getInstance();
         if (jenkins == null) {
             return null;
         }
-        return (DatadogBuildListener.DescriptorImpl) jenkins.getDescriptorOrDie(DatadogBuildListener.class);
+        return ExtensionList.lookup(DatadogGlobalConfiguration.class).get(DatadogGlobalConfiguration.class);
     }
 
     /**
-     * Check if apiKey is null
-     *
-     * @return boolean - apiKey is null
+     * @param r - Current build.
+     * @return - The configured {@link DatadogJobProperty}. Null if not there
      */
-    public static boolean isApiKeyNull() {
-        return Secret.toString(DatadogUtilities.getDatadogDescriptor().getApiKey()).isEmpty();
+    public static DatadogJobProperty getDatadogJobProperties(@Nonnull Run r) {
+        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
     }
 
     /**
@@ -52,16 +52,30 @@ public class DatadogUtilities {
      * @param listener - Current listener
      * @return A {@link HashMap} containing the key,value pairs of tags if any.
      */
-    public static HashMap<String, String> buildExtraTags(Run run, TaskListener listener) {
+    public static Map<String, Set<String>> getBuildTags(Run run, @Nonnull TaskListener listener) {
+        Map<String, Set<String>> result = new HashMap<>();
         String jobName = run.getParent().getFullName();
-        HashMap<String, String> extraTags = new HashMap<>();
+        final String globalJobTags = getDatadogGlobalDescriptor().getGlobalJobTags();
+        final DatadogJobProperty property = DatadogUtilities.getDatadogJobProperties(run);
+        String workspaceTagFile = property.readTagFile(run);
+        // If job doesn't have a workspace Tag File set we check if one has been defined globally
+        if(workspaceTagFile == null){
+            workspaceTagFile = getDatadogGlobalDescriptor().getGlobalTagFile();
+        }
         try {
-            extraTags = DatadogUtilities.parseTagList(run, listener);
+            final EnvVars envVars = run.getEnvironment(listener);
+            if (workspaceTagFile != null) {
+                result = TagsUtil.merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
+            }
+
+            String prop = property.getTagProperties();
+            result = TagsUtil.merge(result, computeTagListFromVarList(envVars, prop));
         } catch (IOException | InterruptedException ex) {
             logger.severe(ex.getMessage());
         }
-        extraTags.putAll(DatadogUtilities.getRegexJobTags(jobName));
-        return extraTags;
+
+        result = TagsUtil.merge(result, getTagsFromGlobalJobTags(jobName, globalJobTags));
+        return result;
     }
 
     /**
@@ -71,7 +85,7 @@ public class DatadogUtilities {
      * @return a boolean to signify if the jobName is or is not blacklisted or whitelisted.
      */
     public static boolean isJobTracked(final String jobName) {
-        return !DatadogUtilities.isJobBlacklisted(jobName) && DatadogUtilities.isJobWhitelisted(jobName);
+        return !isJobBlacklisted(jobName) && isJobWhitelisted(jobName);
     }
 
     /**
@@ -86,41 +100,92 @@ public class DatadogUtilities {
     }
 
     /**
-     * Retrieve the list of tags from the Config file if regex Jobs was checked
+     * Retrieve the list of tags from the globalJobTagsLines param for jobName
      *
-     * @param jobName - A string containing the name of some job
-     * @return - A Map of values containing the key and value of each Datadog tag to apply to the metric/event
+     * @param jobName - JobName to retrieve and process tags from.
+     * @param globalJobTags - globalJobTags string
+     * @return - A Map of values containing the key and values of each Datadog tag to apply to the metric/event
      */
-    private static Map<String, String> getRegexJobTags(String jobName) {
-        Map<String, String> tags = new HashMap<>();
-        final List<List<String>> globalTags = DatadogUtilities.regexJoblistStringtoList(
-                DatadogUtilities.getDatadogDescriptor().getGlobalJobTags());
-
-        logger.fine(String.format("The list of Global Job Tags are: %s", globalTags));
+    private static Map<String, Set<String>> getTagsFromGlobalJobTags(String jobName, final String globalJobTags) {
+        Map<String, Set<String>> tags = new HashMap<>();
+        List<String> globalJobTagsLines = linesToList(globalJobTags);
+        logger.fine(String.format("The list of Global Job Tags are: %s", globalJobTagsLines));
 
         // Each jobInfo is a list containing one regex, and a variable number of tags
-        for (List<String> jobInfo : globalTags) {
-
+        for (String globalTagsLine : globalJobTagsLines) {
+            List<String> jobInfo = cstrToList(globalTagsLine);
             if (jobInfo.isEmpty()) {
                 continue;
             }
-
-            Pattern p = Pattern.compile(jobInfo.get(0));
-            Matcher m = p.matcher(jobName);
-            if (m.matches()) {
+            Pattern jobNamePattern = Pattern.compile(jobInfo.get(0));
+            Matcher jobNameMatcher = jobNamePattern.matcher(jobName);
+            if (jobNameMatcher.matches()) {
                 for (int i = 1; i < jobInfo.size(); i++) {
-                    String[] tagItem = jobInfo.get(i).split(":");
-                    if (Character.toString(tagItem[1].charAt(0)).equals("$")) {
-                        try {
-                            tags.put(tagItem[0], m.group(Character.getNumericValue(tagItem[1].charAt(1))));
-                        } catch (IndexOutOfBoundsException e) {
-                            logger.fine(String.format(
-                                    "Specified a capture group that doesn't exist, not applying tag: %s Exception: %s",
-                                    Arrays.toString(tagItem), e));
+                    String[] tagItem = jobInfo.get(i).replaceAll(" ", "").split(":", 2);
+                    if (tagItem.length == 2) {
+                        String tagName = tagItem[0];
+                        String tagValue = tagItem[1];
+                        // Fills regex group values from the regex job name to tag values
+                        // eg: (.*?)-job, owner:$1
+                        if (Character.toString(tagValue.charAt(0)).equals("$")) {
+                            try {
+                                tagValue = jobNameMatcher.group(Character.getNumericValue(tagValue.charAt(1)));
+                            } catch (IndexOutOfBoundsException e) {
+                                logger.fine(String.format(
+                                        "Specified a capture group that doesn't exist, not applying tag: %s Exception: %s",
+                                        Arrays.toString(tagItem), e));
+                            }
                         }
+                        Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                        tagValues.add(tagValue.toLowerCase());
+                        tags.put(tagName, tagValues);
+                    } else if(tagItem.length == 1) {
+                        String tagName = tagItem[0];
+                        Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                        tagValues.add(""); // no values
+                        tags.put(tagName, tagValues);
                     } else {
-                        tags.put(tagItem[0], tagItem[1]);
+                        logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                     }
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Getter function for the globalTags global configuration, containing
+     * a comma-separated list of tags that should be applied everywhere.
+     *
+     * @return a map containing the globalTags global configuration.
+     */
+    public static Map<String, Set<String>> getTagsFromGlobalTags() {
+        final String globalTags = getDatadogGlobalDescriptor().getGlobalTags();
+        Map<String, Set<String>> tags = new HashMap<>();
+        List<String> globalTagsLines = DatadogUtilities.linesToList(globalTags);
+
+        for (String globalTagsLine : globalTagsLines) {
+            List<String> tagList = DatadogUtilities.cstrToList(globalTagsLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+
+            for (int i = 0; i < tagList.size(); i++) {
+                String[] tagItem = tagList.get(i).replaceAll(" ", "").split(":", 2);
+                if(tagItem.length == 2) {
+                    String tagName = tagItem[0];
+                    String tagValue = tagItem[1];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(tagValue.toLowerCase());
+                    tags.put(tagName, tagValues);
+                } else if(tagItem.length == 1) {
+                    String tagName = tagItem[0];
+                    Set<String> tagValues = tags.containsKey(tagName) ? tags.get(tagName) : new HashSet<String>();
+                    tagValues.add(""); // no values
+                    tags.put(tagName, tagValues);
+                } else {
+                    logger.fine(String.format("Ignoring the tag %s. It is empty.", tagItem));
                 }
             }
         }
@@ -135,9 +200,17 @@ public class DatadogUtilities {
      * @return a boolean to signify if the jobName is or is not blacklisted.
      */
     private static boolean isJobBlacklisted(final String jobName) {
-        final List<String> blacklist = DatadogUtilities.joblistStringtoList(
-                DatadogUtilities.getDatadogDescriptor().getBlacklist());
-        return blacklist.contains(jobName.toLowerCase());
+        final String blacklistProp = getDatadogGlobalDescriptor().getBlacklist();
+        List<String> blacklist = cstrToList(blacklistProp);
+        for (String blacklistedJob : blacklist){
+            Pattern blacklistedJobPattern = Pattern.compile(blacklistedJob);
+            Matcher jobNameMatcher = blacklistedJobPattern.matcher(jobName);
+            if (jobNameMatcher.matches()) {
+                return true;
+            }
+        }
+        return false;
+
     }
 
     /**
@@ -147,120 +220,86 @@ public class DatadogUtilities {
      * @return a boolean to signify if the jobName is or is not whitelisted.
      */
     private static boolean isJobWhitelisted(final String jobName) {
-        final List<String> whitelist = DatadogUtilities.joblistStringtoList(
-                DatadogUtilities.getDatadogDescriptor().getWhitelist());
-
-        // Check if the user config is using regexes
-        return whitelist.isEmpty() || whitelist.contains(jobName.toLowerCase());
+        final String whitelistProp = getDatadogGlobalDescriptor().getWhitelist();
+        final List<String> whitelist = cstrToList(whitelistProp);
+        for (String whitelistedJob : whitelist){
+            Pattern whitelistedJobPattern = Pattern.compile(whitelistedJob);
+            Matcher jobNameMatcher = whitelistedJobPattern.matcher(jobName);
+            if (jobNameMatcher.matches()) {
+                return true;
+            }
+        }
+        return whitelist.isEmpty();
     }
 
     /**
-     * Converts a blacklist/whitelist string into a String array.
+     * Converts a Comma Separated List into a List Object
      *
-     * @param joblist - A String containing a set of job names.
-     * @return a String array representing the job names to be whitelisted/blacklisted. Returns
-     * empty string if blacklist is null.
+     * @param str - A String containing a comma separated list of items.
+     * @return a String List with all items transform with trim and lower case
      */
-    private static List<String> joblistStringtoList(final String joblist) {
-        List<String> jobs = new ArrayList<>();
-        if (joblist != null) {
-            for (String job : joblist.trim().split(",")) {
-                if (!job.isEmpty()) {
-                    jobs.add(job.trim().toLowerCase());
-                }
-            }
-        }
-        return jobs;
+    public static List<String> cstrToList(final String str) {
+        return convertRegexStringToList(str, ",");
     }
 
     /**
-     * Converts a blacklist/whitelist string into a String array.
-     * This is the implementation for when the Use Regex checkbox is enabled
+     * Converts a string List into a List Object
      *
-     * @param joblist - A String containing a set of job name regexes and tags.
-     * @return a String List representing the job names to be whitelisted/blacklisted and its associated tags.
-     * Returns empty string if blacklist is null.
+     * @param str - A String containing a comma separated list of items.
+     * @return a String List with all items
      */
-    private static List<List<String>> regexJoblistStringtoList(final String joblist) {
-        List<List<String>> jobs = new ArrayList<>();
-        if (joblist != null && joblist.length() != 0) {
-            for (String job : joblist.split("\\r?\\n")) {
-                List<String> jobAndTags = new ArrayList<>();
-                for (String item : job.split(",")) {
-                    if (!item.isEmpty()) {
-                        jobAndTags.add(item);
-                    }
-                }
-                jobs.add(jobAndTags);
-            }
-        }
-        return jobs;
+    public static List<String> linesToList(final String str) {
+        return convertRegexStringToList(str, "\\r?\\n");
     }
 
     /**
-     * This method parses the contents of the configured Datadog tags. If they are present.
-     * Takes the current build as a parameter. And returns the expanded tags and their
-     * values in a HashMap.
+     * Converts a string List into a List Object
      *
-     * Always returns a HashMap, that can be empty, if no tagging is configured.
-     *
-     * @param run      - Current build
-     * @param listener - Current listener
-     * @return A {@link HashMap} containing the key,value pairs of tags. Never null.
-     * @throws IOException          if an error occurs when reading from any objects
-     * @throws InterruptedException if an interrupt error occurs
+     * @param str - A String containing a comma separated list of items.
+     * @param regex - Regex to use to split the string list
+     * @return a String List with all items
      */
-    @Nonnull
-    private static HashMap<String, String> parseTagList(Run run, TaskListener listener) throws IOException,
-            InterruptedException {
-        HashMap<String, String> map = new HashMap<>();
-
-        DatadogJobProperty property = DatadogUtilities.retrieveProperty(run);
-
-        // If Null, nothing to retrieve
-        if (property == null) {
-            return map;
-        }
-
-        String prop = property.getTagProperties();
-
-        if (!property.isTagFileEmpty()) {
-            String dataFromFile = property.readTagFile(run);
-            if (dataFromFile != null) {
-                for (String tag : dataFromFile.split("\\r?\\n")) {
-                    String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
-                    if (expanded.length > 1) {
-                        map.put(expanded[0], expanded[1]);
-                        logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
-                    } else {
-                        logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
-                    }
+    private static List<String> convertRegexStringToList(final String str, String regex) {
+        List<String> result = new ArrayList<>();
+        if (str != null && str.length() != 0) {
+            for (String item : str.trim().split(regex)) {
+                if (!item.isEmpty()) {
+                    result.add(item.trim());
                 }
             }
         }
+        return result;
+    }
 
-        if (!property.isTagPropertiesEmpty()) {
-            for (String tag : prop.split("\\r?\\n")) {
-                String[] expanded = run.getEnvironment(listener).expand(tag).split("=");
-                if (expanded.length > 1) {
-                    map.put(expanded[0], expanded[1]);
-                    logger.fine(String.format("Emitted tag %s:%s", expanded[0], expanded[1]));
+    public static Map<String, Set<String>> computeTagListFromVarList(EnvVars envVars, final String varList) {
+        HashMap<String, Set<String>> result = new HashMap<>();
+        List<String> rawTagList = linesToList(varList);
+        for (String tagLine : rawTagList) {
+            List<String> tagList = DatadogUtilities.cstrToList(tagLine);
+            if (tagList.isEmpty()) {
+                continue;
+            }
+            for (int i = 0; i < tagList.size(); i++) {
+                String tag = tagList.get(i).replaceAll(" ", "");
+                String[] expanded = envVars.expand(tag).split("=", 2);
+                if (expanded.length == 2) {
+                    String name = expanded[0];
+                    String value = expanded[1];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(value);
+                    result.put(name, values);
+                    logger.fine(String.format("Emitted tag %s:%s", name, value));
+                } else if(expanded.length == 1) {
+                    String name = expanded[0];
+                    Set<String> values = result.containsKey(name) ? result.get(name) : new HashSet<String>();
+                    values.add(""); // no values
+                    result.put(name, values);
                 } else {
                     logger.fine(String.format("Ignoring the tag %s. It is empty.", tag));
                 }
             }
         }
-
-        return map;
-    }
-
-    /**
-     * @param r - Current build.
-     * @return - The configured {@link DatadogJobProperty}. Null if not there
-     */
-    @CheckForNull
-    public static DatadogJobProperty retrieveProperty(Run r) {
-        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+        return result;
     }
 
     /**
@@ -281,7 +320,12 @@ public class DatadogUtilities {
         String[] UNIX_OS = {"mac", "linux", "freebsd", "sunos"};
 
         // Check hostname configuration from Jenkins
-        String hostname = DatadogUtilities.getDatadogDescriptor().getHostname();
+        String hostname = null;
+        try {
+            hostname = getDatadogGlobalDescriptor().getHostname();
+        } catch (NullPointerException e){
+            // noop
+        }
         if (isValidHostname(hostname)) {
             logger.fine("Using hostname set in 'Manage Plugins'. Hostname: " + hostname);
             return hostname;
@@ -343,6 +387,7 @@ public class DatadogUtilities {
             logger.warning("Unable to reliably determine host name. You can define one in "
                     + "the 'Manage Plugins' section under the 'Datadog Plugin' section.");
         }
+
         return null;
     }
 
@@ -387,13 +432,79 @@ public class DatadogUtilities {
         return m.find();
     }
 
-    /**
-     * Check if TagNode is enable
-     *
-     * @return boolean - tagNode
-     */
-    public static boolean isTagNodeEnable() {
-        return DatadogUtilities.getDatadogDescriptor().getTagNode();
+    public static Map<String, Set<String>> getComputerTags(Computer computer) {
+        Set<LabelAtom> labels = null;
+        try {
+            labels = computer.getNode().getAssignedLabels();
+        } catch (NullPointerException e){
+            logger.fine("Could not retrieve labels");
+        }
+        String nodeHostname = null;
+        try {
+            nodeHostname = computer.getHostName();
+        } catch (IOException | InterruptedException e) {
+            logger.fine("Could not retrieve hostname");
+        }
+        String nodeName = getNodeName(computer);
+        Map<String, Set<String>> result = new HashMap<>();
+        Set<String> nodeNameValues = new HashSet<>();
+        nodeNameValues.add(nodeName);
+        result.put("node_name", nodeNameValues);
+        if(nodeHostname != null){
+            Set<String> nodeHostnameValues = new HashSet<>();
+            nodeHostnameValues.add(nodeHostname);
+            result.put("node_hostname", nodeHostnameValues);
+        }
+        if(labels != null){
+            Set<String> nodeLabelsValues = new HashSet<>();
+            for (LabelAtom label: labels){
+                nodeLabelsValues.add(label.getName());
+            }
+            result.put("node_label", nodeLabelsValues);
+        }
+
+        return result;
     }
 
+    public static String getNodeName(Computer computer){
+        if (computer instanceof Jenkins.MasterComputer) {
+            return "master";
+        } else {
+            return computer.getName();
+        }
+    }
+
+    public static String getUserId() {
+        User user = User.current();
+        if (user == null) {
+            return "anonymous";
+        } else {
+            return user.getId();
+        }
+    }
+
+    public static String getItemName(Item item) {
+        if (item == null) {
+            return "unknown";
+        }
+        return item.getName();
+    }
+
+    public static Long getRunStartTimeInMillis(Run run) {
+        // getStartTimeInMillis wrapper in order to mock it in unit tests
+        return run.getStartTimeInMillis();
+    }
+
+    public static long currentTimeMillis(){
+        // This method exist so we can mock System.currentTimeMillis in unit tests
+        return System.currentTimeMillis();
+    }
+
+    public static String getFileName(XmlFile file) {
+        if(file == null || file.getFile() == null || file.getFile().getName().isEmpty()){
+            return "unknown";
+        } else {
+            return file.getFile().getName();
+        }
+    }
 }

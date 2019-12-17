@@ -8,12 +8,17 @@ import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.logs.LogSender;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
+import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 /**
@@ -22,6 +27,7 @@ import java.util.logging.Logger;
  */
 public class DatadogHttpClient implements DatadogClient {
 
+    private static DatadogClient instance;
     private static final Logger logger = Logger.getLogger(DatadogHttpClient.class.getName());
 
     private static final String EVENT = "v1/events";
@@ -39,20 +45,91 @@ public class DatadogHttpClient implements DatadogClient {
     private static final Integer BAD_REQUEST = 400;
 
 
+    public static boolean enableValidations = true;
+
     private String url;
     private Secret apiKey;
 
+    /**
+     * NOTE: Use ClientFactory.getClient method to instantiate the client in the Jenkins Plugin
+     * This method is not recommended to be used because it misses some validations.
+     * @param url - target url
+     * @param apiKey - Secret api Key
+     * @return an singleton instance of the DatadogHttpClient.
+     */
+    public static DatadogClient getInstance(String url, Secret apiKey){
+        if(enableValidations){
+            if (url == null || url.isEmpty()) {
+                logger.severe("Datadog Target URL is not set properly");
+                throw new RuntimeException("Datadog Target URL is not set properly");
+            }
+            if (apiKey == null || Secret.toString(apiKey).isEmpty()){
+                logger.severe("Datadog API Key is not set properly");
+                throw new RuntimeException("Datadog API Key is not set properly");
+            }
+        }
 
-    public DatadogHttpClient(String url, Secret apiKey) {
+        if(instance == null){
+            synchronized (DatadogHttpClient.class) {
+                if(instance == null){
+                    instance = new DatadogHttpClient(url, apiKey);
+                }
+            }
+        }
+
+        // We reset param just in case we change values
+        instance.setApiKey(apiKey);
+        instance.setUrl(url);
+        return instance;
+    }
+
+    private DatadogHttpClient(String url, Secret apiKey) {
         this.url = url;
         this.apiKey = apiKey;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     @Override
-    public boolean sendEvent(JSONObject payload) {
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Secret getApiKey() {
+        return apiKey;
+    }
+
+    @Override
+    public void setApiKey(Secret apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    @Override
+    public void setHostname(String hostname) {
+        // noop
+    }
+
+    @Override
+    public void setPort(int port) {
+        // noop
+    }
+
+    public boolean event(DatadogEvent event) {
         logger.fine("Sending event");
         boolean status;
         try {
+            JSONObject payload = new JSONObject();
+            payload.put("title", event.getTitle());
+            payload.put("text", event.getText());
+            payload.put("host", event.getHost());
+            payload.put("aggregation_key", event.getAggregationKey());
+            payload.put("date_happened", event.getDate());
+            payload.put("tags", TagsUtil.convertTagsToJSONArray(event.getTags()));
+            payload.put("source_type_name", "jenkins");
+            payload.put("priority", event.getPriority().name().toLowerCase());
+            payload.put("alert_type", event.getAlertType().name().toLowerCase());
             status = post(payload, EVENT);
         } catch (Exception e) {
             logger.severe(e.toString());
@@ -62,7 +139,34 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean gauge(String name, long value, String hostname, JSONArray tags) {
+    public void incrementCounter(String name, String hostname, Map<String, Set<String>> tags) {
+        ConcurrentMetricCounters.getInstance().increment(name, hostname, tags);
+    }
+
+    @Override
+    public void flushCounters() {
+        ConcurrentMap<CounterMetric, Integer> counters = ConcurrentMetricCounters.getInstance().getAndReset();
+
+        logger.fine("Run flushCounters method");
+        // Submit all metrics as gauge
+        for (CounterMetric counterMetric: counters.keySet()) {
+            int count = counters.get(counterMetric);
+            logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
+            // Since we submit a rate we need to divide the submitted value by the interval (10)
+            this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(),
+                    counterMetric.getTags(), "rate");
+
+        }
+    }
+
+    @Override
+    public boolean gauge(String name, long value, String hostname, Map<String, Set<String>> tags) {
+        return postMetric(name, value, hostname, tags, "gauge");
+    }
+
+    private boolean postMetric(String name, float value, String hostname, Map<String, Set<String>> tags, String type) {
+        int INTERVAL = 10;
+
         logger.fine(String.format("Sending metric '%s' with value %s", name, String.valueOf(value)));
 
         // Setup data point, of type [<unix_timestamp>, <value>]
@@ -70,17 +174,24 @@ public class DatadogHttpClient implements DatadogClient {
         JSONArray point = new JSONArray();
 
         point.add(System.currentTimeMillis() / 1000); // current time, s
-        point.add(value);
+        if(type.equals("rate")){
+            point.add(value / (float)INTERVAL);
+        } else {
+            point.add(value);
+        }
         points.add(point); // api expects a list of points
 
         JSONObject metric = new JSONObject();
         metric.put("metric", name);
         metric.put("points", points);
-        metric.put("type", "gauge");
+        metric.put("type", type);
         metric.put("host", hostname);
+        if(type.equals("rate")){
+            metric.put("interval", INTERVAL);
+        }
         if (tags != null) {
             logger.fine(tags.toString());
-            metric.put("tags", tags);
+            metric.put("tags", TagsUtil.convertTagsToJSONArray(tags));
         }
         // Place metric as item of series list
         JSONArray series = new JSONArray();
@@ -103,15 +214,15 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean serviceCheck(String name, int code, String hostname, JSONArray tags) {
-        logger.fine(String.format("Sending service check '%s' with status %s", name, code));
+    public boolean serviceCheck(String name, Status status, String hostname, Map<String, Set<String>> tags) {
+        logger.fine(String.format("Sending service check '%s' with status %s", name, status));
 
         // Build payload
         JSONObject payload = new JSONObject();
         payload.put("check", name);
         payload.put("host_name", hostname);
         payload.put("timestamp", System.currentTimeMillis() / 1000); // current time, s
-        payload.put("status", code);
+        payload.put("status", status.toValue());
 
         // Remove result tag, so we don't create multiple service check groups
         if (tags != null) {
@@ -184,6 +295,7 @@ public class DatadogHttpClient implements DatadogClient {
         return status;
     }
 
+    @Override
     public boolean validate() throws IOException, ServletException {
         String urlParameters = "?api_key=" + apiKey;
         HttpURLConnection conn = null;
@@ -256,6 +368,14 @@ public class DatadogHttpClient implements DatadogClient {
             conn = (HttpURLConnection) url.openConnection();
             logger.fine("Using HttpURLConnection, without proxy");
         }
+
+        /* Timeout of 1 minutes for connecting and reading.
+        * this prevents this plugin from causing jobs to hang in case of
+        * flaky network or Datadog being down. Left intentionally long.
+        */
+        int timeoutMS = 1 * 60 * 1000;
+        conn.setConnectTimeout(timeoutMS);
+        conn.setReadTimeout(timeoutMS);
 
         return conn;
     }

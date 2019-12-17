@@ -1,52 +1,34 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
-import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
-
-import java.util.Map;
 
 /**
  * This event should contain all the data to construct a build started event. With
  * the right message for Datadog.
  */
-public class BuildStartedEventImpl extends AbstractDatadogEvent {
+public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
 
-    public BuildStartedEventImpl(BuildData buildData, Map<String, String> buildTags) {
-        super(buildData, buildTags);
-    }
+    public BuildStartedEventImpl(BuildData buildData) {
+        super(buildData);
 
-    /**
-     * @return - A JSON payload. See {@link DatadogEvent#createPayload()}
-     */
-    @Override
-    public JSONObject createPayload() {
-        JSONObject payload = super.createPayload();
-        String number = builddata.getNumber(null) == null ?
-                "unknown" : builddata.getNumber(null).toString();
+        String buildNumber = buildData.getBuildNumber("unknown");
+        String userId = buildData.getUserId();
+        String jobName = buildData.getJobName("unknown");
+        String buildUrl = buildData.getBuildUrl("unknown");
+        String hostname = buildData.getHostname("unknown");
 
         // Build title
-        String title = builddata.getJob("unknown") +
-                " build #" +
-                number +
-                " started" +
-                " on " +
-                builddata.getHostname("unknown");
-        payload.put("title", title);
+        // eg: `job_name build #1 started on hostname`
+        String title = "Job " + jobName + " build #" + buildNumber + " started on " + hostname;
+        setTitle(title);
 
         // Build Text
-        String message = "%%% \n [Follow build #" +
-                number +
-                " progress](" +
-                builddata.getBuildUrl("unknown") +
-                ") " +
-                getDuration() +
-                " \n %%%";
-        payload.put("text", message);
+        // eg: User <userId> started the [job <jobName> with build number #<buildNumber>] (1sec)"
+        String text = "%%% \nUser " + userId + " started the [job " + jobName + " build #" +
+                buildNumber + "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
+        setText(text);
 
-        payload.put("alert_type", "info");
-        payload.put("priority", "low");
-
-        return payload;
+        setPriority(Priority.LOW);
+        setAlertType(AlertType.INFO);
     }
 }

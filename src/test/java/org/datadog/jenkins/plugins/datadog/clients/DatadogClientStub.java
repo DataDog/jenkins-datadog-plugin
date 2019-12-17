@@ -1,16 +1,14 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import hudson.util.Secret;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.logs.LogSender;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.junit.Assert;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class DatadogClientStub implements DatadogClient {
 
@@ -23,20 +21,58 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     @Override
-    public boolean sendEvent(JSONObject payload) {
+    public void setUrl(String url) {
+        // noop
+    }
+
+    @Override
+    public void setApiKey(Secret apiKey) {
+        // noop
+    }
+
+    @Override
+    public void setHostname(String hostname) {
+        // noop
+    }
+
+    @Override
+    public void setPort(int port) {
+        // noop
+    }
+
+    @Override
+    public boolean event(DatadogEvent event) {
         //NO-OP
         return true;
     }
 
     @Override
-    public boolean gauge(String name, long value, String hostname, JSONArray tags) {
-        this.metrics.add(new DatadogMetric(name, value, hostname, tags));
+    public void incrementCounter(String name, String hostname, Map<String, Set<String>> tags) {
+        for (DatadogMetric m : this.metrics) {
+            if(m.same(new DatadogMetric(name, 0, hostname, convertTagMapToList(tags)))) {
+                double value = m.getValue() + 1;
+                this.metrics.remove(m);
+                this.metrics.add(new DatadogMetric(name, value, hostname, convertTagMapToList(tags)));
+                return;
+            }
+        }
+        this.metrics.add(new DatadogMetric(name, 1, hostname, convertTagMapToList(tags)));
+    }
+
+    @Override
+    public void flushCounters() {
+        // noop
+    }
+
+    @Override
+    public boolean gauge(String name, long value, String hostname, Map<String, Set<String>> tags) {
+        this.metrics.add(new DatadogMetric(name, value, hostname, convertTagMapToList(tags)));
         return true;
     }
 
     @Override
-    public boolean serviceCheck(String name, int code, String hostname, JSONArray tags) {
-        this.serviceChecks.add(new DatadogMetric(name, code, hostname, tags));
+    public boolean serviceCheck(String name, Status status, String hostname, Map<String, Set<String>> tags) {
+        this.serviceChecks.add(new DatadogMetric(name, status.toValue(), hostname, convertTagMapToList(tags)));
         return true;
     }
 
@@ -51,11 +87,7 @@ public class DatadogClientStub implements DatadogClient {
     }
 
     public boolean assertMetric(String name, double value, String hostname, String[] tags) {
-        JSONArray jtags = new JSONArray();
-        if (tags != null) {
-            jtags.addAll(Arrays.asList(tags));
-        }
-        DatadogMetric m = new DatadogMetric(name, value, hostname, jtags);
+        DatadogMetric m = new DatadogMetric(name, value, hostname, Arrays.asList(tags));
         if (this.metrics.contains(m)) {
             this.metrics.remove(m);
             return true;
@@ -65,30 +97,8 @@ public class DatadogClientStub implements DatadogClient {
         return false;
     }
 
-//    public boolean assertMetricNotZero(String name, String hostname, String[] tags) {
-//        JSONArray jtags = new JSONArray();
-//        if (tags != null) {
-//            jtags.addAll(Arrays.asList(tags));
-//        }
-//        for (DatadogMetric m : this.metrics) {
-//            if (Objects.equals(m.getName(), name) && Objects.equals(m.getHostname(), hostname) &&
-//                    Objects.equals(m.getTags(), jtags)) {
-//                DatadogMetric r = new DatadogMetric(name, m.getValue(), hostname, jtags);
-//                this.metrics.remove(r);
-//                return true;
-//            }
-//        }
-//        Assert.fail("metric with {name: " + name + ", hostname: " + hostname + ", tags: " + tags.toString() +
-//                "} does not exist. metrics: {" + this.metrics.toString() + " }");
-//        return false;
-//    }
-
     public boolean assertServiceCheck(String name, int code, String hostname, String[] tags) {
-        JSONArray jtags = new JSONArray();
-        if (tags != null) {
-            jtags.addAll(Arrays.asList(tags));
-        }
-        DatadogMetric m = new DatadogMetric(name, code, hostname, jtags);
+        DatadogMetric m = new DatadogMetric(name, code, hostname, Arrays.asList(tags));
         if (this.serviceChecks.contains(m)) {
             this.serviceChecks.remove(m);
             return true;
@@ -106,5 +116,24 @@ public class DatadogClientStub implements DatadogClient {
         Assert.fail("metrics: {" + this.metrics.toString() + " }, serviceChecks : {" +
                 this.serviceChecks.toString() + "}");
         return false;
+    }
+
+    public static List<String> convertTagMapToList(Map<String, Set<String>> tags){
+        List<String> result = new ArrayList<>();
+        for (String name : tags.keySet()) {
+            Set<String> values = tags.get(name);
+            for (String value : values){
+                result.add(String.format("%s:%s", name, value));
+            }
+        }
+        return result;
+
+    }
+
+    public static Map<String, Set<String>> addTagToMap(Map<String, Set<String>> tags, String name, String value){
+        Set<String> v = tags.containsKey(name) ? tags.get(name) : new HashSet<String>();
+        v.add(value);
+        tags.put(name, v);
+        return tags;
     }
 }
