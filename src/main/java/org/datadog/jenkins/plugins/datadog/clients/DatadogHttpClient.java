@@ -7,7 +7,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
@@ -45,11 +45,11 @@ public class DatadogHttpClient implements DatadogClient {
     private Secret apiKey;
 
     /**
-     * NOTE: Use DatadogUtilities.getDatadogClient method to instanciate the client in the Jenkins Plugin
+     * NOTE: Use ClientFactory.getClient method to instantiate the client in the Jenkins Plugin
      * This method is not recommended to be used because it misses some validations.
      * @param url - target url
      * @param apiKey - Secret api Key
-     * @return an singleton instance of the DatadogClient.
+     * @return an singleton instance of the DatadogHttpClient.
      */
     public static DatadogClient getInstance(String url, Secret apiKey){
         if(enableValidations){
@@ -101,10 +101,29 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean sendEvent(JSONObject payload) {
+    public void setHostname(String hostname) {
+        // noop
+    }
+
+    @Override
+    public void setPort(int port) {
+        // noop
+    }
+
+    public boolean event(DatadogEvent event) {
         logger.fine("Sending event");
         boolean status;
         try {
+            JSONObject payload = new JSONObject();
+            payload.put("title", event.getTitle());
+            payload.put("text", event.getText());
+            payload.put("host", event.getHost());
+            payload.put("aggregation_key", event.getAggregationKey());
+            payload.put("date_happened", event.getDate());
+            payload.put("tags", TagsUtil.convertTagsToJSONArray(event.getTags()));
+            payload.put("source_type_name", "jenkins");
+            payload.put("priority", event.getPriority().name().toLowerCase());
+            payload.put("alert_type", event.getAlertType().name().toLowerCase());
             status = post(payload, EVENT);
         } catch (Exception e) {
             logger.severe(e.toString());
@@ -189,15 +208,15 @@ public class DatadogHttpClient implements DatadogClient {
     }
 
     @Override
-    public boolean serviceCheck(String name, int code, String hostname, Map<String, Set<String>> tags) {
-        logger.fine(String.format("Sending service check '%s' with status %s", name, code));
+    public boolean serviceCheck(String name, Status status, String hostname, Map<String, Set<String>> tags) {
+        logger.fine(String.format("Sending service check '%s' with status %s", name, status));
 
         // Build payload
         JSONObject payload = new JSONObject();
         payload.put("check", name);
         payload.put("host_name", hostname);
         payload.put("timestamp", System.currentTimeMillis() / 1000); // current time, s
-        payload.put("status", code);
+        payload.put("status", status.toValue());
 
         // Remove result tag, so we don't create multiple service check groups
         if (tags != null) {
@@ -270,6 +289,7 @@ public class DatadogHttpClient implements DatadogClient {
         return status;
     }
 
+    @Override
     public boolean validate() throws IOException, ServletException {
         String urlParameters = "?api_key=" + apiKey;
         HttpURLConnection conn = null;

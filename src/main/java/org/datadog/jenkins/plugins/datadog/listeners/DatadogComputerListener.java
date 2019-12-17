@@ -8,6 +8,7 @@ import hudson.slaves.OfflineCause;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.*;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
@@ -41,7 +42,7 @@ public class DatadogComputerListener extends ComputerListener {
             logger.fine("Start DatadogComputerListener#onOnline");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
@@ -50,7 +51,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOnlineEventImpl(computer, listener, tags, false);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -72,7 +73,7 @@ public class DatadogComputerListener extends ComputerListener {
             logger.fine("Start DatadogComputerListener#onOffline");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
@@ -81,7 +82,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOfflineEventImpl(computer, cause, tags, false);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -103,7 +104,7 @@ public class DatadogComputerListener extends ComputerListener {
             logger.fine("Start DatadogComputerListener#onTemporarilyOnline");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
@@ -112,7 +113,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOnlineEventImpl(computer, null, tags, true);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -134,7 +135,7 @@ public class DatadogComputerListener extends ComputerListener {
             logger.fine("Start DatadogComputerListener#onTemporarilyOffline");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
@@ -143,7 +144,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerOfflineEventImpl(computer, cause, tags, true);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -165,7 +166,7 @@ public class DatadogComputerListener extends ComputerListener {
             logger.fine("Start DatadogComputerListener#onLaunchFailure");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of tags to apply
             Map<String, Set<String>> tags = TagsUtil.merge(
@@ -174,7 +175,7 @@ public class DatadogComputerListener extends ComputerListener {
 
             // Send event
             DatadogEvent event = new ComputerLaunchFailedEventImpl(computer, taskListener, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

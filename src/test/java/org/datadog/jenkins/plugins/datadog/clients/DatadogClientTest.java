@@ -1,6 +1,5 @@
 package org.datadog.jenkins.plugins.datadog.clients;
 
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.junit.Assert;
 import org.junit.Test;

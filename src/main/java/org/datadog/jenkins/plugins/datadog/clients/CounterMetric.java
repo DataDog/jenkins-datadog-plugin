@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class CounterMetric {
+
     private Map<String, Set<String>> tags = new HashMap<>();
     private String metricName;
     private String hostname;

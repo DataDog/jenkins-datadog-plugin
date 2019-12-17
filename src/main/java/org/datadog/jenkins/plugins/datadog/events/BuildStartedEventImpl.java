@@ -1,7 +1,5 @@
 package org.datadog.jenkins.plugins.datadog.events;
 
-import net.sf.json.JSONObject;
-import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
 /**
@@ -12,14 +10,7 @@ public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
 
     public BuildStartedEventImpl(BuildData buildData) {
         super(buildData);
-    }
 
-    /**
-     * @return - A JSON payload. See {@link DatadogEvent#createPayload()}
-     */
-    @Override
-    public JSONObject createPayload() {
-        JSONObject payload = super.createPayload();
         String buildNumber = buildData.getBuildNumber("unknown");
         String userId = buildData.getUserId();
         String jobName = buildData.getJobName("unknown");
@@ -28,18 +19,16 @@ public class BuildStartedEventImpl extends AbstractDatadogBuildEvent {
 
         // Build title
         // eg: `job_name build #1 started on hostname`
-        String title = jobName + " build #" + buildNumber + " started on " + hostname;
-        payload.put("title", title);
+        String title = "Job " + jobName + " build #" + buildNumber + " started on " + hostname;
+        setTitle(title);
 
         // Build Text
         // eg: User <userId> started the [job <jobName> with build number #<buildNumber>] (1sec)"
-        String message = "%%% \nUser " + userId + " started the [job " + jobName + " build #" +
+        String text = "%%% \nUser " + userId + " started the [job " + jobName + " build #" +
                 buildNumber + "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
-        payload.put("text", message);
+        setText(text);
 
-        payload.put("priority", "low");
-        payload.put("alert_type", "info");
-
-        return payload;
+        setPriority(Priority.LOW);
+        setAlertType(AlertType.INFO);
     }
 }

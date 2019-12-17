@@ -3,7 +3,7 @@ package org.datadog.jenkins.plugins.datadog.publishers;
 import hudson.Extension;
 import hudson.model.*;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
-import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +29,7 @@ public class DatadogCountersPublisher extends AsyncPeriodicWork {
             logger.fine("Execute called: Publishing counters");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
             client.flushCounters();
         } catch (Exception e) {
             logger.warning("Unexpected exception occurred - " + e.getMessage());

@@ -13,38 +13,64 @@
     so it should be straightforward to find them.
   -->
   <f:section title="Datadog Plugin">
-    <f:entry title="API Key" field="apiKeyEntry">
-      <f:password field="apiKey" default="${apiKey}" />
-    </f:entry>
-    <f:validateButton title="${%Test Key}" progress="${%Testing...}" method="testConnection" with="apiKey" />
 
-    <f:entry title="Hostname" field="hostnameEntry">
-      <f:textbox field="hostname" default="${hostname}" />
-    </f:entry>
-    <f:validateButton title="${%Test Hostname}" progress="${%Testing...}" method="testHostname" with="hostname" />
+    <f:radioBlock title="Use Datadog API URL and Key to report to Datadog" name="reportWith" value="HTTP"
+        checked="${instance.reportWithEquals('HTTP')}" inline="true">
 
-    <f:entry title="Blacklisted Jobs" description="A comma-separated list of job names that should not monitored." >
-      <f:textarea field="blacklist" optional="true" default="${blacklist}" />
-    </f:entry>
+        <f:entry title="Datadog API URL" field="targetApiURLEntry" description="URL which the plugin reports to." >
+          <f:textbox field="targetApiURL" default="${targetApiURL}" />
+        </f:entry>
 
-    <f:entry title="Whitelisted Jobs" description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
-      <f:textarea field="whitelist" optional="true" default="${whitelist}" />
-    </f:entry>
+        <f:entry title="Datadog API Key" field="targetApiKeyEntry">
+          <f:password field="targetApiKey" default="${targetApiKey}" />
+        </f:entry>
+        <f:validateButton title="${%Test Key}" progress="${%Testing...}" method="testConnection" with="targetApiKey" />
 
-    <f:entry field="globalTagFileEntry" title="Global Tag File" description="Add tags from default file in workspace">
-        <f:textbox field="globalTagFile" optional="true" default="${globalTagFile}"/>
-    </f:entry>
+    </f:radioBlock>
 
-    <f:entry title="Global Tags" field="globalTagsEntry" description="A list of tags to apply globally to all submissions." >
-      <f:textarea field="globalTags" optional="true" default="${globalTags}" />
-    </f:entry>
+    <f:radioBlock title="Use a DogStatsD Server to report to Datadog" name="reportWith" value="DSD"
+        checked="${instance.reportWithEquals('DSD')}" inline="true">
 
-    <f:entry title="Global Job Tags" field="globalJobTagsEntry" description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
-      <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
-    </f:entry>
+        <f:entry title="DogStatsD Host" field="dsdHostEntry">
+          <f:textbox field="targetHost" default="${targetHost}" />
+        </f:entry>
+
+        <f:entry title="DogStatsD Port" field="targetPortEntry">
+          <f:textbox field="targetPort" default="${targetPort}" />
+        </f:entry>
+
+    </f:radioBlock>
+
+    <tr>
+        <td colspan="4">
+            <hr style="background-color:#e5e5e5;height:1px;border:1px"/>
+        </td>
+    </tr>
+
     <f:advanced>
-        <f:entry title="Target API URL" field="targetMetricURLEntry" description="URL which the plugin reports to." >
-          <f:textbox field="targetMetricURL" default="${targetMetricURL}" />
+        <f:entry title="Hostname" field="hostnameEntry">
+          <f:textbox field="hostname" default="${hostname}" />
+        </f:entry>
+        <f:validateButton title="${%Test Hostname}" progress="${%Testing...}" method="testHostname" with="hostname" />
+
+        <f:entry title="Blacklisted Jobs" description="A comma-separated list of job names that should not monitored." >
+          <f:textarea field="blacklist" optional="true" default="${blacklist}" />
+        </f:entry>
+
+        <f:entry title="Whitelisted Jobs" description="A list of job names that should be monitored. An empty whitelist permits all jobs not blacklisted." >
+          <f:textarea field="whitelist" optional="true" default="${whitelist}" />
+        </f:entry>
+
+        <f:entry field="globalTagFileEntry" title="Global Tag File" description="Add tags from default file in workspace">
+            <f:textbox field="globalTagFile" optional="true" default="${globalTagFile}"/>
+        </f:entry>
+
+        <f:entry title="Global Tags" field="globalTagsEntry" description="A list of tags to apply globally to all submissions." >
+          <f:textarea field="globalTags" optional="true" default="${globalTags}" />
+        </f:entry>
+
+        <f:entry title="Global Job Tags" field="globalJobTagsEntry" description="A list of job names, regex or literal, followed by a list of tags to apply globally for those jobs." >
+          <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
         </f:entry>
 
         <f:entry title="Send Security audit events" description="Send security events like login, logout, login failure, configuration changes to jobs or changes to jenkins.">

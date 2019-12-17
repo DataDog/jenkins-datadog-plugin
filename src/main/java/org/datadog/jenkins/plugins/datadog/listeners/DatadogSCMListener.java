@@ -7,11 +7,11 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.SCMListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
-import net.sf.json.JSONArray;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogJobProperty;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.SCMCheckoutCompletedEventImpl;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
@@ -55,7 +55,7 @@ public class DatadogSCMListener extends SCMListener {
             logger.fine("Start DatadogSCMListener#onCheckout");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -68,7 +68,7 @@ public class DatadogSCMListener extends SCMListener {
 
             // Send event
             DatadogEvent event = new SCMCheckoutCompletedEventImpl(buildData);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

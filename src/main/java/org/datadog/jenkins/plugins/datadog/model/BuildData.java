@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class BuildData {
+
     private String buildNumber;
     private String buildId;
     private String buildUrl;

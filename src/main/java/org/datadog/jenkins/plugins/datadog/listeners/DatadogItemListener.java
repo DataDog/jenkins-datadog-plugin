@@ -6,6 +6,7 @@ import hudson.model.listeners.ItemListener;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.ItemCRUDEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.ItemCopiedEventImpl;
 import org.datadog.jenkins.plugins.datadog.events.ItemLocationChangedEventImpl;
@@ -51,14 +52,14 @@ public class DatadogItemListener extends ItemListener {
             logger.fine("Start DatadogItemListener#on" + action);
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemCRUDEventImpl(item, action, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -80,14 +81,14 @@ public class DatadogItemListener extends ItemListener {
             logger.fine("Start DatadogItemListener#onCopied");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemCopiedEventImpl(src, item, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -109,14 +110,14 @@ public class DatadogItemListener extends ItemListener {
             logger.fine("Start DatadogItemListener#onLocationChanged");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new ItemLocationChangedEventImpl(item, oldFullName, newFullName, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");

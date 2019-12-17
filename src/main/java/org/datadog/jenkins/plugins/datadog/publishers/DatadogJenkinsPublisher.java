@@ -6,6 +6,7 @@ import hudson.model.Project;
 import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +35,7 @@ public class DatadogJenkinsPublisher extends PeriodicWork {
             logger.fine("doRun called: Computing Jenkins metrics");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
             String hostname = DatadogUtilities.getHostname("null");
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
             long projectCount = 0;

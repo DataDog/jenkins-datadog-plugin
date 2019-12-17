@@ -2,10 +2,10 @@ package org.datadog.jenkins.plugins.datadog;
 
 import hudson.EnvVars;
 import hudson.ExtensionList;
+import hudson.XmlFile;
 import hudson.model.*;
 import hudson.model.labels.LabelAtom;
 import jenkins.model.Jenkins;
-import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.annotation.Nonnull;
@@ -43,14 +43,6 @@ public class DatadogUtilities {
      */
     public static DatadogJobProperty getDatadogJobProperties(@Nonnull Run r) {
         return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
-    }
-
-    /**
-     * @return - The descriptor for the Datadog plugin. In this case the global configuration.
-     */
-    public static DatadogClient getDatadogClient() {
-        DatadogGlobalConfiguration descriptor = getDatadogGlobalDescriptor();
-        return DatadogHttpClient.getInstance(descriptor.getTargetMetricURL(), descriptor.getApiKey());
     }
 
     /**
@@ -506,5 +498,13 @@ public class DatadogUtilities {
     public static long currentTimeMillis(){
         // This method exist so we can mock System.currentTimeMillis in unit tests
         return System.currentTimeMillis();
+    }
+
+    public static String getFileName(XmlFile file) {
+        if(file == null || file.getFile() == null || file.getFile().getName().isEmpty()){
+            return "unknown";
+        } else {
+            return file.getFile().getName();
+        }
     }
 }

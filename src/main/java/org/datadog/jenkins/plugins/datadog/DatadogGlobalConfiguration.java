@@ -7,6 +7,7 @@ import hudson.util.Secret;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogHttpClient;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -15,7 +16,6 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.*;
 import java.util.logging.Logger;
 
 import static hudson.Util.fixEmptyAndTrim;
@@ -26,14 +26,17 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     private static final Logger logger = Logger.getLogger(DatadogGlobalConfiguration.class.getName());
     private static final String DISPLAY_NAME = "Datadog Plugin";
 
-    private Secret apiKey = null;
+    private String reportWith = DatadogClient.ClientType.HTTP.name();
+    private String targetApiURL = "https://api.datadoghq.com/api/";
+    private Secret targetApiKey = null;
+    private String targetHost = "localhost";
+    private Integer targetPort = 8125;
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
     private String globalTagFile = null;
     private String globalTags = null;
     private String globalJobTags = null;
-    private String targetMetricURL = "https://api.datadoghq.com/api/";
     private boolean emitSecurityEvents = true;
     private boolean emitSystemEvents = true;
 
@@ -46,7 +49,7 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
      * Tests the apiKey field from the configuration screen, to check its' validity.
      * It is used in the config.jelly resource file. See method="testConnection"
      *
-     * @param formApiKey - A String containing the apiKey submitted from the form on the
+     * @param targetApiKey - A String containing the apiKey submitted from the form on the
      *                   configuration screen, which will be used to authenticate a request to the
      *                   Datadog API.
      * @return a FormValidation object used to display a message to the user on the configuration
@@ -54,12 +57,11 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
      * @throws IOException      if there is an input/output exception.
      * @throws ServletException if there is a servlet exception.
      */
-    public FormValidation doTestConnection(@QueryParameter("apiKey") final String formApiKey)
+    public FormValidation doTestConnection(@QueryParameter("targetApiKey") final String targetApiKey)
             throws IOException, ServletException {
         try {
             // Instantiate the Datadog Client
-            DatadogClient client = DatadogHttpClient.getInstance(this.getTargetMetricURL(),
-                    Secret.fromString(formApiKey));
+            DatadogClient client = DatadogHttpClient.getInstance(this.getTargetApiURL(), Secret.fromString(targetApiKey));
             boolean status = client.validate();
 
             if (status) {
@@ -78,7 +80,7 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
      * the hostname is of a valid format, according to the RFC 1123.
      * It is used in the config.jelly resource file. See method="testHostname"
      *
-     * @param formHostname - A String containing the hostname submitted from the form on the
+     * @param hostname - A String containing the hostname submitted from the form on the
      *                     configuration screen, which will be used to authenticate a request to the
      *                     Datadog API.
      * @return a FormValidation object used to display a message to the user on the configuration
@@ -86,9 +88,9 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
      * @throws IOException      if there is an input/output exception.
      * @throws ServletException if there is a servlet exception.
      */
-    public FormValidation doTestHostname(@QueryParameter("hostname") final String formHostname)
+    public FormValidation doTestHostname(@QueryParameter("hostname") final String hostname)
             throws IOException, ServletException {
-        if (DatadogUtilities.isValidHostname(formHostname)) {
+        if (DatadogUtilities.isValidHostname(hostname)) {
             return FormValidation.ok("Great! Your hostname is valid.");
         } else {
             return FormValidation.error("Your hostname is invalid, likely because"
@@ -97,16 +99,16 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     }
 
     /**
-     * @param targetMetricURL - The API URL which the plugin will report to.
+     * @param targetApiURL - The API URL which the plugin will report to.
      * @return a FormValidation object used to display a message to the user on the configuration
      * screen.
      */
-    public FormValidation doCheckTargetMetricURL(@QueryParameter("targetMetricURL") final String targetMetricURL) {
-        if (!targetMetricURL.contains("http")) {
+    public FormValidation doCheckTargetApiURL(@QueryParameter("targetApiURL") final String targetApiURL) {
+        if (!targetApiURL.contains("http")) {
             return FormValidation.error("The field must be configured in the form <http|https>://<url>/");
         }
 
-        if (StringUtils.isBlank(targetMetricURL)) {
+        if (StringUtils.isBlank(targetApiURL)) {
             return FormValidation.error("Empty API URL");
         }
 
@@ -147,48 +149,134 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     @Override
     public boolean configure(final StaplerRequest req, final JSONObject formData) throws FormException {
         try {
+            super.configure(req, formData);
+
             // Grab apiKey and hostname
-            this.setApiKey(formData.getString("apiKey"));
+            this.setReportWith(formData.getString("reportWith"));
+            this.setTargetApiURL(formData.getString("targetApiURL"));
+            this.setTargetApiKey(formData.getString("targetApiKey"));
+            this.setTargetHost(formData.getString("targetHost"));
+            this.setTargetPort(formData.getInt("targetPort"));
             this.setHostname(formData.getString("hostname"));
             this.setBlacklist(formData.getString("blacklist"));
             this.setWhitelist(formData.getString("whitelist"));
             this.setGlobalTagFile(formData.getString("globalTagFile"));
             this.setGlobalTags(formData.getString("globalTags"));
             this.setGlobalJobTags(formData.getString("globalJobTags"));
-            this.setTargetMetricURL(formData.getString("targetMetricURL"));
             this.setEmitSecurityEvents(formData.getBoolean("emitSecurityEvents"));
             this.setEmitSystemEvents(formData.getBoolean("emitSystemEvents"));
 
-            //When form is saved...reinitialize the DatadogClient.
-            DatadogHttpClient.getInstance(this.getTargetMetricURL(), this.getApiKey());
-
             // Persist global configuration information
             save();
-            return super.configure(req, formData);
+
+            //When form is saved...reinitialize the DatadogClient.
+            ClientFactory.getClient(DatadogClient.ClientType.valueOf(this.getReportWith()),
+                    this.getTargetApiURL(), this.getTargetApiKey(), this.getTargetHost(), this.getTargetPort());
+
         } catch(Exception e){
             logger.warning("Unexpected exception occurred - " + e.getMessage());
         }
         return super.configure(req, formData);
     }
 
+    public boolean reportWithEquals(String value){
+        return this.reportWith.equals(value);
+    }
+
     /**
-     * Getter function for the apiKey global configuration.
+     * Getter function for the reportWith global configuration.
      *
-     * @return a Secret containing the apiKey global configuration.
+     * @return a String containing the reportWith global configuration.
      */
-    public Secret getApiKey() {
-        return apiKey;
+    public String getReportWith() {
+        return reportWith;
+    }
+
+    /**
+     * Setter function for the reportWith global configuration.
+     *
+     * @param reportWith = A string containing the reportWith global configuration.
+     */
+    @DataBoundSetter
+    public void setReportWith(String reportWith) {
+        this.reportWith = reportWith;
+    }
+
+    /**
+     * Getter function for the targetApiUR global configuration.
+     *
+     * @return a String containing the targetApiUR global configuration.
+     */
+    public String getTargetApiURL() {
+        return targetApiURL;
+    }
+
+    /**
+     * Setter function for the targetApiURL global configuration.
+     *
+     * @param targetApiURL = A string containing the DataDog API URL
+     */
+    @DataBoundSetter
+    public void setTargetApiURL(String targetApiURL) {
+        this.targetApiURL = targetApiURL;
+    }
+
+    /**
+     * Getter function for the targetApiKey global configuration.
+     *
+     * @return a Secret containing the targetApiKey global configuration.
+     */
+    public Secret getTargetApiKey() {
+        return targetApiKey;
     }
 
     /**
      * Setter function for the apiKey global configuration.
      *
-     * @param key = A string containing the plaintext representation of a
+     * @param targetApiKey = A string containing the plaintext representation of a
      *            DataDog API Key
      */
     @DataBoundSetter
-    public void setApiKey(final String key) {
-        this.apiKey = Secret.fromString(fixEmptyAndTrim(key));
+    public void setTargetApiKey(final String targetApiKey) {
+        this.targetApiKey = Secret.fromString(fixEmptyAndTrim(targetApiKey));
+    }
+
+    /**
+     * Getter function for the targetHost global configuration.
+     *
+     * @return a String containing the targetHost global configuration.
+     */
+    public String getTargetHost() {
+        return targetHost;
+    }
+
+    /**
+     * Setter function for the targetHost global configuration.
+     *
+     * @param targetHost = A string containing the DogStatsD Host
+     */
+    @DataBoundSetter
+    public void setTargetHost(String targetHost) {
+        this.targetHost = targetHost;
+    }
+
+    /**
+     * Getter function for the targetPort global configuration.
+     *
+     * @return a Integer containing the targetPort global configuration.
+     */
+    public Integer getTargetPort() {
+        return targetPort;
+    }
+
+    /**
+     * Setter function for the targetPort global configuration.
+     *
+     * @param targetPort = A string containing the DogStatsD Port
+     */
+    @DataBoundSetter
+    public void setTargetPort(Integer targetPort) {
+        this.targetPort = targetPort;
     }
 
     /**
@@ -312,21 +400,6 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     @DataBoundSetter
     public void setGlobalJobTags(String globalJobTags) {
         this.globalJobTags = globalJobTags;
-    }
-
-    /**
-     * @return The target API URL
-     */
-    public String getTargetMetricURL() {
-        return targetMetricURL;
-    }
-
-    /**
-     * @param targetMetricURL - The target API URL
-     */
-    @DataBoundSetter
-    public void setTargetMetricURL(String targetMetricURL) {
-        this.targetMetricURL = targetMetricURL;
     }
 
     /**

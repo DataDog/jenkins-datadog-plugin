@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
 public class ConcurrentMetricCounters {
+
     private static final Logger logger = Logger.getLogger(ConcurrentMetricCounters.class.getName());
     private static ConcurrentMetricCounters instance;
     private static ConcurrentMap<CounterMetric, Integer> counters = new ConcurrentHashMap<>();

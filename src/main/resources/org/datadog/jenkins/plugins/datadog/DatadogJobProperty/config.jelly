@@ -1,6 +1,7 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:section title="Datadog Tagging">
+
         <f:optionalBlock field="enableFile" checked="${enableFile}" title="Add tags from file in workspace" inline="true">
             <f:entry field="tagFileEntry" title="File" description="Add tags from file in workspace">
                 <f:textbox field="tagFile" optional="true" default="${tagFile}"/>
@@ -18,11 +19,8 @@
                 <f:checkbox field="emitSCMEvents" default="true"/>
             </f:entry>
         </f:advanced>
+
     </f:section>
-    <tr>
-        <td colspan="4">
-            <hr style="background-color:#e5e5e5;height:1px;border:1px"/>
-        </td>
-    </tr>
+
 </j:jelly>
 

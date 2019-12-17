@@ -1,7 +1,7 @@
 package org.datadog.jenkins.plugins.datadog;
 
+import com.timgroup.statsd.ServiceCheck;
 import hudson.util.Secret;
-import net.sf.json.JSONObject;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -10,22 +10,49 @@ import java.util.Set;
 
 public interface DatadogClient {
 
-    public Integer OK = 0;
-    public Integer WARNING = 1;
-    public Integer CRITICAL = 2;
-    public Integer UNKNOWN = 3;
+    public static enum ClientType {
+        HTTP,
+        DSD;
+
+        private ClientType() { }
+    }
+
+    public static enum Status {
+        OK(0),
+        WARNING(1),
+        CRITICAL(2),
+        UNKNOWN(3);
+
+        private final int val;
+
+        private Status(int val) {
+            this.val = val;
+        }
+
+        public int toValue(){
+           return this.val;
+        }
+
+        public ServiceCheck.Status toServiceCheckStatus(){
+            return ServiceCheck.Status.valueOf(this.name());
+        }
+    }
 
     public void setUrl(String url);
 
     public void setApiKey(Secret apiKey);
 
+    public void setHostname(String hostname);
+
+    public void setPort(int port);
+
     /**
      * Sends an event to the Datadog API, including the event payload.
      *
-     * @param payload - The payload to send
-     * @return a boolean to signify the success or failure of the HTTP POST request.
+     * @param event - a DatadogEvent object
+     * @return  a boolean to signify the success or failure of the HTTP POST request.
      */
-    public boolean sendEvent(JSONObject payload);
+    public boolean event(DatadogEvent event);
 
     /**
      * Increment a counter for the given metrics.
@@ -57,12 +84,12 @@ public interface DatadogClient {
      * Sends a service check to the Datadog API, including the check name, and status.
      *
      * @param name     - A String with the name of the service check to record.
-     * @param code     - An int with the status code to record for this service check.
+     * @param status     - An Status with the status code to record for this service check.
      * @param hostname - A String with the hostname to submit.
      * @param tags     - A Map containing the tags to submit.
      * @return a boolean to signify the success or failure of the HTTP POST request.
      */
-    public boolean serviceCheck(String name, int code, String hostname, Map<String, Set<String>> tags);
+    public boolean serviceCheck(String name, Status status, String hostname, Map<String, Set<String>> tags);
 
     /**
      * Tests the apiKey is valid.

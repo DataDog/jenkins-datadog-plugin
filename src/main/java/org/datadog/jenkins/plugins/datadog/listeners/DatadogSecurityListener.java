@@ -6,6 +6,7 @@ import org.acegisecurity.userdetails.UserDetails;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 import org.datadog.jenkins.plugins.datadog.events.UserAuthenticationEventImpl;
 
 import javax.annotation.Nonnull;
@@ -34,7 +35,7 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#authenticated");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
@@ -42,7 +43,7 @@ public class DatadogSecurityListener extends SecurityListener {
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(details.getUsername(),
                     UserAuthenticationEventImpl.LOGIN, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -64,14 +65,14 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#failedToAuthenticate");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.ACCESS_DENIED, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
@@ -103,14 +104,14 @@ public class DatadogSecurityListener extends SecurityListener {
             logger.fine("Start DatadogSecurityListener#loggedOut");
 
             // Get Datadog Client Instance
-            DatadogClient client = DatadogUtilities.getDatadogClient();
+            DatadogClient client = ClientFactory.getClient();
 
             // Get the list of global tags to apply
             Map<String, Set<String>> tags = DatadogUtilities.getTagsFromGlobalTags();
 
             // Send event
             DatadogEvent event = new UserAuthenticationEventImpl(username, UserAuthenticationEventImpl.LOGOUT, tags);
-            client.sendEvent(event.createPayload());
+            client.event(event);
 
             // Submit counter
             String hostname = DatadogUtilities.getHostname("null");
