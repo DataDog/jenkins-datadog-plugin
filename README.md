@@ -222,7 +222,7 @@ Configuring the plugin this way might be useful if you're running your Jenkins M
 ### Configure with an environment variables
 
 Configure your Datadog plugin using environment variables by specifying the three variables below:. 
-- `DATADOG_JENKINS_PLUGIN_REPORT_WITH` specify which report mechanism you want to use. When set to `DSD` it will use a DogStatsD Server to report to Datadog. Otherwise set it to the default `HTTP` value.
+- `DATADOG_JENKINS_PLUGIN_REPORT_WITH` which specifies which report mechanism you want to use. When set to `DSD` it will use a DogStatsD Server to report to Datadog. Otherwise set it to the default `HTTP` value.
 
 If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `DSD` value, you must specify the following environment variables:
 - `DATADOG_JENKINS_PLUGIN_TARGET_HOST` which specifies the DogStatsD Server host to report to. Default value is `localhost`.
