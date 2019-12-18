@@ -176,7 +176,7 @@ Note: If you do not see the version of `Datadog Plugin` that you are expecting, 
 
 ### Configure with the plugin user interface
 
-To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. 
+To configure your newly installed Datadog Plugin, navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. 
 Once there, scroll down to find the `Datadog Plugin` section.
 
 You can use two ways to configure your plugin to submit data to Datadog.
@@ -188,11 +188,11 @@ You can use two ways to configure your plugin to submit data to Datadog.
   - Click the "Use a DogStatsD Server to report to Datadog" radio button.
   - Specify both your DogStatD server hostname and port
    
-Once your configuration changes are finished, simply save them, and you're good to go!
+Once your configuration changes are finished, save them, and you're good to go!
 
 ### Configure with a Groovy script
 
-You have the option of configuring your Datadog plugin using a Groovy script like this one:
+Configure your Datadog plugin using a Groovy script like this one
 
 ```groovy
 import jenkins.model.*
@@ -221,18 +221,17 @@ Configuring the plugin this way might be useful if you're running your Jenkins M
 
 ### Configure with an environment variables
 
-You have the option of configuring your Datadog plugin using environment variables. 
-You will have to specify three variables:
-- `DATADOG_JENKINS_PLUGIN_REPORT_WITH` specify which authentication mechanism you want to use. When set to `DSD` it will use a DogStatsD Server to report to Datadog. Otherwise set it to the default `HTTP` value.
+Configure your Datadog plugin using environment variables by specifying the three variables below:. 
+- `DATADOG_JENKINS_PLUGIN_REPORT_WITH` specify which report mechanism you want to use. When set to `DSD` it will use a DogStatsD Server to report to Datadog. Otherwise set it to the default `HTTP` value.
 
-If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `DSD` value, you will have to specify the following environment variables:
-- `DATADOG_JENKINS_PLUGIN_TARGET_HOST` which specify the DogStatsD Server host to report to. Default value is `localhost`.
-- `DATADOG_JENKINS_PLUGIN_TARGET_PORT` which specify the DogStatsD Server port to report to. Default value is `8125`.
+If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `DSD` value, you must specify the following environment variables:
+- `DATADOG_JENKINS_PLUGIN_TARGET_HOST` which specifies the DogStatsD Server host to report to. Default value is `localhost`.
+- `DATADOG_JENKINS_PLUGIN_TARGET_PORT` which specifies the DogStatsD Server port to report to. Default value is `8125`.
 
-If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `HTTP` value or don't specify it, you will have to specify the following environment variables:
-- `DATADOG_JENKINS_PLUGIN_TARGET_API_URL` which specify the Datadog API Endpoint to report to. Default value is `https://api.datadoghq.com/api/`.
-- `DATADOG_JENKINS_PLUGIN_TARGET_API_KEY` which specify your Datadog API key in order to report to your Datadog account.
-  - Find your API Key from the [API Keys](https://app.datadoghq.com/account/settings#api) page on your Datadog account.
+If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `HTTP` value or don't specify it, you must specify the following environment variables:
+- `DATADOG_JENKINS_PLUGIN_TARGET_API_URL` which specifies the Datadog API Endpoint to report to. Default value is `https://api.datadoghq.com/api/`.
+- `DATADOG_JENKINS_PLUGIN_TARGET_API_KEY` which specifies your Datadog API key in order to report to your Datadog account.
+  - Get your API Key from the [Datadog API Keys page](https://app.datadoghq.com/account/settings#api).
 
 ### Logging
 Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener`.
