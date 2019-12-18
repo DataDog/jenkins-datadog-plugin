@@ -127,23 +127,31 @@ Currently, the plugin is tracking the following data.
     - NOTE: Git Branch available when using the [Git Plugin](https://wiki.jenkins.io/display/JENKINS/Git+Plugin)
 
 ## Customization
+
 From the global configuration page, at `Manage Jenkins -> Configure System`.
-* Global Tags
-	* A comma-separated list of tags to apply to all metrics, events, service checks.
 * Blacklisted Jobs
 	* A comma-separated list of regex to match job names that should not be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+	* This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_BLACKLIST`.
 * Whitelisted Jobs
 	* A comma-separated list of regex to match job names that should be monitored. (eg: susans-job,johns-.*,prod_folder/prod_release).
+	* This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_WHITELIST`.
 * Global Tag File
     * Path to the workspace file containing a comma separated list of tags (not compatible with Pipeline jobs).   	
+    * This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_GLOBAL_TAG_FILE`.
+* Global Tags
+	* A comma-separated list of tags to apply to all metrics, events, service checks.
+	* This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_GLOBAL_TAGS`.    
 * Global Job Tags
 	* A regex to match a job, and a list of tags to apply to that job, all separated by a comma. 
 	  * tags can reference match groups in the regex using the $ symbol 
 	  * eg: `(.*?)_job_(*?)_release, owner:$1, release_env:$2, optional:Tag3`
+	  * This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_GLOBAL_JOB_TAGS`.
 * Send Security audit events
     * Enabled by default, it submits `Security Events Type` of events and metrics.
+    * This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_EMIT_SECURITY_EVENTS`.
 * Send System events
     * Enabled by default, it submits `System Events Type` of events and metrics
+    * This property can be set using the following environment variable: `DATADOG_JENKINS_PLUGIN_EMIT_SYSTEM_EVENTS`.
 
 From a job specific configuration page
 * Custom tags
@@ -165,7 +173,10 @@ If the plugin has been successfully installed, then continue on to the configura
 Note: If you do not see the version of `Datadog Plugin` that you are expecting, make sure you have run `Check Now` from the `Manage Jenkins -> Manage Plugins` screen.
 
 ## Configuration
-To configure your newly installed Datadog Plugin, simply navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. 
+
+### Configure with the plugin user interface
+
+To configure your newly installed Datadog Plugin, navigate to the `Manage Jenkins -> Configure System` page on your Jenkins installation. 
 Once there, scroll down to find the `Datadog Plugin` section.
 
 You can use two ways to configure your plugin to submit data to Datadog.
@@ -177,9 +188,11 @@ You can use two ways to configure your plugin to submit data to Datadog.
   - Click the "Use a DogStatsD Server to report to Datadog" radio button.
   - Specify both your DogStatD server hostname and port
    
-Once your configuration changes are finished, simply save them, and you're good to go!
+Once your configuration changes are finished, save them, and you're good to go!
 
-Alternatively, you have the option of configuring your Datadog plugin using a Groovy script like this one:
+### Configure with a Groovy script
+
+Configure your Datadog plugin using a Groovy script like this one
 
 ```groovy
 import jenkins.model.*
@@ -205,6 +218,20 @@ d.save()
 ```
 
 Configuring the plugin this way might be useful if you're running your Jenkins Master in a Docker container using the [Official Jenkins Docker Image](https://github.com/jenkinsci/docker) or any derivative that supports plugins.txt and Groovy init scripts.
+
+### Configure with an environment variables
+
+Configure your Datadog plugin using environment variables by specifying the three variables below:. 
+- `DATADOG_JENKINS_PLUGIN_REPORT_WITH` which specifies which report mechanism you want to use. When set to `DSD` it will use a DogStatsD Server to report to Datadog. Otherwise set it to the default `HTTP` value.
+
+If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `DSD` value, you must specify the following environment variables:
+- `DATADOG_JENKINS_PLUGIN_TARGET_HOST` which specifies the DogStatsD Server host to report to. Default value is `localhost`.
+- `DATADOG_JENKINS_PLUGIN_TARGET_PORT` which specifies the DogStatsD Server port to report to. Default value is `8125`.
+
+If you set `DATADOG_JENKINS_PLUGIN_REPORT_WITH` with the `HTTP` value or don't specify it, you must specify the following environment variables:
+- `DATADOG_JENKINS_PLUGIN_TARGET_API_URL` which specifies the Datadog API Endpoint to report to. Default value is `https://api.datadoghq.com/api/`.
+- `DATADOG_JENKINS_PLUGIN_TARGET_API_KEY` which specifies your Datadog API key in order to report to your Datadog account.
+  - Get your API Key from the [Datadog API Keys page](https://app.datadoghq.com/account/settings#api).
 
 ### Logging
 Logging is done by utilizing the java.util.Logger, which follows the [best logging practices for Jenkins](https://wiki.jenkins-ci.org/display/JENKINS/Logging). In order to obtain logs, follow the directions listed [here](https://wiki.jenkins-ci.org/display/JENKINS/Logging). When adding a Logger, all Datadog plugin functions start with `org.datadog.jenkins.plugins.datadog.` and the function name you're after should autopopulate. As of this writing, the only function available was `org.datadog.jenkins.plugins.datadog.listeners.DatadogBuildListener`.

@@ -1,5 +1,6 @@
 package org.datadog.jenkins.plugins.datadog;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.util.FormValidation;
@@ -26,11 +27,32 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     private static final Logger logger = Logger.getLogger(DatadogGlobalConfiguration.class.getName());
     private static final String DISPLAY_NAME = "Datadog Plugin";
 
-    private String reportWith = DatadogClient.ClientType.HTTP.name();
-    private String targetApiURL = "https://api.datadoghq.com/api/";
+    private static String REPORT_WITH_PROPERTY = "DATADOG_JENKINS_PLUGIN_REPORT_WITH";
+    private static String TARGET_API_URL_PROPERTY = "DATADOG_JENKINS_PLUGIN_TARGET_API_URL";
+    private static String TARGET_API_KEY_PROPERTY = "DATADOG_JENKINS_PLUGIN_TARGET_API_KEY";
+    private static String TARGET_HOST_PROPERTY = "DATADOG_JENKINS_PLUGIN_TARGET_HOST";
+    private static String TARGET_PORT_PROPERTY = "DATADOG_JENKINS_PLUGIN_TARGET_PORT";
+    private static String HOSTNAME_PROPERTY = "DATADOG_JENKINS_PLUGIN_HOSTNAME";
+    private static String BLACKLIST_PROPERTY = "DATADOG_JENKINS_PLUGIN_BLACKLIST";
+    private static String WHITELIST_PROPERTY = "DATADOG_JENKINS_PLUGIN_WHITELIST";
+    private static String GLOBAL_TAG_FILE_PROPERTY = "DATADOG_JENKINS_PLUGIN_GLOBAL_TAG_FILE";
+    private static String GLOBAL_TAGS_PROPERTY = "DATADOG_JENKINS_PLUGIN_GLOBAL_TAGS";
+    private static String GLOBAL_JOB_TAGS_PROPERTY = "DATADOG_JENKINS_PLUGIN_GLOBAL_JOB_TAGS";
+    private static String EMIT_SECURITY_EVENTS_PROPERTY = "DATADOG_JENKINS_PLUGIN_EMIT_SECURITY_EVENTS";
+    private static String EMIT_SYSTEM_EVENTS_PROPERTY = "DATADOG_JENKINS_PLUGIN_EMIT_SYSTEM_EVENTS";
+
+    private static String DEFAULT_REPORT_WITH_VALUE = DatadogClient.ClientType.HTTP.name();
+    private static String DEFAULT_TARGET_API_KEY_VALUE = "https://api.datadoghq.com/api/";
+    private static String DEFAULT_TARGET_HOST_VALUE = "localhost";
+    private static Integer DEFAULT_TARGET_PORT_VALUE = 8125;
+    private static boolean DEFAULT_EMIT_SECURITY_EVENTS_VALUE = true;
+    private static boolean DEFAULT_EMIT_SYSTEM_EVENTS_VALUE = true;
+
+    private String reportWith = DEFAULT_REPORT_WITH_VALUE;
+    private String targetApiURL = DEFAULT_TARGET_API_KEY_VALUE;
     private Secret targetApiKey = null;
-    private String targetHost = "localhost";
-    private Integer targetPort = 8125;
+    private String targetHost = DEFAULT_TARGET_HOST_VALUE;
+    private Integer targetPort = DEFAULT_TARGET_PORT_VALUE;
     private String hostname = null;
     private String blacklist = null;
     private String whitelist = null;
@@ -43,6 +65,76 @@ public class DatadogGlobalConfiguration extends GlobalConfiguration {
     @DataBoundConstructor
     public DatadogGlobalConfiguration() {
         load(); // load the persisted global configuration
+        loadEnvVariables(); // load environment variables
+    }
+
+    private void loadEnvVariables(){
+        String reportWithEnvVar = System.getenv(REPORT_WITH_PROPERTY);
+        if(StringUtils.isNotBlank(reportWithEnvVar) && DEFAULT_REPORT_WITH_VALUE.equals(this.reportWith) &&
+                (reportWithEnvVar.equals(DatadogClient.ClientType.HTTP.name()) ||
+                        reportWithEnvVar.equals(DatadogClient.ClientType.DSD.name()))){
+            this.reportWith = reportWithEnvVar;
+        }
+
+        String targetApiURLEnvVar = System.getenv(TARGET_API_URL_PROPERTY);
+        if(StringUtils.isNotBlank(targetApiURLEnvVar) && DEFAULT_TARGET_API_KEY_VALUE.equals(this.targetApiURL)) {
+            this.targetApiURL = targetApiURLEnvVar;
+        }
+
+        String targetApiKeyEnvVar = System.getenv(TARGET_API_KEY_PROPERTY);
+        if(StringUtils.isNotBlank(targetApiKeyEnvVar) && this.targetApiKey == null) {
+            this.targetApiKey = Secret.fromString(targetApiKeyEnvVar);
+        }
+
+        String targetHostEnvVar = System.getenv(TARGET_HOST_PROPERTY);
+        if(StringUtils.isNotBlank(targetHostEnvVar) && DEFAULT_TARGET_HOST_VALUE.equals(this.targetHost)) {
+            this.targetHost = targetHostEnvVar;
+        }
+
+        String targetPortEnvVar = System.getenv(TARGET_PORT_PROPERTY);
+        if(StringUtils.isNotBlank(targetPortEnvVar) && DEFAULT_TARGET_PORT_VALUE.equals(this.targetPort)) {
+            this.targetPort = Integer.valueOf(targetPortEnvVar);
+        }
+
+        String hostnameEnvVar = System.getenv(HOSTNAME_PROPERTY);
+        if(StringUtils.isNotBlank(hostnameEnvVar) && this.hostname == null) {
+            this.hostname = hostnameEnvVar;
+        }
+
+        String blacklistEnvVar = System.getenv(BLACKLIST_PROPERTY);
+        if(StringUtils.isNotBlank(blacklistEnvVar) && this.blacklist == null) {
+            this.blacklist = blacklistEnvVar;
+        }
+
+        String whitelistEnvVar = System.getenv(WHITELIST_PROPERTY);
+        if(StringUtils.isNotBlank(whitelistEnvVar) && this.whitelist == null) {
+            this.whitelist = whitelistEnvVar;
+        }
+
+        String globalTagFileEnvVar = System.getenv(GLOBAL_TAG_FILE_PROPERTY);
+        if(StringUtils.isNotBlank(globalTagFileEnvVar) && this.globalTagFile == null) {
+            this.globalTagFile = globalTagFileEnvVar;
+        }
+
+        String globalTagsEnvVar = System.getenv(GLOBAL_TAGS_PROPERTY);
+        if(StringUtils.isNotBlank(globalTagsEnvVar) && this.globalTags == null) {
+            this.globalTags = globalTagsEnvVar;
+        }
+
+        String globalJobTagsEnvVar = System.getenv(GLOBAL_JOB_TAGS_PROPERTY);
+        if(StringUtils.isNotBlank(globalJobTagsEnvVar) && this.globalJobTags == null) {
+            this.globalJobTags = globalJobTagsEnvVar;
+        }
+
+        String emitSecurityEventsEnvVar = System.getenv(EMIT_SECURITY_EVENTS_PROPERTY);
+        if(StringUtils.isNotBlank(emitSecurityEventsEnvVar) && DEFAULT_EMIT_SECURITY_EVENTS_VALUE == this.emitSecurityEvents) {
+            this.emitSecurityEvents = Boolean.valueOf(emitSecurityEventsEnvVar);
+        }
+
+        String emitSystemEventsEnvVar = System.getenv(EMIT_SYSTEM_EVENTS_PROPERTY);
+        if(StringUtils.isNotBlank(emitSystemEventsEnvVar) && DEFAULT_EMIT_SYSTEM_EVENTS_VALUE == this.emitSystemEvents) {
+            this.emitSystemEvents = Boolean.valueOf(emitSystemEventsEnvVar);
+        }
     }
 
     /**
