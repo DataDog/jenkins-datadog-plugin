@@ -1,7 +1,7 @@
 /*
 The MIT License
 
-Copyright (c) 2010-2019, Datadog <info@datadoghq.com>
+Copyright (c) 2010-2020, Datadog <opensource@datadoghq.com>
 All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
