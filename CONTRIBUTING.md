@@ -4,12 +4,6 @@ First of all, thanks for contributing!
 
 This document provides some basic guidelines for contributing to this repository. To propose improvements, feel free to submit a PR.
 
-## Code of Conduct
-
-This project and everyone participating in it is governed by the Datadog [Code of Conduct][/CODE_OF_CONDUCT.md]. 
-By participating, you are expected to uphold this code. 
-Please report unacceptable behavior to opensource@datadoghq.com.
-
 ## Reporting a Bug - Requesting a feature - Github Issues
 
 * **Ensure the bug was not already reported** by searching on GitHub under [Issues][1].
