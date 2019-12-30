@@ -1,97 +1,117 @@
-# Contributing
+# How to contribute
 
-We love pull requests. Here's a quick guide.
+First of all, thanks for contributing!
 
-Fork, then clone the repo:
+This document provides some basic guidelines for contributing to this repository. To propose improvements, feel free to submit a PR.
 
-    git clone git@github.com:DataDog/jenkins-datadog-plugin.git
+## Code of Conduct
 
-Make sure the tests pass:
+This project and everyone participating in it is governed by the Datadog [Code of Conduct][/CODE_OF_CONDUCT.md]. 
+By participating, you are expected to uphold this code. 
+Please report unacceptable behavior to opensource@datadoghq.com.
 
-    mvn test
+## Reporting a Bug - Requesting a feature - Github Issues
 
-Make your change. Add tests for your change. Make the tests pass again.
-It is strongly recommended to perform manual testing as well, see section below.
+* **Ensure the bug was not already reported** by searching on GitHub under [Issues][1].
+* If you're unable to find an open issue addressing the problem, [open a new one][2]. 
+  - **Fill out the issue template completely**. Label the issue properly.
+    - Add `severity/` label.
+    - Add `documentation` label if this issue is related to documentation changes.
+* If you have a feature request, it is encouraged to [contact support][3] so the request can be prioritized and properly tracked.
+* **Do not open an issue if you have a question**, instead [contact support][3].
+
+## Suggesting an enhancements - Pull Requests
+
+Have you fixed an issues? Many thanks!
+
+Read the [development guide][/DEVELOPMENT.md] for more information on how to get started.
+
+In order to ease/speed up our review, here are some items you can check/improve when submitting your PR:
+* **Ensure an [Issue has been created](#reporting)**. 
+* Avoid changing too many things at once.
+  - Make sure that your Pull Requests only fixes one Issue at the time.
+* **Write tests** for the code you wrote.
+* Make sure that **all tests pass locally**.
+* Summarize your PR with a **meaningful title** and **fill out the pull request description template completely!**
+* Add the most suitable changelog label choosing one of the following:
+  * `changelog/Added` for new features.
+  * `changelog/Changed` for changes in existing functionality.
+  * `changelog/Deprecated` for soon-to-be removed features.
+  * `changelog/Removed` for now removed features.
+  * `changelog/Fixed` for any bug fixes.
+  * `changelog/Security` in case of vulnerabilities.
+  * `changelog/no-changelog` in case this PR should not appear in the changelog at all.
+
+See [here][4] for more details about changelogs.
+
+Your pull request must pass all CI tests before we will merge it. If you're seeing
+an error and don't think it's your fault, it may not be! [Join us on Slack][5] or send us an email, and together we'll 
+get it sorted out.
+
+### Keep it small, focused
+
+Avoid changing too many things at once. For instance if you're fixing two different
+checks at once, it makes reviewing harder and the _time-to-release_ longer.
+
+### Pull Request title
+
+Unless the PR is marked with the proper exclusion label, the title will be used
+to automatically fill the changelog entries. For this reason the title must be
+concise but explanatory.
+
+### Commit Messages
+
+Please don't be this person: `git commit -m "Fixed stuff"`. Take a moment to
+write meaningful commit messages.
+
+The commit message should describe the reason for the change and give extra details
+that will allow someone later on to understand in 5 seconds the thing you've been
+working on for a day.
+
+### Releasing
+
+The release procedure is managed by Datadog, instructions can be found in the [RELEASING](/RELEASING.md) document.
+
+## Asking a questions
+
+Need help? Contact [Datadog support][3]
+
+## Additional Notes
+
+### Issue and Pull Request Labels
+
+This section lists the labels we use to help us track and manage issues and pull requests.
+
+| Label name                    | Usage                    | Description 
+|-------------------------------|--------------------------|------------------------------------------------------------
+| `backward-incompatible`       | Issues and Pull Requests | Warn for backward incompatible changes. 
+| `changelog/Added`             | Pull Request Only        | Added features results into a minor version bump.
+| `changelog/Changed`           | Pull Request Only        | Changed features results into a major version bump.
+| `changelog/Deprecated`        | Pull Request Only        | Deprecated features results into a major version bump.
+| `changelog/Fixed`             | Pull Request Only        | Fixed features results into a bug fix version bump.
+| `changelog/no-changelog`      | Pull Request Only        | Changes don't appear in changelog.
+| `changelog/Removed`           | Pull Request Only        | Deprecated features results into a major version bump.
+| `changelog/Security`          | Pull Request Only        | Fixed features results into a bug fix version bump.
+| `community/help-wanted`       | Issue Only               | Community help wanted.
+| `community`                   | Issues and Pull Requests | Community driven changes.
+| `dev/testing`                 | Issues and Pull Requests | Tests related changes.
+| `dev/tooling`                 | Issues and Pull Requests | Tooling related changes.
+| `do-not-merge/HOLD`           | Pull Request Only        | Do not merge this PR.
+| `do-not-merge/WIP`            | Pull Request Only        | Do not merge this PR.
+| `documentation`               | Issues and Pull Requests | Documentation related changes.
+| `duplicate`                   | Issue Only               | Duplicate issue.
+| `invalid`                     | Issue Only               | Invalid issue.
+| `kind/bug`                    | Issue Only               | Bug related issue.
+| `kind/feature-request`        | Issue Only               | Feature request related issue.
+| `severity/critical`           | Issue Only               | Critical severity issue.
+| `severity/major`              | Issue Only               | Major severity issue.
+| `severity/minor`              | Issue Only               | Minor severity issue.
+| `severity/normal`             | Issue Only               | Normal severity issue.
+| `stale`                       | Issues and Pull Requests | Stale - Bot reminder.
 
 
-Push to your fork and [submit a pull request][pr].
-
-[pr]: https://github.com/your-username/jenkins-datadog-plugin/compare/DataDog:master...master
-
-At this point you're waiting on us. We may suggest some changes, improvements or alternatives.
-
-## Manual Testing
-
-### Setup
-
-To spin up a development environment for the *jenkins-datadog-plugin* repository. The requirements are:
-
-* [Java 1.8](https://www.java.com/en/download/)
-* [Docker](https://docs.docker.com/get-started/) & [docker-compose](https://docs.docker.com/compose/install/)
-* [A clone/fork of this repository](https://help.github.com/en/articles/fork-a-repo)
-
-
-1. To get started, save the following `docker-compose.yaml` file in your working directory locally:
-
-    ```
-    version: "3.7"
-    services:
-      jenkins:
-        image: jenkins/jenkins:lts
-        ports:
-          - 8080:8080
-        volumes:
-          - $JENKINS_PLUGIN/target/:/var/jenkins_home/plugins
-               
-    ```
-
-2. Set the `JENKINS_PLUGIN` environment variable to point to the directory where this repository is cloned/forked.
-3. Run `docker-compose -f <DOCKER_COMPOSE_FILE_PATH> up`.
-    - NOTE: This spins up the Jenkins docker image and auto mount the target folder of this repository (the location where the binary is built)
-    - NOTE: To see code updates, after re building the provider with `mvn clean package` on your local machine, run `docker-compose down` and spin this up again.
-4. Check your terminal and look for the admin password:
-    ```
-    jenkins_1    | *************************************************************
-    jenkins_1    | *************************************************************
-    jenkins_1    | *************************************************************
-    jenkins_1    |
-    jenkins_1    | Jenkins initial setup is required. An admin user has been created and a password generated.
-    jenkins_1    | Please use the following password to proceed to installation:
-    jenkins_1    |
-    jenkins_1    | <JENKINS_ADMIN_PASSWORD>
-    jenkins_1    |
-    jenkins_1    | This may also be found at: /var/jenkins_home/secrets/initialAdminPassword
-    jenkins_1    |
-    jenkins_1    | *************************************************************
-    jenkins_1    | *************************************************************
-    jenkins_1    | *************************************************************
-    ``` 
-
-5. Access your Jenkins instance http://localhost:8080
-6. Enter the administrator password in the Getting Started form.
-7. On the next page, click on the "Select plugins to be installed" unless you want to install all suggested plugins. 
-8. Select desired plugins depending on your needs. You can always add plugins later.
-9. Create a user so that you don't have to use the admin credential again (optional).
-10. Continue until the end of the setup process and log back in.
-11. Go to http://localhost:8080/configure to configure the "Datadog Plugin", set your `API Key`.
-  - Click on the "Test Key" to make sure your key is valid.
-  - You can set your machine `hostname`.
-  - You can set Global Tag. For example `.*, owner:$1, release_env:$2, optional:Tag3`.
-  
-### Create your first job
-
-1. On jenkins Home page, click on "Create a new Job" 
-2. Give it a name and select "freestyle project".
-3. Then add a build step (execute Shell):
-    ```
-    #!/bin/sh
-    
-    echo "Executing my job script"
-    sleep 5s
-    ```
-
-### Create Logger
-1. Go to http://localhost:8080/log/
-2. Give a name to your logger - For example `datadog`
-3. Add entries for all `org.datadog.jenkins.plugins.datadog.*` packages with log Level `ALL`.
-4. If you now run a job and go back to http://localhost:8080/log/datadog/, you should see your logs
+[1]: https://github.com/DataDog/jenkins-datadog-plugin/issues
+[2]: https://github.com/DataDog/jenkins-datadog-plugin/issues/new
+[3]: https://docs.datadoghq.com/help
+[4]: https://keepachangelog.com/en/1.0.0
+[5]: https://datadoghq.slack.com

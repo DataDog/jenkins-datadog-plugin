@@ -1,7 +1,7 @@
 # Support
 
 The issue queue we have here on GitHub is primarily intended for tracking features,
-bugs and work items associated with this datadog open source project.
+bugs and work items associated with this Datadog open source project.
 
 For any other support request, please reach out through one of the following:
 
