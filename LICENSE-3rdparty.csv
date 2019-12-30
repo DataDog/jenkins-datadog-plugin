@@ -1,6 +1,0 @@
-Component,Origin,License,Copyright
-pom.xml,org.apache.httpcomponents.httpclient,Apache-2.0,
-pom.xml,com.datadoghqjava-dogstatsd-client,MIT,
-pom.xml (test),org.mockito.mockito-core,MIT,
-pom.xml (test),org.powermock.powermock-module-junit4,Apache-2.0,
-pom.xml (test),org.powermock.powermock-api-mockito2,Apache-2.0,
