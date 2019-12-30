@@ -13,7 +13,7 @@ This project does not have a strict release schedule. However, we would make a r
 ## Make Sure Everything Works
 
 * Make sure tests are passing.
-* Manually tests changes included in the new release.
+* Manually test changes included in the new release.
 * Make sure documentation is up-to-date.
 
 ## Update Changelog
