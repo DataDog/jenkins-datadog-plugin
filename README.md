@@ -3,7 +3,7 @@
 # Jenkins Datadog Plugin
 A Jenkins plugin used to forward metrics, events, and service checks to an account at Datadog, automatically.
 
-There is a [Jenkins-CI Wiki page](https://wiki.jenkins-ci.org/display/JENKINS/Datadog+Plugin) for this plugin, but it refers to our [DataDog/jenkins-datadog-plugin](https://github.com/DataDog/jenkins-datadog-plugin) for documentation.
+There is a [Jenkins CI Plugin page](https://plugins.jenkins.io/datadog) for this plugin, but it refers to our [DataDog/jenkins-datadog-plugin](https://github.com/DataDog/jenkins-datadog-plugin) for documentation.
 
 ## Features
 Currently, the plugin is tracking the following data.
