@@ -17,8 +17,6 @@ https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.1...datadog-1.0.
 [IMPROVEMENT] Add more granular statuses (i.e. `Not Built`, etc) to onCompleted event. See [153](https://github.com/DataDog/jenkins-datadog-plugin/pull/153) (Thanks @mbaitelman)
 [IMPROVEMENT] Add note about how to send data to EU [154](https://github.com/DataDog/jenkins-datadog-plugin/pull/154)
 [IMPROVEMENT] Send delivery KPIs. See [132](https://github.com/DataDog/jenkins-datadog-plugin/pull/132) & [156](https://github.com/DataDog/jenkins-datadog-plugin/pull/156) (Thanks @pgarbe)
-[IMPROVEMENT] Lint project and remove unused code. See [160](https://github.com/DataDog/jenkins-datadog-plugin/pull/160)
-[IMPROVEMENT] Overall code refactor and cleanup. See [161](https://github.com/DataDog/jenkins-datadog-plugin/pull/161)
 [IMPROVEMENT] Add thread safety to dogstatsd submissions, adds `jenkins.job.started` and `jenkins.scm.checkout`, and add resiliency around potential build failures. See [169](https://github.com/DataDog/jenkins-datadog-plugin/pull/169)
 [IMPROVEMENT] Allow multiple values for tags & Support prefix for White/Blacklist & set Node tag by default & Added API + Target URL validations. See [172](https://github.com/DataDog/jenkins-datadog-plugin/pull/172)
 [IMPROVEMENT] Add 1 minute request timeout. See [174](https://github.com/DataDog/jenkins-datadog-plugin/pull/174) (Thanks @Mischa-Alff)
@@ -31,6 +29,8 @@ https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.1...datadog-1.0.
 [IMPROVEMENT] Adding Global Tag file from workspace. See [182](https://github.com/DataDog/jenkins-datadog-plugin/pull/182)
 [IMPROVEMENT] Allow configuring plugin using env vars. See [184](https://github.com/DataDog/jenkins-datadog-plugin/pull/184)
 
+[OTHER] Lint project and remove unused code. See [160](https://github.com/DataDog/jenkins-datadog-plugin/pull/160)
+[OTHER] Overall code refactor and cleanup. See [161](https://github.com/DataDog/jenkins-datadog-plugin/pull/161)
 [OTHER] Update License and Github files. See [187](https://github.com/DataDog/jenkins-datadog-plugin/pull/187)
 [OTHER] Cleanup license and standard files. See [193](https://github.com/DataDog/jenkins-datadog-plugin/pull/193)
 
