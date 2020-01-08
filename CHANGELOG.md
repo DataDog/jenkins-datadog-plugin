@@ -3,7 +3,7 @@ Changes
 
 # 1.0.0 / 01-07-2020
 ### Details
-https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.0...datadog-1.0.0
+https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.1...datadog-1.0.0
 
 ### Changes
 [BACKWARDS INCOMPATIBILITY NTOES]
