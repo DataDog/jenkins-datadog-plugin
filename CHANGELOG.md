@@ -6,7 +6,7 @@ Changes
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.1...datadog-1.0.0
 
 ### Changes
-[BACKWARDS INCOMPATIBILITY NTOES]
+[BACKWARDS INCOMPATIBILITY NOTES]
 * Instead of sending `null` as default value for some tags we now send `unknown`
 * Event titles and messages now include additional information. Search queries and monitors may need updating.
 * Node tag is added by default
