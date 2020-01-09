@@ -5,34 +5,33 @@ Changes
 ### Details
 https://github.com/jenkinsci/datadog-plugin/compare/datadog-0.7.1...datadog-1.0.0
 
-### Changes
 [BACKWARDS INCOMPATIBILITY NOTES]
-* Instead of sending `null` as default value for some tags we now send `unknown`
+* Instead of sending `null` as default value for some tags we now send `unknown`.
 * Event titles and messages now include additional information. Search queries and monitors may need updating.
-* Node tag is added by default
-* Groovy scripts need to be updated (descriptor path changed). See [Configure With A Groovy Script](https://github.com/DataDog/jenkins-datadog-plugin#configure-with-a-groovy-script)
-* More configs are available (some got removed, some added). See [Customization](https://github.com/DataDog/jenkins-datadog-plugin#customization)
-* Whitelist and blacklist configs now support regex expressions
+* Node tag is added by default.
+* Groovy scripts need to be updated (descriptor path changed). See [Configure With A Groovy Script](https://github.com/DataDog/jenkins-datadog-plugin#configure-with-a-groovy-script).
+* More configs are available (some got removed, some added). See [Customization](https://github.com/DataDog/jenkins-datadog-plugin#customization).
+* Whitelist and blacklist configs now support regex expressions.
 
-[IMPROVEMENT] Add more granular statuses (i.e. `Not Built`, etc) to onCompleted event. See [153](https://github.com/DataDog/jenkins-datadog-plugin/pull/153) (Thanks @mbaitelman)
-[IMPROVEMENT] Add note about how to send data to EU [154](https://github.com/DataDog/jenkins-datadog-plugin/pull/154)
-[IMPROVEMENT] Send delivery KPIs. See [132](https://github.com/DataDog/jenkins-datadog-plugin/pull/132) & [156](https://github.com/DataDog/jenkins-datadog-plugin/pull/156) (Thanks @pgarbe)
-[IMPROVEMENT] Add thread safety to dogstatsd submissions, adds `jenkins.job.started` and `jenkins.scm.checkout`, and add resiliency around potential build failures. See [169](https://github.com/DataDog/jenkins-datadog-plugin/pull/169)
-[IMPROVEMENT] Allow multiple values for tags & Support prefix for White/Blacklist & set Node tag by default & Added API + Target URL validations. See [172](https://github.com/DataDog/jenkins-datadog-plugin/pull/172)
-[IMPROVEMENT] Add 1 minute request timeout. See [174](https://github.com/DataDog/jenkins-datadog-plugin/pull/174) (Thanks @Mischa-Alff)
-[IMPROVEMENT] Add SVN tag support. See [175](https://github.com/DataDog/jenkins-datadog-plugin/pull/175)
-[IMPROVEMENT] Collect env variables. See [176](https://github.com/DataDog/jenkins-datadog-plugin/pull/176)
-[IMPROVEMENT] Improve plugin config. See [177](https://github.com/DataDog/jenkins-datadog-plugin/pull/177)
-[IMPROVEMENT] Add executor, node, and queue metrics. Also adds total number of jobs metric. See [180](https://github.com/DataDog/jenkins-datadog-plugin/pull/180)
-[IMPROVEMENT] Add slave statistic metrics and more. Also adds security/SCM/system events. See [181](https://github.com/DataDog/jenkins-datadog-plugin/pull/181)
-[IMPROVEMENT] Add full support with DogStatsD client. See [183](https://github.com/DataDog/jenkins-datadog-plugin/pull/183)
-[IMPROVEMENT] Adding Global Tag file from workspace. See [182](https://github.com/DataDog/jenkins-datadog-plugin/pull/182)
-[IMPROVEMENT] Allow configuring plugin using env vars. See [184](https://github.com/DataDog/jenkins-datadog-plugin/pull/184)
-
-[OTHER] Lint project and remove unused code. See [160](https://github.com/DataDog/jenkins-datadog-plugin/pull/160)
-[OTHER] Overall code refactor and cleanup. See [161](https://github.com/DataDog/jenkins-datadog-plugin/pull/161)
-[OTHER] Update License and Github files. See [187](https://github.com/DataDog/jenkins-datadog-plugin/pull/187)
-[OTHER] Cleanup license and standard files. See [193](https://github.com/DataDog/jenkins-datadog-plugin/pull/193)
+### Changes
+* [IMPROVEMENT][BREAKING CHANGE] Add more granular statuses (i.e. `Not Built`, etc) to onCompleted event. See [153](https://github.com/DataDog/jenkins-datadog-plugin/pull/153) (Thanks @mbaitelman)
+* [IMPROVEMENT] Add note about how to send data to EU [154](https://github.com/DataDog/jenkins-datadog-plugin/pull/154)
+* [IMPROVEMENT] Send delivery KPIs. See [132](https://github.com/DataDog/jenkins-datadog-plugin/pull/132) & [156](https://github.com/DataDog/jenkins-datadog-plugin/pull/156) (Thanks @pgarbe)
+* [IMPROVEMENT] Add thread safety to dogstatsd submissions, adds `jenkins.job.started` and `jenkins.scm.checkout`, and add resiliency around potential build failures. See [169](https://github.com/DataDog/jenkins-datadog-plugin/pull/169)
+* [IMPROVEMENT][BREAKING CHANGE] Allow multiple values for tags & Support prefix for White/Blacklist & set Node tag by default & Added API + Target URL validations. See [172](https://github.com/DataDog/jenkins-datadog-plugin/pull/172)
+* [IMPROVEMENT] Add 1 minute request timeout. See [174](https://github.com/DataDog/jenkins-datadog-plugin/pull/174) (Thanks @Mischa-Alff)
+* [IMPROVEMENT] Add SVN tag support. See [175](https://github.com/DataDog/jenkins-datadog-plugin/pull/175)
+* [IMPROVEMENT] Collect env variables. See [176](https://github.com/DataDog/jenkins-datadog-plugin/pull/176)
+* [IMPROVEMENT][BREAKING CHANGE] Improve plugin config. See [177](https://github.com/DataDog/jenkins-datadog-plugin/pull/177)
+* [IMPROVEMENT] Add executor, node, and queue metrics. Also adds total number of jobs metric. See [180](https://github.com/DataDog/jenkins-datadog-plugin/pull/180)
+* [IMPROVEMENT] Add slave statistic metrics and more. Also adds security/SCM/system events. See [181](https://github.com/DataDog/jenkins-datadog-plugin/pull/181)
+* [IMPROVEMENT][BREAKING CHANGE] Add full support with DogStatsD client. See [183](https://github.com/DataDog/jenkins-datadog-plugin/pull/183)
+* [IMPROVEMENT] Adding global tag file from workspace. See [182](https://github.com/DataDog/jenkins-datadog-plugin/pull/182)
+* [IMPROVEMENT] Allow configuring plugin using env vars. See [184](https://github.com/DataDog/jenkins-datadog-plugin/pull/184)
+* [OTHER] Lint project and remove unused code. See [160](https://github.com/DataDog/jenkins-datadog-plugin/pull/160)
+* [OTHER][BREAKING CHANGE] Overall code refactor and cleanup. See [161](https://github.com/DataDog/jenkins-datadog-plugin/pull/161)
+* [OTHER] Update license and Github files. See [187](https://github.com/DataDog/jenkins-datadog-plugin/pull/187)
+* [OTHER] Cleanup license and standard files. See [193](https://github.com/DataDog/jenkins-datadog-plugin/pull/193)
 
 # 0.7.1 / 03-01-2019
 ### Details
