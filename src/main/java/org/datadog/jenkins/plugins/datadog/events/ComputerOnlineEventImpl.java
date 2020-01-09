@@ -23,59 +23,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import hudson.model.Computer;
+import hudson.model.TaskListener;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class ComputerOnlineEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public ComputerOnlineEventImpl(Computer computer, TaskListener listener, Map<String, Set<String>> tags, boolean isTemporarily) {
+        super(tags);
 
-        private AlertType() {
-        }
+        String nodeName = DatadogUtilities.getNodeName(computer);
+        setAggregationKey(nodeName);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+        String title = "Jenkins node " + nodeName + " is" + (isTemporarily ? " temporarily " : " ") + "online";
+        setTitle(title);
+
+        String text = "%%% \nJenkins node " + nodeName + " is" + (isTemporarily ? " temporarily " : " ") +
+                "online \n%%%";
+        setText(text);
+
+        setPriority(Priority.LOW);
+        setAlertType(AlertType.SUCCESS);
     }
-
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
-    }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
 }

@@ -23,59 +23,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
-
-import com.timgroup.statsd.Event;
+package org.datadog.jenkins.plugins.datadog.events;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class UserAuthenticationEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public final static String LOGIN = "authenticated";
+    public final static String ACCESS_DENIED = "failed to authenticate";
+    public final static String LOGOUT = "logout";
 
-        private AlertType() {
+    public UserAuthenticationEventImpl(String username, String action, Map<String, Set<String>> tags) {
+        super(tags);
+
+        if(action == null){
+            action = "did something";
         }
+        setAggregationKey(username);
+        String title = "User " + username + " " + action.toLowerCase();
+        setTitle(title);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
-    }
+        String text = "%%% \nUser " + username + " " + action.toLowerCase() +" \n%%%";
+        setText(text);
 
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
+        if (LOGIN.equals(action) || LOGOUT.equals(action)){
+            setPriority(Priority.LOW);
+            setAlertType(AlertType.SUCCESS);
+        } else {
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.ERROR);
         }
     }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
 
 }

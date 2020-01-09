@@ -23,59 +23,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import org.datadog.jenkins.plugins.datadog.model.BuildData;
 
-import java.util.Map;
-import java.util.Set;
+public class BuildAbortedEventImpl extends AbstractDatadogBuildEvent {
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+    public BuildAbortedEventImpl(BuildData buildData) {
+        super(buildData);
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+        String number = buildData.getBuildNumber("unknown");
+        String userId = buildData.getUserId();
+        String jobName = buildData.getJobName("unknown");
+        String buildUrl = buildData.getBuildUrl("unknown");
+        String hostname = buildData.getHostname("unknown");
 
-        private AlertType() {
-        }
+        // Build title
+        // eg: `job_name build #1 aborted on hostname`
+        String title = "Job " + jobName + " build #" + number + " aborted on " + hostname;
+        setTitle(title);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+        // Build Text
+        // eg: `User <userId> aborted the [job with build number #<buildNumber>] (1sec)`
+        String text = "%%% \nUser " + userId + " aborted the [job " + jobName + " build #" + number +
+                "](" + buildUrl + ") " + getFormattedDuration() + " \n%%%";
+        setText(text);
+
+        setPriority(Priority.LOW);
+        setAlertType(AlertType.INFO);
     }
-
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
-    }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
 }

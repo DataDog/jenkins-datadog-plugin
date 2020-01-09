@@ -23,59 +23,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import hudson.model.Item;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class ItemCRUDEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public final static String CREATED = "Created";
+    public final static String UPDATED = "Updated";
+    public final static String DELETED = "Deleted";
 
-        private AlertType() {
+    public ItemCRUDEventImpl(Item item, String action, Map<String, Set<String>> tags) {
+        super(tags);
+
+        if(action == null){
+            action = "did something with";
         }
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+        String itemName = DatadogUtilities.getItemName(item);
+        String userId = DatadogUtilities.getUserId();
+        setAggregationKey(itemName);
+
+        String title = "User " + userId + " " + action.toLowerCase() + " the item " + itemName;
+        setTitle(title);
+
+        String text = "%%% \nUser " + userId + " " + action.toLowerCase() + " the item " + itemName + " \n%%%";
+        setText(text);
+
+        setPriority(Priority.NORMAL);
+        setAlertType(AlertType.INFO);
     }
-
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
-    }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
 }

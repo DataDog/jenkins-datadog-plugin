@@ -23,59 +23,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import hudson.model.Item;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class ItemLocationChangedEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public ItemLocationChangedEventImpl(Item item, String oldFullName, String newFullName, Map<String, Set<String>> tags) {
+        super(tags);
 
-        private AlertType() {
-        }
+        String itemName = DatadogUtilities.getItemName(item);
+        String userId = DatadogUtilities.getUserId();
+        setAggregationKey(itemName);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+        String title = "User " + userId + " changed the location of the item " + itemName;
+        setTitle(title);
+
+        String text = "%%% \nUser " + userId + " changed the location of the item " + itemName + " from " +
+                oldFullName + " to " + newFullName + " \n%%%";
+        setText(text);
+
+        setPriority(Priority.NORMAL);
+        setAlertType(AlertType.INFO);
     }
-
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
-    }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
 }

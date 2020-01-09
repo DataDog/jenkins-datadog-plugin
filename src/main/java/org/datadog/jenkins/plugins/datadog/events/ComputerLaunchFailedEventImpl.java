@@ -23,59 +23,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import hudson.model.Computer;
+import hudson.model.TaskListener;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class ComputerLaunchFailedEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public ComputerLaunchFailedEventImpl(Computer computer, TaskListener listener, Map<String, Set<String>> tags) {
+        super(tags);
 
-        private AlertType() {
-        }
+        String nodeName = DatadogUtilities.getNodeName(computer);
+        setAggregationKey(nodeName);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+        String title = "Jenkins node " + nodeName + " failed to launch";
+        setTitle(title);
+
+        String text = "%%% \nJenkins node " + nodeName + " failed to launch \n%%%";
+        setText(text);
+
+        setPriority(Priority.NORMAL);
+        setAlertType(AlertType.ERROR);
     }
-
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
-    }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
 }

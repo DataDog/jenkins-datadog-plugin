@@ -23,59 +23,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.publishers;
 
-import com.timgroup.statsd.Event;
+import hudson.Extension;
+import hudson.model.*;
+import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.clients.ClientFactory;
 
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+@Extension
+public class DatadogCountersPublisher extends AsyncPeriodicWork {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    private static final Logger logger = Logger.getLogger(DatadogCountersPublisher.class.getName());
 
-        private AlertType() {
-        }
-
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
+    public DatadogCountersPublisher() {
+        super("Datadog Counters Publisher");
     }
 
-    public static enum Priority {
-        LOW,
-        NORMAL;
-
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
-        }
+    @Override
+    public long getRecurrencePeriod() {
+        return TimeUnit.SECONDS.toMillis(10);
     }
 
-    public String getTitle();
+    @Override
+    protected void execute(TaskListener taskListener) throws IOException, InterruptedException {
+        try {
+            logger.fine("Execute called: Publishing counters");
 
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
-
+            // Get Datadog Client Instance
+            DatadogClient client = ClientFactory.getClient();
+            client.flushCounters();
+        } catch (Exception e) {
+            logger.warning("Unexpected exception occurred - " + e.getMessage());
+        }
+    }
 }

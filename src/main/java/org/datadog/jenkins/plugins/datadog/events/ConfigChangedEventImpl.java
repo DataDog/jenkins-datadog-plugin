@@ -23,59 +23,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package org.datadog.jenkins.plugins.datadog;
+package org.datadog.jenkins.plugins.datadog.events;
 
-import com.timgroup.statsd.Event;
+import hudson.XmlFile;
+import hudson.model.Saveable;
+import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Interface for Datadog events.
- */
-public interface DatadogEvent {
+public class ConfigChangedEventImpl extends AbstractDatadogSimpleEvent {
 
-    public static enum AlertType {
-        ERROR,
-        WARNING,
-        INFO,
-        SUCCESS;
+    public ConfigChangedEventImpl(Saveable config, XmlFile file, Map<String, Set<String>> tags) {
+        super(tags);
 
-        private AlertType() {
-        }
+        String fileName = DatadogUtilities.getFileName(file);
+        String userId = DatadogUtilities.getUserId();
+        setAggregationKey(fileName);
 
-        public Event.AlertType toEventAlertType(){
-            return Event.AlertType.valueOf(this.name());
-        }
-    }
+        String title = "User " + userId + " changed file " + fileName;
+        setTitle(title);
 
-    public static enum Priority {
-        LOW,
-        NORMAL;
+        String text = "%%% \nUser " + userId + " changed file " + fileName + " \n%%%";
+        setText(text);
 
-        private Priority() {
-        }
-
-        public Event.Priority toEventPriority(){
-            return Event.Priority.valueOf(this.name());
+        if (userId != null && "system".equals(userId.toLowerCase())){
+            setPriority(Priority.LOW);
+            setAlertType(AlertType.INFO);
+        }else{
+            setPriority(Priority.NORMAL);
+            setAlertType(AlertType.WARNING);
         }
     }
-
-    public String getTitle();
-
-    public String getText();
-
-    public String getHost();
-
-    public Priority getPriority();
-
-    public AlertType getAlertType();
-
-    public String getAggregationKey();
-
-    public Long getDate();
-
-    public Map<String, Set<String>> getTags();
-
 
 }
