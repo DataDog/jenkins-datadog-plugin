@@ -73,12 +73,12 @@
           <f:textarea field="globalJobTags" optional="true" default="${globalJobTags}" />
         </f:entry>
 
-        <f:entry title="Send Security audit events" description="Send security events like login, logout, login failure, configuration changes to jobs or changes to jenkins.">
-            <f:checkbox field="emitSecurityEvents" default="true"/>
+        <f:entry description="Send security events like login, logout, login failure, configuration changes to jobs or changes to jenkins.">
+            <f:checkbox title="Send Security audit events" field="emitSecurityEvents" default="true"/>
         </f:entry>
 
-        <f:entry title="Send System events" description="Send system events like Node changes of states.">
-            <f:checkbox field="emitSystemEvents" default="true"/>
+        <f:entry description="Send system events like Node changes of states.">
+            <f:checkbox title="Send System events" field="emitSystemEvents" default="true"/>
         </f:entry>
     </f:advanced>
   </f:section>

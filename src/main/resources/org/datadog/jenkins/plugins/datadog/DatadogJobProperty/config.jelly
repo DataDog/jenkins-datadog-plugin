@@ -15,8 +15,8 @@
         </f:optionalBlock>
 
         <f:advanced>
-            <f:entry title="Send Source Control Management events" description="Send an event after each successful checkout.">
-                <f:checkbox field="emitSCMEvents" default="true"/>
+            <f:entry description="Send an event after each successful checkout.">
+                <f:checkbox title="Send Source Control Management events" field="emitSCMEvents" default="true"/>
             </f:entry>
         </f:advanced>
 
