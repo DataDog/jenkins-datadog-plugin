@@ -45,8 +45,19 @@ public class ClientFactory {
 
     public static DatadogClient getClient() {
         DatadogGlobalConfiguration descriptor = DatadogUtilities.getDatadogGlobalDescriptor();
-        return ClientFactory.getClient(DatadogClient.ClientType.valueOf(descriptor.getReportWith()),
-                descriptor.getTargetApiURL(), descriptor.getTargetApiKey(),
-                descriptor.getTargetHost(), descriptor.getTargetPort());
+        String reportWith = null;
+        String targetApiURL = null;
+        Secret targetApiKey = null;
+        String targetHost = null;
+        Integer targetPort = null;
+        if(descriptor != null){
+            reportWith = descriptor.getReportWith();
+            targetApiURL = descriptor.getTargetApiURL();
+            targetApiKey = descriptor.getTargetApiKey();
+            targetHost = descriptor.getTargetHost();
+            targetPort = descriptor.getTargetPort();
+        }
+        return ClientFactory.getClient(DatadogClient.ClientType.valueOf(reportWith),
+                targetApiURL, targetApiKey, targetHost, targetPort);
     }
 }

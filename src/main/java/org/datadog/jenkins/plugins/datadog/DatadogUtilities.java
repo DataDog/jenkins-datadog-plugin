@@ -101,8 +101,14 @@ public class DatadogUtilities {
             return result;
         }
         final String globalJobTags = datadogGlobalConfig.getGlobalJobTags();
+        String workspaceTagFile = null;
+        String tagProperties = null;
         final DatadogJobProperty property = DatadogUtilities.getDatadogJobProperties(run);
-        String workspaceTagFile = property.readTagFile(run);
+        if(property != null){
+            workspaceTagFile = property.readTagFile(run);
+            tagProperties = property.getTagProperties();
+        }
+
         // If job doesn't have a workspace Tag File set we check if one has been defined globally
         if(workspaceTagFile == null){
             workspaceTagFile = datadogGlobalConfig.getGlobalTagFile();
@@ -112,9 +118,7 @@ public class DatadogUtilities {
             if (workspaceTagFile != null) {
                 result = TagsUtil.merge(result, computeTagListFromVarList(envVars, workspaceTagFile));
             }
-
-            String prop = property.getTagProperties();
-            result = TagsUtil.merge(result, computeTagListFromVarList(envVars, prop));
+            result = TagsUtil.merge(result, computeTagListFromVarList(envVars, tagProperties));
         } catch (IOException | InterruptedException ex) {
             logger.severe(ex.getMessage());
         }
