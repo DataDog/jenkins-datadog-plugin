@@ -25,6 +25,8 @@ THE SOFTWARE.
 
 package org.datadog.jenkins.plugins.datadog.clients;
 
+import org.datadog.jenkins.plugins.datadog.util.SuppressFBWarnings;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,7 @@ public class ConcurrentMetricCounters {
 
     private ConcurrentMetricCounters(){}
 
+    @SuppressFBWarnings(value="DC_DOUBLECHECK")
     public static ConcurrentMetricCounters getInstance(){
         if(instance == null){
             synchronized (ConcurrentMetricCounters.class) {
@@ -60,6 +63,7 @@ public class ConcurrentMetricCounters {
         countersInstance.resetCounters();
     }
 
+    @SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     private void resetCounters(){
         counters = new ConcurrentHashMap<>();
     }
@@ -84,9 +88,9 @@ public class ConcurrentMetricCounters {
                 ok = counters.replace(counterMetric, previousValue, previousValue + 1);
             }
         }
-        previousValue = previousValue == null ? 0 : previousValue;
+        previousValue = (previousValue == null) ? Integer.valueOf(0) : previousValue;
         logger.fine("Counter " + name + " updated from previousValue " + previousValue + " to "
-                + (previousValue + 1));
+                + (previousValue + Integer.valueOf(1)));
     }
 
     public synchronized ConcurrentMap<CounterMetric, Integer> getAndReset(){

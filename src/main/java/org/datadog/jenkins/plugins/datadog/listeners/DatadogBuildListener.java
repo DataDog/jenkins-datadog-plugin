@@ -71,7 +71,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("End DatadogBuildListener#onStarted");
 
             // Get Datadog Client Instance
-            DatadogClient client = ClientFactory.getClient();
+            DatadogClient client = getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -90,7 +90,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             // item.getInQueueSince() may raise a NPE if a worker node is spinning up to run the job.
             // This could be expected behavior with ec2 spot instances/ecs containers, meaning no waiting
             // queue times if the plugin is spinning up an instance/container for one/first job.
-            Queue queue = Queue.getInstance();
+            Queue queue = getQueue();
             Queue.Item item = queue.getItem(run.getQueueId());
             Map<String, Set<String>> tags = buildData.getTags();
             String hostname = buildData.getHostname("null");
@@ -129,7 +129,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("Start DatadogBuildListener#onCompleted");
 
             // Get Datadog Client Instance
-            DatadogClient client = ClientFactory.getClient();
+            DatadogClient client = getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -204,7 +204,7 @@ public class DatadogBuildListener extends RunListener<Run>  {
             logger.fine("Start DatadogBuildListener#onDeleted");
 
             // Get Datadog Client Instance
-            DatadogClient client = ClientFactory.getClient();
+            DatadogClient client = getDatadogClient();
 
             // Collect Build Data
             BuildData buildData;
@@ -271,4 +271,11 @@ public class DatadogBuildListener extends RunListener<Run>  {
         return run != null && run.getResult() != Result.SUCCESS;
     }
 
+    public Queue getQueue(){
+        return Queue.getInstance();
+    }
+
+    public DatadogClient getDatadogClient(){
+        return ClientFactory.getClient();
+    }
 }

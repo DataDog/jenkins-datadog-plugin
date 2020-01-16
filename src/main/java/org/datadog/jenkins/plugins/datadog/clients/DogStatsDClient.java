@@ -29,6 +29,7 @@ import com.timgroup.statsd.*;
 import hudson.util.Secret;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
+import org.datadog.jenkins.plugins.datadog.util.SuppressFBWarnings;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
@@ -46,6 +47,7 @@ public class DogStatsDClient implements DatadogClient {
     private static DatadogClient instance;
     private static final Logger logger = Logger.getLogger(DatadogHttpClient.class.getName());
 
+    @SuppressFBWarnings(value="MS_SHOULD_BE_FINAL")
     public static boolean enableValidations = true;
 
     private StatsDClient statsd;
@@ -60,6 +62,7 @@ public class DogStatsDClient implements DatadogClient {
      * @param port - target port
      * @return an singleton instance of the DogStatsDClient.
      */
+    @SuppressFBWarnings(value="DC_DOUBLECHECK")
     public static DatadogClient getInstance(String hostname, int port){
         if(enableValidations){
             if (hostname == null || hostname.isEmpty()) {

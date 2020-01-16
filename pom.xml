@@ -5,24 +5,28 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <!-- Baseline Jenkins version you use to build and test the plugin. Users must have this version or newer to run. -->
-    <version>2.17</version>
+    <version>3.55</version> <!-- or whatever the newest version available is -->
+    <!--Check https://mvnrepository.com/artifact/org.jenkins-ci.plugins/plugin?repo=jenkins-releases-->
     <relativePath />
   </parent>
 
+  <name>Datadog Plugin</name>
+  <description>This plugin is used to forward metrics, events, and service checks to your account at Datadog, automatically.</description>
+  <url>https://github.com/jenkinsci/datadog-plugin</url>
+  <!--<url>https://wiki.jenkins-ci.org/display/JENKINS/Datadog+Plugin</url>-->
   <groupId>org.datadog.jenkins.plugins</groupId>
   <artifactId>datadog</artifactId>
   <version>1.0.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
-  <name>Datadog Plugin</name>
-  <description>This plugin is used to forward metrics, events, and service checks to your account at Datadog, automatically.</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/Datadog+Plugin</url>
+  <properties>
+    <java.level>8</java.level>
+  </properties>
 
   <licenses>
     <license>
       <name>MIT</name>
-      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <url>https://www.opensource.org/licenses/mit-license.php</url>
     </license>
   </licenses>
 
@@ -37,69 +41,46 @@
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/datadog-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/datadog-plugin.git</developerConnection>
-    <url>http://github.com/jenkinsci/datadog-plugin</url>
+    <url>https://github.com/jenkinsci/datadog-plugin</url>
     <tag>HEAD</tag>
   </scm>
 
-  <properties>
-    <findbugs.skip>true</findbugs.skip>
-    <powermock.version>1.6.6</powermock.version>
-  </properties>
-
   <repositories>
     <repository>
-      <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <id>releases.repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/releases/</url>
+    </repository>
+    <repository>
+      <id>public.repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </repository>
   </repositories>
 
   <pluginRepositories>
     <pluginRepository>
-      <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <id>releases.repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/releases/</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>public.repo.jenkins-ci.org</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
 
   <dependencies>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>4.5.6</version>
-    </dependency>
     <dependency>
       <groupId>com.datadoghq</groupId>
       <artifactId>java-dogstatsd-client</artifactId>
       <version>2.8.1</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>2.0.42-beta</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-junit4</artifactId>
-      <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito2</artifactId>
-      <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>3.5</version>
-      </plugin>
-    </plugins>
-  </build>
+  </dependencies>
 
 </project>

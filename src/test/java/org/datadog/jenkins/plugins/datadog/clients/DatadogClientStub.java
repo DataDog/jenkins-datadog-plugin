@@ -36,8 +36,8 @@ import java.util.*;
 
 public class DatadogClientStub implements DatadogClient {
 
-    List<DatadogMetric> metrics = new ArrayList<>();
-    List<DatadogMetric> serviceChecks = new ArrayList<>();
+    public List<DatadogMetric> metrics = new ArrayList<>();
+    public List<DatadogMetric> serviceChecks = new ArrayList<>();
 
     public DatadogClientStub() {
         this.metrics = new ArrayList<>();

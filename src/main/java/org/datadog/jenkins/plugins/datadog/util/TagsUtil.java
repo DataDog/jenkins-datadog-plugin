@@ -38,12 +38,14 @@ public class TagsUtil {
         if (orig == null) {
             orig = new HashMap<>();
         }
-        for (String oName: orig.keySet()){
+        for (final Iterator<Map.Entry<String, Set<String>>> iter = orig.entrySet().iterator(); iter.hasNext();){
+            Map.Entry<String, Set<String>> entry = iter.next();
+            final String oName = entry.getKey();
             Set<String> dValues = dest.containsKey(oName) ? dest.get(oName) : new HashSet<String>();
             if (dValues == null) {
                 dValues = new HashSet<>();
             }
-            Set<String> oValues = orig.get(oName);
+            Set<String> oValues = entry.getValue();
             if (oValues != null) {
                 dValues.addAll(oValues);
             }
@@ -54,8 +56,10 @@ public class TagsUtil {
 
     public static JSONArray convertTagsToJSONArray(Map<String, Set<String>> tags){
         JSONArray result = new JSONArray();
-        for (String name : tags.keySet()) {
-            Set<String> values = tags.get(name);
+        for (final Iterator<Map.Entry<String, Set<String>>> iter = tags.entrySet().iterator(); iter.hasNext();){
+            Map.Entry<String, Set<String>> entry = iter.next();
+            String name = entry.getKey();
+            Set<String> values = entry.getValue();
             for (String value : values){
                 if ("".equals(value)){
                     result.add(name); // Tag with no value
@@ -69,8 +73,10 @@ public class TagsUtil {
 
     public static String[] convertTagsToArray(Map<String, Set<String>> tags){
         List<String> result = new ArrayList<>();
-        for (String name : tags.keySet()) {
-            Set<String> values = tags.get(name);
+        for (final Iterator<Map.Entry<String, Set<String>>> iter = tags.entrySet().iterator(); iter.hasNext();){
+            Map.Entry<String, Set<String>> entry = iter.next();
+            String name = entry.getKey();
+            Set<String> values = entry.getValue();
             for (String value : values){
                 if("".equals(value)){
                     result.add(name);

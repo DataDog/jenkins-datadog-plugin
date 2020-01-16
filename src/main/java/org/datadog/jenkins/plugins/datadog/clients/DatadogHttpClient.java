@@ -33,6 +33,7 @@ import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
+import org.datadog.jenkins.plugins.datadog.util.SuppressFBWarnings;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
@@ -43,6 +44,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -64,6 +66,7 @@ public class DatadogHttpClient implements DatadogClient {
 
     private static final Integer HTTP_FORBIDDEN = 403;
 
+    @SuppressFBWarnings(value="MS_SHOULD_BE_FINAL")
     public static boolean enableValidations = true;
 
     private String url;
@@ -76,6 +79,7 @@ public class DatadogHttpClient implements DatadogClient {
      * @param apiKey - Secret api Key
      * @return an singleton instance of the DatadogHttpClient.
      */
+    @SuppressFBWarnings(value="DC_DOUBLECHECK")
     public static DatadogClient getInstance(String url, Secret apiKey){
         if(enableValidations){
             if (url == null || url.isEmpty()) {
@@ -168,8 +172,10 @@ public class DatadogHttpClient implements DatadogClient {
 
         logger.fine("Run flushCounters method");
         // Submit all metrics as gauge
-        for (CounterMetric counterMetric: counters.keySet()) {
-            int count = counters.get(counterMetric);
+        for (final Iterator<Map.Entry<CounterMetric, Integer>> iter = counters.entrySet().iterator(); iter.hasNext();){
+            Map.Entry<CounterMetric, Integer> entry = iter.next();
+            CounterMetric counterMetric = entry.getKey();
+            int count = entry.getValue();
             logger.fine("Flushing: " + counterMetric.getMetricName() + " - " + count);
             // Since we submit a rate we need to divide the submitted value by the interval (10)
             this.postMetric(counterMetric.getMetricName(), count, counterMetric.getHostname(),
@@ -362,11 +368,12 @@ public class DatadogHttpClient implements DatadogClient {
      */
     private HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
         HttpURLConnection conn = null;
+        ProxyConfiguration proxyConfig = null;
+
         Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            return null;
+        if(jenkins != null){
+            proxyConfig = jenkins.proxy;
         }
-        ProxyConfiguration proxyConfig = jenkins.proxy;
 
         /* Attempt to use proxy */
         if (proxyConfig != null) {
@@ -374,9 +381,6 @@ public class DatadogHttpClient implements DatadogClient {
             if (proxy != null && proxy.type() == Proxy.Type.HTTP) {
                 logger.fine("Attempting to use the Jenkins proxy configuration");
                 conn = (HttpURLConnection) url.openConnection(proxy);
-                if (conn == null) {
-                    logger.fine("Failed to use the Jenkins proxy configuration");
-                }
             }
         } else {
             logger.fine("Jenkins proxy configuration not found");

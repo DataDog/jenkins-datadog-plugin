@@ -27,16 +27,15 @@ package org.datadog.jenkins.plugins.datadog.events;
 
 import hudson.EnvVars;
 import hudson.model.*;
+import jenkins.model.Jenkins;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.DatadogUtilities;
 import org.datadog.jenkins.plugins.datadog.clients.DatadogClientStub;
 import org.datadog.jenkins.plugins.datadog.model.BuildData;
+import org.datadog.jenkins.plugins.datadog.stubs.BuildStub;
+import org.datadog.jenkins.plugins.datadog.stubs.ProjectStub;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.*;
@@ -45,38 +44,28 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DatadogUtilities.class})
 public class BuildFinishedEventTest {
 
     @Test
     public void testWithNothingSet() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn(null);
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn(null);
+        ProjectStub job = new ProjectStub(jenkins,null);
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn(null);
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(null);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, null, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost() == null);
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
         Assert.assertTrue(event.getAggregationKey().equals("unknown"));
-        Assert.assertTrue(event.getDate() == 0);
+        Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("unknown"));
-        Assert.assertTrue(event.getTitle().equals("Job unknown build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job unknown build #0 unknown on " + hostname));
         Assert.assertTrue(event.getText().contains("[Job unknown build #0](unknown) finished with status unknown (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.WARNING));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
@@ -84,119 +73,89 @@ public class BuildFinishedEventTest {
 
     @Test
     public void testWithNothingSet_parentFullName() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("parentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parentFullName");
+        ProjectStub job = new ProjectStub(jenkins,null);
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn(null);
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(null);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, null, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/null"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/null build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/null build #0 unknown on " + hostname));
     }
 
     @Test
     public void testWithNothingSet_parentFullName_2() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("parent»Full  Name");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parent»Full  Name");
+        ProjectStub job = new ProjectStub(jenkins,null);
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn(null);
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(null);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, null, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
         Assert.assertTrue(event.getAggregationKey().equals("parent/FullName/null"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parent/FullName/null"));
-        Assert.assertTrue(event.getTitle().equals("Job parent/FullName/null build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parent/FullName/null build #0 unknown on " + hostname));
     }
 
     @Test
     public void testWithNothingSet_jobName() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("parentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parentFullName");
+        ProjectStub job = new ProjectStub(jenkins,"jobName");
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("jobName");
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(null);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, null, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() == 0);
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
+        Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 1);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unknown on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unknown on " + hostname));
     }
 
     @Test
     public void testWithNothingSet_result_failure() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("parentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parentFullName");
+        ProjectStub job = new ProjectStub(jenkins,"jobName");
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("jobName");
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.FAILURE);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, Result.FAILURE, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() == 0);
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
+        Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 2);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().get("result").contains("FAILURE"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 failure on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 failure on " + hostname));
         Assert.assertTrue(event.getText().contains("[Job parentFullName/jobName build #0](unknown) finished with status failure (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.ERROR));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
@@ -204,33 +163,25 @@ public class BuildFinishedEventTest {
 
     @Test
     public void testWithNothingSet_result_unstable() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(0l);
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn(null);
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("parentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("parentFullName");
+        ProjectStub job = new ProjectStub(jenkins,"jobName");
 
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("jobName");
-
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.UNSTABLE);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(null);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, Result.UNSTABLE, null, null, 0L, 0, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost() == null);
-        Assert.assertTrue(event.getDate() == 0);
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
+        Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getAggregationKey().equals("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().size() == 2);
         Assert.assertTrue(event.getTags().get("job").contains("parentFullName/jobName"));
         Assert.assertTrue(event.getTags().get("result").contains("UNSTABLE"));
-        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unstable on unknown"));
+        Assert.assertTrue(event.getTitle().equals("Job parentFullName/jobName build #0 unstable on " + hostname));
         Assert.assertTrue(event.getText().contains("[Job parentFullName/jobName build #0](unknown) finished with status unstable (0.00 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.WARNING));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.NORMAL));
@@ -238,16 +189,10 @@ public class BuildFinishedEventTest {
 
     @Test
     public void testWithEverythingSet() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(System.currentTimeMillis());
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("ParentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("JobName");
+        ProjectStub job = new ProjectStub(jenkins,"JobName");
 
         EnvVars envVars = new EnvVars();
         envVars.put("HOSTNAME", "test-hostname-2");
@@ -255,19 +200,14 @@ public class BuildFinishedEventTest {
         envVars.put("BUILD_URL", "http://build_url.com");
         envVars.put("GIT_BRANCH", "test-branch");
 
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(10L);
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, Result.SUCCESS, envVars, null, 10L, 2, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
 
         BuildData bd = new BuildData(run, listener);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost().equals("test-hostname-1"));
+        Assert.assertTrue(event.getHost().equals("test-hostname-2"));
         Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
         Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getTags().size() == 4);
@@ -275,37 +215,25 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(event.getTags().get("result").contains("SUCCESS"));
         Assert.assertTrue(event.getTags().get("branch").contains("test-branch"));
         Assert.assertTrue(event.getTags().get("node").contains("test-node"));
-        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on test-hostname-1"));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on test-hostname-2"));
         Assert.assertTrue(event.getText().contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.SUCCESS));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));
-
     }
 
     @Test
     public void testWithEverythingSet_envVarsAndTags() throws IOException, InterruptedException {
-        PowerMockito.mockStatic(DatadogUtilities.class);
-        when(DatadogUtilities.currentTimeMillis()).thenReturn(System.currentTimeMillis());
-        when(DatadogUtilities.getHostname(any(String.class))).thenReturn("test-hostname-1");
+        Jenkins jenkins = mock(Jenkins.class);
+        when(jenkins.getFullName()).thenReturn("ParentFullName");
 
-        ItemGroup parent = mock(ItemGroup.class);
-        when(parent.getFullName()).thenReturn("ParentFullName");
-
-        Job job = mock(Job.class);
-        when(job.getParent()).thenReturn(parent);
-        when(job.getName()).thenReturn("JobName");
+        ProjectStub job = new ProjectStub(jenkins,"JobName");
 
         EnvVars envVars = new EnvVars();
         envVars.put("BUILD_URL", "http://build_url.com");
         envVars.put("CVS_BRANCH", "csv-branch");
         envVars.put("SVN_BRANCH", "svn-branch");
 
-        Run run = mock(Run.class);
-        when(run.getResult()).thenReturn(Result.SUCCESS);
-        when(run.getEnvironment(any(TaskListener.class))).thenReturn(envVars);
-        when(run.getDuration()).thenReturn(10L);
-        when(run.getNumber()).thenReturn(2);
-        when(run.getParent()).thenReturn(job);
+        Run run = new BuildStub(job, Result.SUCCESS, envVars, null, 10L, 2, null, 0L, null);
 
         TaskListener listener = mock(TaskListener.class);
 
@@ -316,7 +244,8 @@ public class BuildFinishedEventTest {
         bd.setTags(tags);
         DatadogEvent event = new BuildFinishedEventImpl(bd);
 
-        Assert.assertTrue(event.getHost().equals("test-hostname-1"));
+        String hostname = DatadogUtilities.getHostname(null);
+        Assert.assertTrue(event.getHost().equals(hostname));
         Assert.assertTrue(event.getDate() != 0);
         Assert.assertTrue(event.getAggregationKey().equals("ParentFullName/JobName"));
         Assert.assertTrue(event.getTags().size() == 5);
@@ -325,7 +254,7 @@ public class BuildFinishedEventTest {
         Assert.assertTrue(event.getTags().get("tag1").contains("value1"));
         Assert.assertTrue(event.getTags().get("tag2").contains("value2"));
         Assert.assertTrue(event.getTags().get("branch").contains("csv-branch"));
-        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on test-hostname-1"));
+        Assert.assertTrue(event.getTitle().equals("Job ParentFullName/JobName build #2 success on " + hostname));
         Assert.assertTrue(event.getText().contains("[Job ParentFullName/JobName build #2](http://build_url.com) finished with status success (0.01 secs)"));
         Assert.assertTrue(event.getAlertType().equals(DatadogEvent.AlertType.SUCCESS));
         Assert.assertTrue(event.getPriority().equals(DatadogEvent.Priority.LOW));

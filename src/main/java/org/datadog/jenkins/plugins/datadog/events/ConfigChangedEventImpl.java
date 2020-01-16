@@ -47,6 +47,10 @@ public class ConfigChangedEventImpl extends AbstractDatadogSimpleEvent {
         String text = "%%% \nUser " + userId + " changed file " + fileName + " \n%%%";
         setText(text);
 
+        setEnums(userId);
+    }
+
+    public void setEnums(String userId){
         if (userId != null && "system".equals(userId.toLowerCase())){
             setPriority(Priority.LOW);
             setAlertType(AlertType.INFO);
