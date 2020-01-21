@@ -64,10 +64,15 @@ public class DatadogUtilities {
 
     /**
      * @param r - Current build.
-     * @return - The configured {@link DatadogJobProperty}. Null if not there
+     * @return - The configured {@link DatadogJobProperty}. Default object with empty properties if not there
      */
     public static DatadogJobProperty getDatadogJobProperties(@Nonnull Run r) {
-        return (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+        DatadogJobProperty datadogJobProperty = (DatadogJobProperty) r.getParent().getProperty(DatadogJobProperty.class);
+        if (datadogJobProperty != null) {
+            return datadogJobProperty;
+        } else {
+            return new DatadogJobProperty();
+        }
     }
 
     /**
