@@ -1,3 +1,9 @@
+# IMPORTANT
+This repository is now archived.  
+Official repository is now located at [https://github.com/jenkinsci/datadog-plugin](https://github.com/jenkinsci/datadog-plugin).  
+This repository will not be deleted in order to keep track of historical changes, issues and pull requests.
+  - Note that the changelog file references issues from this repository. 
+_________
 [![Build Status](https://dev.azure.com/datadoghq/jenkins-datadog-plugin/_apis/build/status/DataDog.jenkins-datadog-plugin?branchName=master)](https://dev.azure.com/datadoghq/jenkins-datadog-plugin/_build/latest?definitionId=18&branchName=master)
 
 # Jenkins Datadog Plugin
