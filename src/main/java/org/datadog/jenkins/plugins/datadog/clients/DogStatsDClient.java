@@ -29,6 +29,7 @@ import com.timgroup.statsd.*;
 import hudson.util.Secret;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
@@ -233,6 +234,11 @@ public class DogStatsDClient implements DatadogClient {
     @Override
     public boolean validate() throws IOException, ServletException {
         return true;
+    }
+
+    @Override
+    public boolean sendLogs(LogSender payloadLogs) throws IOException {
+        return false;
     }
 
 }

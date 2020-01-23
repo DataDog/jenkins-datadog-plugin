@@ -27,6 +27,7 @@ package org.datadog.jenkins.plugins.datadog.clients;
 
 import hudson.util.Secret;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.junit.Assert;
 
@@ -103,6 +104,11 @@ public class DatadogClientStub implements DatadogClient {
     @Override
     public boolean validate() throws IOException, ServletException {
         return true;
+    }
+
+    @Override
+    public boolean sendLogs(LogSender payloadLogs) throws IOException {
+        return false;
     }
 
     public boolean assertMetric(String name, double value, String hostname, String[] tags) {

@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 package org.datadog.jenkins.plugins.datadog;
 
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import com.timgroup.statsd.ServiceCheck;
 import hudson.util.Secret;
 
@@ -109,7 +110,7 @@ public interface DatadogClient {
      * Sends a service check to the Datadog API, including the check name, and status.
      *
      * @param name     - A String with the name of the service check to record.
-     * @param status     - An Status with the status code to record for this service check.
+     * @param status   - An Status with the status code to record for this service check.
      * @param hostname - A String with the hostname to submit.
      * @param tags     - A Map containing the tags to submit.
      * @return a boolean to signify the success or failure of the HTTP POST request.
@@ -124,4 +125,6 @@ public interface DatadogClient {
      * @throws ServletException if there is a servlet exception.
      */
     public boolean validate() throws IOException, ServletException;
+
+    public boolean sendLogs(LogSender payloadLogs) throws IOException;
 }

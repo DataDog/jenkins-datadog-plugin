@@ -32,14 +32,12 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.datadog.jenkins.plugins.datadog.DatadogClient;
+import org.datadog.jenkins.plugins.datadog.logs.LogSender;
 import org.datadog.jenkins.plugins.datadog.DatadogEvent;
 import org.datadog.jenkins.plugins.datadog.util.TagsUtil;
 
 import javax.servlet.ServletException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -62,7 +60,15 @@ public class DatadogHttpClient implements DatadogClient {
     private static final String SERVICECHECK = "v1/check_run";
     private static final String VALIDATE = "v1/validate";
 
+    private static final String API_ENDPOINT_US = "https://api.datadoghq.com/api/";
+    private static final String API_ENDPOINT_EU = "https://api.datadoghq.eu/api/";
+
+    private static final String LOGS_ENDPOINT_US = "https://http-intake.logs.datadoghq.com/v1/input/";
+    private static final String LOGS_ENDPOINT_EU = "https://http-intake.logs.datadoghq.eu/v1/input/";
+
     private static final Integer HTTP_FORBIDDEN = 403;
+    private static final Integer BAD_REQUEST = 400;
+
 
     public static boolean enableValidations = true;
 
@@ -399,4 +405,74 @@ public class DatadogHttpClient implements DatadogClient {
         return conn;
     }
 
+    /**
+     * Posts a given {@link JSONObject} payload to the Datadog API, using the
+     * user configured apiKey.
+     *
+     * @param payload - A JSONObject containing a specific subset of a builds metadata.
+     * @return a boolean to signify the success or failure of the HTTP POST request.
+     * @throws IOException if HttpURLConnection fails to open connection
+     */
+    public boolean sendLogs(final LogSender payload) throws IOException {
+        HttpURLConnection conn = null;
+        String logsUrl = null;
+        boolean status = true;
+
+        // https://docs.datadoghq.com/api/?lang=bash#logs - Logs API
+        // Derive the logs intake endpoint URL from the API url (US or EU)
+        if (this.url.equals(API_ENDPOINT_US)) {
+            logsUrl = LOGS_ENDPOINT_US;
+        } else if (this.url.equals(API_ENDPOINT_EU)) {
+            logsUrl = LOGS_ENDPOINT_EU;
+        }
+        String logsEndpoint = logsUrl + Secret.toString(apiKey);;
+        URL logsEndpointURL = new URL(logsEndpoint);
+
+        try {
+            logger.info("Setting up HttpURLConnection...");
+            conn = getHttpURLConnection(logsEndpointURL);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setUseCaches(false);
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), "utf-8");
+            logger.info("Writing to OutputStreamWriter...");
+            wr.write(payload.toString());
+            wr.close();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"));
+            StringBuilder result = new StringBuilder();
+            String line;
+            while ((line = rd.readLine()) != null) {
+                result.append(line);
+            }
+            rd.close();
+            /*
+            if (result.equals("")) {
+                logger.info(String.format("Logs API call was sent successfully!"));
+                logger.info(String.format("Payload: %s", payload.toString()));
+            } else {
+                logger.info(String.format("Logs API call failed!"));
+                logger.info(String.format("Payload: %s", payload.toString()));
+                status = false;
+            }
+             */
+        } catch (Exception e) {
+            try {
+                if (conn != null && conn.getResponseCode() == BAD_REQUEST) {
+                    logger.info("Hmmm, your API key may be invalid. We received a 400 in response.");
+                } else {
+                    logger.info(String.format("Client error: %s", e.toString()));
+                }
+            } catch (IOException ex) {
+                logger.info(ex.toString());
+            }
+            status = false;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return status;
+    }
 }
